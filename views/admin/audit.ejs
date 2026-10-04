@@ -1,0 +1,5 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Audit log</h1></div>
+<%- include('_audit_table', { rows }) %>
+<div class="pager"><% if (page > 1) { %><a class="btn secondary sm" href="?page=<%= page-1 %>">← Newer</a><% } %><span class="muted small">Page <%= page %></span><% if (rows.length === 50) { %><a class="btn secondary sm" href="?page=<%= page+1 %>">Older →</a><% } %></div>
+<%- include('../partials/app-end') %>

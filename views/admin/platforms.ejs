@@ -1,0 +1,12 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Training platforms</h1>
+  <form method="get"><select name="status" data-autosubmit><% [['','All'],['pending','Pending'],['active','Active'],['suspended','Suspended']].forEach(([v,l]) => { %><option value="<%= v %>" <%= status === v ? 'selected' : '' %>><%= l %></option><% }) %></select></form></div>
+<div class="table-wrap"><table>
+  <tr><th>Organization</th><th>Owner</th><th>Applied</th><th>Certificates</th><th>Status</th><th>Actions</th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No platforms.</td></tr><% } %>
+  <% rows.forEach(p => { %><tr><td><a href="/admin/platforms/<%= p.id %>"><%= p.company_name %></a><div class="small muted"><%= p.country || '' %> <%= p.website || '' %></div></td>
+  <td><%= p.owner_email || '—' %></td><td><%= usDate(p.created_at) %></td><td><%= p.certs %></td>
+  <td><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span></td>
+  <td style="white-space:nowrap"><%- include('_status_buttons', { p }) %></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

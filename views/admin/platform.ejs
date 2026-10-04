@@ -1,0 +1,14 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= p.company_name %></h1><div><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span> <%- include('_status_buttons', { p }) %></div></div>
+<div class="grid g2">
+  <div class="card details"><dl>
+    <dt>Website</dt><dd><%= p.website || '—' %></dd><dt>Country</dt><dd><%= p.country || '—' %></dd>
+    <dt>Contact</dt><dd><%= p.contact_email || '—' %></dd><dt>Applied</dt><dd><%= usDateTime(p.created_at) %></dd>
+    <dt>Certificates</dt><dd><%= st.total %> (<%= st.revoked %> revoked)</dd>
+  </dl></div>
+  <div class="table-wrap"><table><tr><th>User</th><th>Email</th><th>Last login</th></tr>
+    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td></tr><% }) %></table></div>
+</div>
+<h2 class="mt">Activity</h2>
+<%- include('_audit_table', { rows: log.map(a => ({ ...a, company_name: p.company_name })) }) %>
+<%- include('../partials/app-end') %>

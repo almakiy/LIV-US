@@ -1,0 +1,22 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Dashboard</h1><% if (user.accreditation_status === 'active') { %><a class="btn" href="/portal/issue">+ Issue certificates</a><% } %></div>
+<div class="grid g4">
+  <div class="stat"><div class="n"><%= stats.total %></div><div class="l">Certificates issued</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)"><%= stats.active %></div><div class="l">Currently valid</div></div>
+  <div class="stat"><div class="n" style="color:var(--amber)"><%= stats.expiring %></div><div class="l">Expiring in 30 days</div></div>
+  <div class="stat"><div class="n" style="color:var(--red)"><%= stats.revoked %></div><div class="l">Revoked</div></div>
+</div>
+<div class="grid g2 mt">
+  <div class="stat"><div class="n"><%= stats.trainees %></div><div class="l">Trainees on record</div></div>
+  <div class="stat"><div class="n"><%= lookups %></div><div class="l">Verification checks (last 30 days)</div></div>
+</div>
+<h2 class="mt">Recent issuance batches</h2>
+<div class="table-wrap"><table>
+  <tr><th>Date</th><th>Source</th><th>File</th><th>Issued</th><th>Skipped</th><th>By</th><th></th></tr>
+  <% if (!batches.length) { %><tr><td colspan="7" class="muted center">No batches yet.</td></tr><% } %>
+  <% batches.forEach(b => { %><tr>
+    <td><%= usDateTime(b.created_at) %></td><td><span class="badge b-neutral"><%= b.source %></span></td>
+    <td><%= b.file_name || '—' %></td><td><%= b.issued %></td><td><%= b.skipped %></td><td><%= b.full_name || 'API' %></td>
+    <td class="right"><a href="/portal/batches/<%= b.id %>">View</a></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

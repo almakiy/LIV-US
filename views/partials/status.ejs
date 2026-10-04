@@ -1,0 +1,3 @@
+<% const today = new Date().toISOString().slice(0,10);
+   const st = c.status === 'revoked' ? 'revoked' : (c.expiry_date && c.expiry_date < today ? 'expired' : 'active'); %>
+<span class="badge b-<%= st %>"><%= st %></span>

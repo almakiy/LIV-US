@@ -1,0 +1,7 @@
+<div class="table-wrap"><table>
+  <tr><th>Time (ET)</th><th>Actor</th><th>Platform</th><th>Action</th><th>Target</th><th>Details</th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No activity.</td></tr><% } %>
+  <% rows.forEach(a => { %><tr><td style="white-space:nowrap"><%= usDateTime(a.created_at) %></td>
+  <td><%= a.actor_label || '—' %></td><td><%= a.company_name || '—' %></td><td><code><%= a.action %></code></td><td class="mono small"><%= a.target || '' %></td>
+  <td class="small muted"><%= a.metadata ? JSON.stringify(a.metadata) : '' %></td></tr><% }) %>
+</table></div>

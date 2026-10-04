@@ -1,0 +1,28 @@
+<%- include('head') %>
+<div class="shell">
+  <aside class="side">
+  <% if (user.role === 'super_admin') { %>
+    <div class="sec">LIV Administration</div>
+    <a href="/admin" class="<%= path === '/admin' || path === '/admin/' ? 'on' : '' %>">Overview</a>
+    <a href="/admin/platforms" class="<%= path.startsWith('/admin/platforms') ? 'on' : '' %>">Training platforms</a>
+    <a href="/admin/certificates" class="<%= path.startsWith('/admin/certificates') ? 'on' : '' %>">All certificates</a>
+    <a href="/admin/audit" class="<%= path.startsWith('/admin/audit') ? 'on' : '' %>">Audit log</a>
+    <a href="/admin/messages" class="<%= path.startsWith('/admin/messages') ? 'on' : '' %>">Messages</a>
+  <% } else { %>
+    <div class="sec"><%= user.company_name %></div>
+    <a href="/portal" class="<%= path === '/portal' || path === '/portal/' ? 'on' : '' %>">Dashboard</a>
+    <a href="/portal/issue" class="<%= path.startsWith('/portal/issue') ? 'on' : '' %>">Issuance Center</a>
+    <a href="/portal/certificates" class="<%= path.startsWith('/portal/certificates') || path.startsWith('/portal/batches') ? 'on' : '' %>">History &amp; Records</a>
+    <a href="/portal/templates" class="<%= path.startsWith('/portal/templates') ? 'on' : '' %>">Templates</a>
+    <a href="/portal/settings" class="<%= path.startsWith('/portal/settings') ? 'on' : '' %>">Settings &amp; API keys</a>
+    <a href="/portal/api-docs" class="<%= path.startsWith('/portal/api-docs') ? 'on' : '' %>">API docs</a>
+  <% } %>
+  </aside>
+  <main class="main">
+    <% if (user.role === 'platform_admin' && user.accreditation_status !== 'active') { %>
+      <div class="alert <%= user.accreditation_status === 'suspended' ? 'error' : 'warn' %>">
+        Accreditation status: <strong><%= user.accreditation_status %></strong>.
+        <%= user.accreditation_status === 'pending' ? 'Certificate issuance unlocks once LIV approves your application.' : 'Issuance is disabled. Contact LIV support.' %>
+      </div>
+    <% } %>
+    <%- include('flash') %>

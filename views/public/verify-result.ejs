@@ -1,0 +1,42 @@
+<%- include('../partials/head') %>
+<%
+const R = out.result;
+const banner = {
+  valid: ['✓', 'VALID', 'This certificate is authentic and currently valid.'],
+  expired: ['!', 'EXPIRED', 'This certificate is authentic but has passed its expiry date.'],
+  revoked: ['✕', 'REVOKED', 'This certificate has been revoked by the issuer and is no longer valid.'],
+  tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this certificate.'],
+  not_found: ['?', 'NOT FOUND', 'No certificate matches these details. Check the ID and try again.'],
+  invalid_format: ['?', 'NOT FOUND', 'That Certificate ID is not in a valid format.'],
+}[R];
+%>
+<div class="container verify-wrap">
+  <div class="vhead"><%- include('../partials/logo') %><div><h1 class="mb0" style="font-size:1.4rem">Official Verification Portal</h1><div class="muted small">Checked <%= usDateTime(new Date()) %></div></div></div>
+  <div class="status-banner sb-<%= R %>">
+    <div class="icon"><%= banner[0] %></div>
+    <div><h2><%= banner[1] %></h2><p><%= banner[2] %></p></div>
+  </div>
+  <% if (c && R !== 'tampered') { %>
+  <div class="card details">
+    <dl>
+      <dt>Certificate holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
+      <dt>Course</dt><dd><%= c.course_name %></dd>
+      <% if (c.grade) { %><dt>Grade</dt><dd><%= c.grade %></dd><% } %>
+      <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
+      <dt>Issue date</dt><dd><%= longDate(c.issue_date) %></dd>
+      <dt>Expiry date</dt><dd><%= c.expiry_date ? longDate(c.expiry_date) : 'Does not expire' %></dd>
+      <dt>Certificate ID</dt><dd class="mono"><%= c.cert_number %></dd>
+      <dt>Issued by</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
+        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Provider <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">Accredited</span><% } %></div></dd>
+      <% if (R === 'revoked') { %><dt>Revoked on</dt><dd><%= longDate(new Date(c.revoked_at)) %></dd><% } %>
+    </dl>
+    <div class="actions">
+      <% if (R !== 'revoked' && token) { %><a class="btn" href="/verify/<%= c.cert_number %>/pdf?t=<%= token %>">Download original PDF</a><% } %>
+      <% if (linkedin) { %><a class="btn secondary" href="<%= linkedin %>" target="_blank" rel="noopener">Add to LinkedIn profile</a><% } %>
+      <button type="button" class="btn secondary" data-copy="<%= shareUrl %>">Copy verification link</button>
+    </div>
+  </div>
+  <% } %>
+  <p class="small muted mt">Verification reflects <%= brand %> records at the time of the check. Questions? <a href="/contact">Contact support</a>. <a href="/verify">Verify another certificate</a></p>
+</div>
+<%- include('../partials/foot') %>

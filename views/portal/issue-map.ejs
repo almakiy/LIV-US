@@ -1,0 +1,19 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Map columns</h1><span class="muted"><%= job.fileName %> · <%= job.rows.length %> rows</span></div>
+<%- include('_steps', { step: 1 }) %>
+<% if (error) { %><div class="alert error"><%= error %></div><% } %>
+<form class="card" method="post" action="/portal/issue/map">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <p class="muted">We matched your columns automatically. Check each field and adjust if needed.</p>
+  <div class="grid g3">
+  <% FIELDS.forEach(f => { %>
+    <div class="field"><label><%= f %><%= REQUIRED.includes(f) ? ' *' : ' (optional)' %></label>
+      <select name="<%= f %>"><option value="">— not mapped —</option>
+      <% job.headers.forEach(h => { %><option value="<%= h %>" <%= job.mapping[f] === h ? 'selected' : '' %>><%= h %></option><% }) %></select>
+      <div class="hint">e.g. “<%= job.rows[0][job.mapping[f]] || '' %>”</div></div>
+  <% }) %>
+  </div>
+  <div class="actions"><button class="btn">Validate rows →</button></div>
+</form>
+<form method="post" action="/portal/issue/cancel" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Cancel and start over</button></form>
+<%- include('../partials/app-end') %>

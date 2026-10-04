@@ -1,0 +1,21 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:640px;margin:40px auto">
+  <h1>Apply for accreditation</h1>
+  <p class="muted">Create your provider account. You can set up your profile and templates right away; issuance is enabled once your application is approved.</p>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <form class="card" method="post" action="/apply">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Organization</h3>
+    <div class="field"><label>Organization name *</label><input name="company_name" value="<%= form.company_name || '' %>" required></div>
+    <div class="row"><div class="field"><label>Website</label><input type="url" name="website" value="<%= form.website || '' %>" placeholder="https://"></div>
+    <div class="field"><label>Country</label><input name="country" value="<%= form.country || '' %>"></div></div>
+    <h3 class="mt">Administrator account</h3>
+    <div class="field"><label>Full name *</label><input name="full_name" value="<%= form.full_name || '' %>" required></div>
+    <div class="field"><label>Work email *</label><input type="email" name="email" value="<%= form.email || '' %>" required></div>
+    <div class="field"><label>Password *</label><input type="password" name="password" minlength="10" required><div class="hint">At least 10 characters.</div></div>
+    <label class="check"><input type="checkbox" name="agree" value="1" required> I confirm the information is accurate and agree to the accreditation terms.</label>
+    <button class="btn lg mt">Submit application</button>
+  </form>
+  <p class="small muted">Already have an account? <a href="/login">Log in</a></p>
+</div>
+<%- include('../partials/foot') %>

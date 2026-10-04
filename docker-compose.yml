@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: liv, POSTGRES_PASSWORD: liv, POSTGRES_DB: liv }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "liv"], interval: 5s, retries: 10 }
+  app:
+    build: .
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["3000:3000"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://liv:liv@db:5432/liv
+      STORAGE_DIR: /data
+    volumes: [files:/data]
+volumes: { pgdata: {}, files: {} }

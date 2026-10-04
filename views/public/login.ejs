@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<div class="container form-narrow">
+  <h1>Provider &amp; admin login</h1>
+  <%- include('../partials/flash') %>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <form class="card" method="post" action="/login">
+    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+    <div class="field"><label>Email</label><input type="email" name="email" value="<%= email %>" required autofocus></div>
+    <div class="field"><label>Password</label><input type="password" name="password" required></div>
+    <button class="btn lg" style="width:100%">Log in</button>
+  </form>
+  <p class="small muted center">New training provider? <a href="/apply">Apply for accreditation</a></p>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,39 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>API documentation</h1><span class="muted">REST · JSON · v1</span></div>
+<div class="card">
+<h3>Authentication</h3>
+<p>Send your API key in the <code>X-API-Key</code> header. Create keys in <a href="/portal/settings#api">Settings</a>. Limit: 120 requests/minute per IP.</p>
+<pre>curl <%= baseUrl %>/api/v1/certificates -H "X-API-Key: liv_xxxxxxxx_..."</pre>
+
+<h3 class="mt">Issue certificates</h3>
+<p><code>POST /api/v1/certificates</code>. Send a single object, an array, or <code>{ "template_id", "certificates": [...] }</code> (max 500). All rows are validated first; if any row fails, nothing is issued (HTTP 422). Send an <code>Idempotency-Key</code> header to make retries safe.</p>
+<pre>curl -X POST <%= baseUrl %>/api/v1/certificates \
+  -H "X-API-Key: $LIV_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: lms-run-2026-10-04-001" \
+  -d '{
+    "template_id": "<%= templates[0] ? templates[0].id : 'TEMPLATE_ID' %>",
+    "certificates": [{
+      "first_name": "Jane", "last_name": "Doe", "email": "jane@example.com",
+      "course_name": "Fire Safety &amp; Emergency Response",
+      "completion_date": "2026-09-30", "grade": "Pass"
+    }]
+  }'</pre>
+<p>Response <code>201</code>: <code>{ batch_id, certificates: [{ cert_number, verify_url, pdf_url, ... }] }</code>.</p>
+<p>Your template IDs: <% templates.forEach(t => { %><br><code><%= t.id %></code> (<%= t.name %>)<% }) %></p>
+
+<h3 class="mt">Retrieve</h3>
+<pre>GET /api/v1/certificates?limit=50&amp;offset=0
+GET /api/v1/certificates/{cert_number}</pre>
+
+<h3 class="mt">Revoke</h3>
+<pre>POST /api/v1/certificates/{cert_number}/revoke
+{ "reason": "Issued in error" }</pre>
+
+<h3 class="mt">Public verification (no key)</h3>
+<pre>GET /api/v1/verify/{cert_number}
+→ { "result": "valid" | "expired" | "revoked" | "tampered" | "not_found", "certificate": { ... } }</pre>
+
+<h3 class="mt">Errors</h3>
+<p><code>400</code> bad request · <code>401</code> missing/invalid key · <code>403</code> platform not active · <code>404</code> not found · <code>409</code> duplicate · <code>422</code> validation failed · <code>429</code> rate limited</p>
+</div>
+<%- include('../partials/app-end') %>

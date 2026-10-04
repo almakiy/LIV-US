@@ -1,0 +1,30 @@
+<%- include('../partials/head') %>
+<section class="section"><div class="container" style="max-width:880px">
+  <div class="about-head"><img src="/static/brand/liv-seal-color.svg" alt="" width="120" height="120"><div>
+    <span class="eyebrow" style="color:var(--gold)">About <%= brand %></span>
+    <h1><%= brandLong %></h1>
+    <p class="muted" style="font-size:1.08rem;margin:0"><%= brand %> is a United States accreditation organization. We accredit training providers and operate the official verification service for every certificate they issue under <%= brand %> accreditation.</p>
+  </div></div>
+  <h2 class="mt">Our name</h2>
+  <div class="grid g3">
+    <div class="card"><h3><span class="gold-l">L</span>eading</h3><p class="muted mb0">We set a clear, demanding bar for the training providers we accredit and the credentials they issue.</p></div>
+    <div class="card"><h3><span class="gold-l">I</span>nstitute</h3><p class="muted mb0">An independent organization dedicated to the quality and accountability of workforce training.</p></div>
+    <div class="card"><h3><span class="gold-l">V</span>erification</h3><p class="muted mb0">Every credential is signed, tracked and revocable, and anyone can confirm it in seconds.</p></div>
+  </div>
+  <h2 class="mt">Our mission</h2>
+  <p>To make every professional training credential instantly verifiable, so qualified people are recognized and unverified claims are caught before they reach the job site.</p>
+  <h2 class="mt">What we do</h2>
+  <ul>
+    <li>Review and accredit training providers against defined quality criteria.</li>
+    <li>Supply the issuance infrastructure: branded PDF certificates, unique IDs and signed QR codes.</li>
+    <li>Run a public verification portal with live status, including expiry and revocation.</li>
+  </ul>
+  <h2 class="mt">Leadership</h2>
+  <div class="grid g3">
+    <div class="card"><h3>[Name]</h3><p class="muted mb0">President</p></div>
+    <div class="card"><h3>[Name]</h3><p class="muted mb0">Director of Accreditation</p></div>
+    <div class="card"><h3>[Name]</h3><p class="muted mb0">Chief Technology Officer</p></div>
+  </div>
+  <p class="small muted mt"><%= brand %> and <%= brandLong %> are trade names of <%= legalEntity %>, a limited liability company registered in the United States. [Registered address]</p>
+</div></section>
+<%- include('../partials/foot') %>

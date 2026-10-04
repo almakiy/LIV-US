@@ -1,0 +1,13 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Issuance batch</h1>
+  <div class="actions" style="margin:0"><a class="btn secondary" href="/portal/batches/<%= batch.id %>/results.csv">Download results CSV</a><a class="btn" href="/portal/batches/<%= batch.id %>/pdfs.zip">Download all PDFs (ZIP)</a></div></div>
+<%- include('_steps', { step: 3 }) %>
+<p class="muted"><%= usDateTime(batch.created_at) %> · source: <%= batch.source %> · <%= batch.file_name || '' %> · issued <%= batch.issued %>, skipped <%= batch.skipped %></p>
+<div class="table-wrap"><table>
+  <tr><th>Certificate ID</th><th>Name</th><th>Course</th><th>Expiry</th><th>Status</th><th></th></tr>
+  <% certs.forEach(c => { %><tr><td class="mono"><a href="/portal/certificates/<%= c.cert_number %>"><%= c.cert_number %></a></td>
+  <td><%= c.recipient_first_name %> <%= c.recipient_last_name %><div class="small muted"><%= c.recipient_email %></div></td><td><%= c.course_name %></td>
+  <td><%= c.expiry_date ? usDate(c.expiry_date) : '—' %></td><td><%- include('../partials/status', { c }) %></td>
+  <td class="right"><a href="/portal/certificates/<%= c.cert_number %>/pdf">PDF</a> · <a href="<%= verifyLink(c) %>" target="_blank">Verify page</a></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

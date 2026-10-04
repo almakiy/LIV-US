@@ -1,0 +1,27 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1 class="mono"><%= c.cert_number %></h1><%- include('../partials/status', { c }) %></div>
+<div class="grid g2">
+  <div class="card details"><dl>
+    <dt>Trainee</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
+    <dt>Email</dt><dd><%= c.recipient_email %></dd>
+    <dt>Course</dt><dd><%= c.course_name %></dd>
+    <dt>Grade</dt><dd><%= c.grade || '—' %></dd>
+    <dt>Completed</dt><dd><%= longDate(c.completion_date) %></dd>
+    <dt>Issued</dt><dd><%= longDate(c.issue_date) %></dd>
+    <dt>Expiry</dt><dd><%= c.expiry_date ? longDate(c.expiry_date) : 'No expiry' %></dd>
+    <dt>Template</dt><dd><%= c.template_name || '—' %></dd>
+    <dt>Verification checks</dt><dd><%= v.n %><%= v.last ? ' · last ' + usDate(v.last) : '' %></dd>
+    <% if (c.status === 'revoked') { %><dt>Revoked</dt><dd><%= usDateTime(c.revoked_at) %> by <%= c.revoked_by_name || 'API' %><div class="small muted"><%= c.revocation_reason %></div></dd><% } %>
+  </dl>
+  <div class="actions"><a class="btn" href="/portal/certificates/<%= c.cert_number %>/pdf">Download PDF</a><a class="btn secondary" href="<%= verifyLink(c) %>" target="_blank">Open verify page</a><button class="btn secondary" data-copy="<%= verifyLink(c) %>">Copy verify link</button></div>
+  </div>
+  <% if (c.status === 'active') { %>
+  <form class="card" method="post" action="/portal/certificates/<%= c.cert_number %>/revoke" data-confirm="Revoke this certificate? The public verification page will show REVOKED immediately. This cannot be undone.">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Revoke certificate</h3><p class="muted small">Use when a certificate was issued in error or the holder no longer meets requirements. Revocation is permanent and logged.</p>
+    <div class="field"><label>Reason</label><textarea name="reason" rows="3" required minlength="5" maxlength="500"></textarea></div>
+    <button class="btn danger">Revoke certificate</button>
+  </form>
+  <% } %>
+</div>
+<%- include('../partials/app-end') %>

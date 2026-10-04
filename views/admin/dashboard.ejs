@@ -1,0 +1,18 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Admin overview</h1></div>
+<div class="grid g4">
+  <a class="stat" href="/admin/platforms?status=pending"><div class="n" style="color:var(--amber)"><%= s.pending %></div><div class="l">Pending applications</div></a>
+  <a class="stat" href="/admin/platforms?status=active"><div class="n" style="color:var(--green)"><%= s.active %></div><div class="l">Active platforms</div></a>
+  <a class="stat" href="/admin/certificates"><div class="n"><%= s.certs %></div><div class="l">Certificates (<%= s.revoked %> revoked)</div></a>
+  <a class="stat" href="/admin/messages"><div class="n"><%= s.messages %></div><div class="l">Unhandled messages</div></a>
+</div>
+<div class="card mt">
+  <h3>Verification lookups, last 30 days</h3>
+  <% const max = Math.max(1, ...daily.map(d => d.n)); const total = daily.reduce((a,d)=>a+d.n,0); const bad = daily.reduce((a,d)=>a+d.bad,0); %>
+  <p class="muted small"><%= total %> lookups · <%= bad %> failed (not found, invalid or tampered)</p>
+  <div class="bars"><% daily.forEach(d => { %><div title="<%= d.day %>: <%= d.n %> lookups, <%= d.bad %> failed" style="height:<%= Math.round(d.n / max * 100) %>%"></div><% }) %></div>
+  <div class="row small muted" style="justify-content:space-between"><span style="flex:0;white-space:nowrap"><%= daily[0].day %></span><span style="flex:0;white-space:nowrap"><%= daily[daily.length-1].day %></span></div>
+</div>
+<h2 class="mt">Recent activity</h2>
+<%- include('_audit_table', { rows: recent }) %>
+<%- include('../partials/app-end') %>

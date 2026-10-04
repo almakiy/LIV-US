@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<div class="container verify-wrap">
+  <div class="vhead"><%- include('../partials/logo') %><div><h1 class="mb0">Official Verification Portal</h1><div class="muted">Check the authenticity and status of a <%= brand %> accredited certificate.</div></div></div>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <form class="card" method="get" action="/verify">
+    <div class="field"><label for="id">Certificate ID</label><input id="id" name="id" value="<%= id %>" placeholder="LIV-2026-7KQ4M9XZ" required autocomplete="off"><div class="hint">Printed under the QR code on the certificate.</div></div>
+    <div class="field"><label for="ln">Holder's last name <span class="muted">(optional)</span></label><input id="ln" name="last_name" value="<%= last_name %>"><div class="hint">Adds a second check that the certificate belongs to this person.</div></div>
+    <button class="btn lg">Verify</button>
+  </form>
+  <p class="small muted mt">For privacy, certificates can't be searched by name alone. Scanning the QR code on the certificate opens its verification page directly.</p>
+</div>
+<%- include('../partials/foot') %>

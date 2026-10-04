@@ -1,0 +1,11 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Contact messages</h1></div>
+<div class="table-wrap"><table>
+  <tr><th>Received</th><th>From</th><th>Topic</th><th>Message</th><th></th></tr>
+  <% if (!rows.length) { %><tr><td colspan="5" class="muted center">No messages.</td></tr><% } %>
+  <% rows.forEach(m => { %><tr style="<%= m.handled ? 'opacity:.55' : '' %>"><td style="white-space:nowrap"><%= usDateTime(m.created_at) %></td>
+  <td><%= m.name %><div class="small"><a href="mailto:<%= m.email %>"><%= m.email %></a></div></td><td><span class="badge b-neutral"><%= m.topic %></span></td>
+  <td style="white-space:pre-wrap;max-width:480px"><%= m.message %></td>
+  <td><% if (!m.handled) { %><form method="post" action="/admin/messages/<%= m.id %>/handled"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Mark handled</button></form><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

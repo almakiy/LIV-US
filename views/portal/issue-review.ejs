@@ -1,0 +1,26 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Review &amp; issue</h1><span class="muted"><%= job.fileName %> · template: <%= tpl ? tpl.name : '—' %></span></div>
+<%- include('_steps', { step: 2 }) %>
+<div class="grid g3">
+  <div class="stat"><div class="n"><%= results.length %></div><div class="l">Rows in file</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)"><%= valid %></div><div class="l">Ready to issue</div></div>
+  <div class="stat"><div class="n" style="color:var(--red)"><%= invalid %></div><div class="l">Rows with errors</div></div>
+</div>
+<% if (invalid) { %><div class="alert warn">Fix the highlighted rows in your file and re-upload, or skip them and issue the valid rows now.</div><% } %>
+<div class="table-wrap mt"><table>
+  <tr><th>#</th><th>Name</th><th>Email</th><th>Course</th><th>Completed</th><th>Grade</th><th>Status</th></tr>
+  <% results.slice(0, 500).forEach(r => { %><tr class="<%= r.errors.length ? 'err' : '' %>">
+    <td><%= r.index + 2 %></td><td><%= r.data.first_name %> <%= r.data.last_name %></td><td><%= r.data.email %></td><td><%= r.data.course_name %></td>
+    <td><%= usDate(r.data.completion_date) %></td><td><%= r.data.grade %></td>
+    <td><% if (r.errors.length) { %><ul class="errs"><% r.errors.forEach(e => { %><li><%= e %></li><% }) %></ul><% } else { %><span class="badge b-valid">OK</span><% } %></td></tr><% }) %>
+</table></div>
+<% if (results.length > 500) { %><p class="small muted">Showing first 500 rows. All rows are validated.</p><% } %>
+<p class="small muted"># = line number in your CSV (line 1 is the header).</p>
+<form class="card mt" method="post" action="/portal/issue/confirm" data-confirm="Issue <%= valid %> certificate(s)? Certificates are permanent records and can only be revoked, not deleted.">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (invalid) { %><label class="check"><input type="checkbox" name="skip_invalid"> Skip the <%= invalid %> invalid row(s)</label><% } %>
+  <div class="actions"><button class="btn success" <%= valid && user.accreditation_status === 'active' ? '' : 'disabled' %>>Issue <%= valid %> certificate(s)</button>
+  <a class="btn secondary" href="/portal/issue/map">← Back to mapping</a></div>
+</form>
+<form method="post" action="/portal/issue/cancel" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Cancel and start over</button></form>
+<%- include('../partials/app-end') %>

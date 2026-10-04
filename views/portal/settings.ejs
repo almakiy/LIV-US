@@ -1,0 +1,58 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Settings</h1><span class="badge b-<%= platform.accreditation_status %>"><%= platform.accreditation_status %></span></div>
+<div class="grid g2">
+  <form class="card" method="post" action="/portal/settings/profile">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Company profile</h3>
+    <div class="field"><label>Company name</label><input name="company_name" value="<%= platform.company_name %>" required></div>
+    <div class="row"><div class="field"><label>Website</label><input type="url" name="website" value="<%= platform.website || '' %>"></div>
+    <div class="field"><label>Country</label><input name="country" value="<%= platform.country || '' %>"></div></div>
+    <div class="row"><div class="field"><label>Contact email</label><input type="email" name="contact_email" value="<%= platform.contact_email || '' %>"></div>
+    <div class="field" style="flex:0"><label>Brand color</label><input type="color" name="primary_color" value="<%= platform.primary_color || '#0B2545' %>"></div></div>
+    <button class="btn">Save profile</button>
+  </form>
+  <form class="card" method="post" action="/portal/settings/logo" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Logo</h3>
+    <% if (platform.logo_path) { %><p><img src="/logo/<%= platform.id %>" alt="Logo" style="max-height:64px;max-width:240px"></p><% } else { %><p class="muted">No logo uploaded. Your company name is printed instead.</p><% } %>
+    <div class="field"><input type="file" name="logo" accept="image/png,image/jpeg" required><div class="hint">PNG or JPEG, max 1 MB. A transparent PNG at least 600 px wide works best.</div></div>
+    <button class="btn">Upload logo</button>
+  </form>
+</div>
+
+<h2 class="mt" id="api">API keys</h2>
+<% if (newKey) { %><div class="alert success"><strong>Copy your new API key now. It won't be shown again.</strong><div class="keybox mt"><%= newKey %></div><button class="btn sm secondary mt" data-copy="<%= newKey %>">Copy key</button></div><% } %>
+<div class="grid g2">
+  <div class="table-wrap"><table>
+    <tr><th>Label</th><th>Prefix</th><th>Created</th><th>Last used</th><th></th></tr>
+    <% if (!keys.length) { %><tr><td colspan="5" class="muted center">No API keys yet.</td></tr><% } %>
+    <% keys.forEach(k => { %><tr><td><%= k.label %></td><td class="mono"><%= k.prefix %>…</td><td><%= usDate(k.created_at) %></td>
+      <td><%= k.last_used_at ? usDateTime(k.last_used_at) : 'Never' %></td>
+      <td class="right"><% if (k.revoked_at) { %><span class="badge b-revoked">revoked</span><% } else { %>
+        <form method="post" action="/portal/settings/keys/<%= k.id %>/revoke" data-confirm="Revoke this key? Integrations using it will stop working immediately."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Revoke</button></form><% } %></td></tr><% }) %>
+  </table></div>
+  <form class="card" method="post" action="/portal/settings/keys">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Generate API key</h3>
+    <div class="field"><label>Label</label><input name="label" placeholder="e.g. LMS production"></div>
+    <button class="btn">Generate key</button>
+    <p class="small muted mt">Keys are stored only as a one-way hash. See the <a href="/portal/api-docs">API docs</a>.</p>
+  </form>
+</div>
+
+<h2 class="mt">Users</h2>
+<div class="grid g2">
+  <div class="table-wrap"><table>
+    <tr><th>Name</th><th>Email</th><th>Last login</th></tr>
+    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td></tr><% }) %>
+  </table></div>
+  <form class="card" method="post" action="/portal/settings/users">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Add user</h3>
+    <div class="field"><label>Full name</label><input name="full_name" required></div>
+    <div class="field"><label>Email</label><input type="email" name="email" required></div>
+    <div class="field"><label>Temporary password</label><input type="password" name="password" minlength="10" required></div>
+    <button class="btn">Add user</button>
+  </form>
+</div>
+<%- include('../partials/app-end') %>

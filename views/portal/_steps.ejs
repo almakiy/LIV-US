@@ -1,0 +1,1 @@
+<div class="steps"><% ['Template & file','Map columns','Review & issue','Done'].forEach((s,i) => { %><span class="<%= i === step ? 'on' : (i < step ? 'done' : '') %>"><%= i+1 %>. <%= s %></span><% }) %></div>
