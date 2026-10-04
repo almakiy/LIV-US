@@ -3,7 +3,7 @@
   <span class="eyebrow"><%= brand %> Accreditation Program</span>
   <h1>Accreditation employers can verify</h1>
   <p>Accredited providers issue certificates through <%= brand %>, giving every graduate a credential with independent, real-time verification.</p>
-  <div class="actions"><a class="btn gold lg" href="/apply">Apply for Accreditation</a><a class="btn ghost lg" href="/contact">Talk to us</a></div>
+  <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Apply for Accreditation</a><% } else { %><a class="btn gold lg" href="/contact">Request Information</a><% } %><a class="btn ghost lg" href="/contact">Talk to us</a></div>
 </div></section>
 <section class="section white"><div class="container">
   <h2>Why accredit with us</h2>

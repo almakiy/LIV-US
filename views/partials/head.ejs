@@ -22,10 +22,10 @@
       <a href="/about" class="<%= path === '/about' ? 'on' : '' %>">About</a>
       <a href="/contact" class="<%= path === '/contact' ? 'on' : '' %>">Contact</a>
       <% if (user) { %>
-        <a href="<%= user.role === 'super_admin' ? '/admin' : '/portal' %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') ? 'on' : '' %>"><%= user.role === 'super_admin' ? 'Admin' : 'Portal' %></a>
+        <a href="<%= user.realRole === 'super_admin' ? '/admin' : '/portal' %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') ? 'on' : '' %>"><%= user.realRole === 'super_admin' ? 'Admin' : 'Portal' %></a>
         <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Log out</button></form>
       <% } else { %>
-        <a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Provider login</a>
+        <% if (publicApply) { %><a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Provider login</a><% } %>
       <% } %>
     </nav>
   </div>

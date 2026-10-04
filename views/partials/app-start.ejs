@@ -1,7 +1,7 @@
 <%- include('head') %>
 <div class="shell">
   <aside class="side">
-  <% if (user.role === 'super_admin') { %>
+  <% if (user.role === 'super_admin' && !user.actingAs) { %>
     <div class="sec">LIV Administration</div>
     <a href="/admin" class="<%= path === '/admin' || path === '/admin/' ? 'on' : '' %>">Overview</a>
     <a href="/admin/platforms" class="<%= path.startsWith('/admin/platforms') ? 'on' : '' %>">Training platforms</a>
@@ -24,5 +24,9 @@
         Accreditation status: <strong><%= user.accreditation_status %></strong>.
         <%= user.accreditation_status === 'pending' ? 'Certificate issuance unlocks once LIV approves your application.' : 'Issuance is disabled. Contact LIV support.' %>
       </div>
+    <% } %>
+    <% if (user.actingAs) { %>
+      <div class="alert warn">Acting on behalf of <strong><%= user.company_name %></strong>. Every action is recorded under your admin account.
+        <form method="post" action="/admin-exit" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary">Return to admin</button></form></div>
     <% } %>
     <%- include('flash') %>

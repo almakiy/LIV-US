@@ -3,9 +3,16 @@ const { q } = require('../db');
 const cfg = require('../config');
 const { audit } = require('../lib/audit');
 const { qrToken } = require('../lib/crypto');
+const bcrypt = require('bcryptjs');
+const { tx } = require('../db');
 const { requireSuper, wrap, flash } = require('../lib/guards');
 
 const r = express.Router();
+// Visiting /admin while acting on behalf of a provider returns to admin mode.
+r.use((req, res, next) => {
+  if (req.user?.actingAs) { delete req.session.actAs; return res.redirect(req.originalUrl); }
+  next();
+});
 r.use(requireSuper);
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 const verifyLink = (c) => `${cfg.baseUrl}/verify/${c.cert_number}?t=${qrToken(c.verification_hash)}`;
@@ -33,6 +40,37 @@ r.get('/platforms', wrap(async (req, res) => {
       (SELECT email FROM users u WHERE u.platform_id = p.id ORDER BY created_at LIMIT 1) AS owner_email
     FROM platforms p ${status ? 'WHERE accreditation_status = $1' : ''} ORDER BY (accreditation_status='pending') DESC, created_at DESC`, status ? [status] : []);
   res.render('admin/platforms', { title: 'Training platforms', rows, status });
+}));
+
+r.get('/platforms/new', (req, res) => res.render('admin/platform-new', { title: 'New provider', form: {}, error: null }));
+r.post('/platforms/new', wrap(async (req, res) => {
+  const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'password'].map((k) => [k, String(req.body[k] || '').trim()]));
+  f.email = f.email.toLowerCase();
+  const fail = (error) => res.status(400).render('admin/platform-new', { title: 'New provider', form: { ...f, password: '' }, error });
+  if (!f.company_name || !f.full_name || !f.email || !f.password) return fail('Please fill in all required fields.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) return fail('Please enter a valid email.');
+  if (f.password.length < 10) return fail('Temporary password must be at least 10 characters.');
+  if ((await q('SELECT 1 FROM users WHERE email = $1', [f.email])).rows.length) return fail('A user with this email already exists.');
+  const hash = await bcrypt.hash(f.password, 12);
+  const id = await tx(async (c) => {
+    const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email, accreditation_status) VALUES ($1,$2,$3,$4,'active') RETURNING id`,
+      [f.company_name, f.website || null, f.country || null, f.email]);
+    await c.query(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin',$2,$3,$4)`, [p.id, f.full_name, f.email, hash]);
+    await c.query(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title) VALUES ($1,'Default Classic','classic',$2,'Training Director')`, [p.id, f.full_name]);
+    await audit({ user: req.user, platformId: p.id, action: 'platform.create', target: f.company_name }, c);
+    return p.id;
+  });
+  flash(req, 'success', `${f.company_name} created and active. Share the temporary password securely.`);
+  res.redirect(`/admin/platforms/${id}`);
+}));
+
+r.post('/platforms/:id/act-as', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [p] } = await q('SELECT company_name FROM platforms WHERE id = $1', [req.params.id]);
+  if (!p) return next();
+  req.session.actAs = req.params.id;
+  await audit({ user: req.user, platformId: req.params.id, action: 'admin.act_as', target: p.company_name });
+  res.redirect('/portal/issue');
 }));
 
 r.get('/platforms/:id', wrap(async (req, res, next) => {

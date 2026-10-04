@@ -1,5 +1,5 @@
 <%- include('../partials/app-start') %>
-<div class="page-head"><h1>Training platforms</h1>
+<div class="page-head"><h1>Training platforms</h1><a class="btn" href="/admin/platforms/new">+ New provider</a>
   <form method="get"><select name="status" data-autosubmit><% [['','All'],['pending','Pending'],['active','Active'],['suspended','Suspended']].forEach(([v,l]) => { %><option value="<%= v %>" <%= status === v ? 'selected' : '' %>><%= l %></option><% }) %></select></form></div>
 <div class="table-wrap"><table>
   <tr><th>Organization</th><th>Owner</th><th>Applied</th><th>Certificates</th><th>Status</th><th>Actions</th></tr>

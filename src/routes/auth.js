@@ -9,7 +9,7 @@ const DUMMY = bcrypt.hashSync('timing-equalizer', 12); // compared when the emai
 const safeNext = (n) => (typeof n === 'string' && /^\/(?!\/)[\w\-/?=&.%]*$/.test(n) ? n : null);
 
 r.get('/login', (req, res) => {
-  if (req.user) return res.redirect(req.user.role === 'super_admin' ? '/admin' : '/portal');
+  if (req.user) return res.redirect(req.user.realRole === 'super_admin' ? '/admin' : '/portal');
   res.render('public/login', { title: 'Log in', error: null, email: '', next: safeNext(req.query.next) || '' });
 });
 
@@ -29,6 +29,12 @@ r.post('/login', limiter(15, 20), wrap(async (req, res) => {
     res.redirect(safeNext(req.body.next) || (u.role === 'super_admin' ? '/admin' : '/portal'));
   });
 }));
+
+// Leave "act on behalf of provider" mode (real role is still super_admin while acting).
+r.post('/admin-exit', (req, res) => {
+  if (req.user?.realRole === 'super_admin') delete req.session.actAs;
+  res.redirect('/admin/platforms');
+});
 
 r.post('/logout', (req, res) => req.session.destroy(() => { res.clearCookie('liv.sid'); res.redirect('/'); }));
 

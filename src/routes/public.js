@@ -55,8 +55,8 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   res.download(abs, `${c.cert_number}.pdf`);
 }));
 
-r.get('/apply', (req, res) => res.render('public/apply', { title: 'Apply for Accreditation', form: {}, error: null }));
-r.post('/apply', limiter(15, 10), wrap(async (req, res) => {
+r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply for Accreditation', form: {}, error: null }));
+r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), limiter(15, 10), wrap(async (req, res) => {
   const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'password', 'agree'].map((k) => [k, String(req.body[k] || '').trim()]));
   f.email = f.email.toLowerCase();
   let error = null;

@@ -12,6 +12,8 @@ module.exports = {
   baseUrl: (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, ''),
   sessionSecret: must('SESSION_SECRET', isProd ? undefined : 'dev-session-secret-change-me'),
   certHmacSecret: must('CERT_HMAC_SECRET', isProd ? undefined : 'dev-hmac-secret-change-me'),
+  // Public provider application + provider login are hidden until the application gateway ships (roadmap Phase 2).
+  publicApply: process.env.PUBLIC_APPLY === 'true',
   brand: process.env.BRAND_NAME || 'LIV',
   brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',

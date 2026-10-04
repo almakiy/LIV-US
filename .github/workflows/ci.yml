@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: liv, POSTGRES_PASSWORD: liv, POSTGRES_DB: liv }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U liv" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://liv:liv@localhost:5432/liv
+      SESSION_SECRET: ci-session-secret
+      CERT_HMAC_SECRET: ci-hmac-secret
+      BASE_URL: http://localhost:3000
+      NODE_ENV: development
+      PUBLIC_APPLY: 'true'   # e2e covers the apply -> approve flow
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run migrate && npm run seed
+      - run: node src/server.js &
+      - run: npx wait-on http://localhost:3000 || sleep 5
+      - run: node tests/e2e.js http://localhost:3000

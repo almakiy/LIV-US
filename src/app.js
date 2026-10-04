@@ -44,6 +44,7 @@ app.use(async (req, res, next) => {
     res.locals.usDate = (d) => (/^\d{4}-\d{2}-\d{2}/.test(String(d instanceof Date ? d.toISOString() : d)) ? usDate(d) : d);
     res.locals.usDateTime = usDateTime;
     res.locals.baseUrl = cfg.baseUrl;
+    res.locals.publicApply = cfg.publicApply;
     res.locals.path = req.path;
     res.locals.longDate = longDate;
     res.locals.flash = req.session.flash || null;
@@ -52,7 +53,15 @@ app.use(async (req, res, next) => {
       const { rows: [u] } = await q(
         `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
            FROM users u LEFT JOIN platforms p ON p.id = u.platform_id WHERE u.id = $1`, [req.session.userId]);
-      if (u) req.user = u; else delete req.session.userId;
+      if (u) {
+        req.user = { ...u, realRole: u.role };
+        // Super admin acting on behalf of a provider (issuance, templates, settings). Audit rows keep the admin as actor.
+        if (u.role === 'super_admin' && req.session.actAs) {
+          const { rows: [p] } = await q('SELECT id, company_name, accreditation_status, logo_path, primary_color FROM platforms WHERE id = $1', [req.session.actAs]);
+          if (p) req.user = { ...req.user, role: 'platform_admin', platform_id: p.id, company_name: p.company_name, accreditation_status: p.accreditation_status, logo_path: p.logo_path, primary_color: p.primary_color, actingAs: true };
+          else delete req.session.actAs;
+        }
+      } else delete req.session.userId;
     }
     res.locals.user = req.user || null;
     if (!req.session.csrf && req.method === 'GET' && !req.path.startsWith('/api')) req.session.csrf = randomToken();
