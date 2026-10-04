@@ -6,6 +6,18 @@ const bcrypt = require('bcryptjs');
 const cfg = require('../config');
 const { q } = require('../db');
 const { SAMPLE_ARTICLES } = require('./sample-content');
+const { setAdminPassword } = require('./admin-account');
+
+// No-shell recovery: set the ADMIN_RESET_PASSWORD secret (10+ chars), restart, log in, then delete the secret.
+async function resetAdminFromEnv() {
+  const password = process.env.ADMIN_RESET_PASSWORD;
+  if (!password) return;
+  const email = (process.env.ADMIN_EMAIL || process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').trim().toLowerCase();
+  try {
+    const what = await setAdminPassword(email, password);
+    console.log(`\n[bootstrap] ADMIN_RESET_PASSWORD applied: admin ${what} for ${email}. Log in with that password, then DELETE the ADMIN_RESET_PASSWORD secret.\n`);
+  } catch (e) { console.error(`[bootstrap] ADMIN_RESET_PASSWORD not applied: ${e.message}`); }
+}
 
 async function bootstrapAdmin() {
   const { rows } = await q("SELECT 1 FROM users WHERE role = 'super_admin' LIMIT 1");
@@ -40,6 +52,6 @@ async function seedSampleContent() {
 }
 
 async function bootstrap() {
-  try { await bootstrapAdmin(); await seedSampleContent(); } catch (e) { console.warn(`[bootstrap] skipped: ${e.message} (did you run "npm run migrate"?)`); }
+  try { await resetAdminFromEnv(); await bootstrapAdmin(); await seedSampleContent(); } catch (e) { console.warn(`[bootstrap] skipped: ${e.message} (did you run "npm run migrate"?)`); }
 }
 module.exports = { bootstrap };
