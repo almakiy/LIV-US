@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedDevelopment } from "./lib/seed";
+import { bootstrapProductionAdmin } from "./lib/bootstrap";
 
 const rawPort = process.env["PORT"];
 
@@ -14,6 +16,9 @@ const port = Number(rawPort);
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
+
+await bootstrapProductionAdmin();
+await seedDevelopment(process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost");
 
 app.listen(port, (err) => {
   if (err) {

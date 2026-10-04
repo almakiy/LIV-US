@@ -57,6 +57,9 @@ export default defineConfig({
       prettier: true,
       override: {
         zod: {
+          // Orval uses the same name for path schemas and query interfaces
+          // when an operation has both. Validate path identifiers in routes.
+          generate: { param: false },
           // Orval resolves `auto` from lib/api-spec/package.json, which has no
           // zod dependency, so orval >= 8.23 falls back to Zod 4 syntax while
           // the catalog installs zod 3. Pin to match the catalog.

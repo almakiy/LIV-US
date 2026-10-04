@@ -1,0 +1,2 @@
+- [Signing continuity](signing-continuity.md) — preserve signing identity across deployments; authentication secret rotation must not silently invalidate issued certificates.
+- [Orval name collisions](orval-name-collisions.md) — fix generator configuration, not generated barrels, when path and query schema exports collide.

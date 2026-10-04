@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "LIV LLC Accreditation Platform"
+description = "Training provider accreditation, secure certificate issuance, and public verification."
+version = "1.0.0"
+id = "artifacts/liv-platform"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23659
+
+[services.development]
+run = "pnpm --filter @workspace/liv-platform run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/liv-platform", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/liv-platform/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23659"
+BASE_PATH = "/"
