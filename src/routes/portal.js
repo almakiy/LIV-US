@@ -4,13 +4,13 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
-const { parse } = require('csv-parse/sync');
 const cfg = require('../config');
 const { q } = require('../db');
 const { audit } = require('../lib/audit');
 const { newApiKey, randomToken, qrToken } = require('../lib/crypto');
-const { FIELDS, REQUIRED, FIELD_LABELS, hasName, sampleCsv, maskId, autoMap, validateRows, issue } = require('../lib/issuance');
+const { FIELDS, REQUIRED, FIELD_LABELS, TEMPLATE_HEADER, TEMPLATE_ROWS, hasName, sampleCsv, maskId, autoMap, validateRows, issue } = require('../lib/issuance');
 const { fetchCsvFromLink, SourceError } = require('../lib/csv-source');
+const { parseTraineeFile, sampleXlsx, FileError, MAX_ROWS } = require('../lib/trainee-file');
 const crypto = require('crypto');
 const { renderCertificate, THEMES } = require('../lib/pdf');
 const { normalizeConfig, RECOMMENDED } = require('../lib/pdf-security');
@@ -19,7 +19,6 @@ const { requirePlatformAdmin, requireActivePlatform, wrap, flash } = require('..
 const r = express.Router();
 r.use(requirePlatformAdmin);
 const csrfCheck = (req, res, next) => req.app.locals.csrfCheck(req, res, next);
-const MAX_ROWS = 5000;
 
 const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 const logoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024, files: 1 } });
@@ -60,7 +59,7 @@ const saveJob = (token, job) => {
 const mappedRows = (job) => job.rows.map((row) => Object.fromEntries(FIELDS.map((f) => [f, job.mapping[f] ? row[job.mapping[f]] : ''])));
 
 r.get('/issue', wrap(async (req, res) => {
-  res.render('portal/issue-upload', { title: 'Issuance Center', templates: await templates(pid(req)), error: null });
+  res.render('portal/issue-upload', { title: 'Issuance Center', templates: await templates(pid(req)), error: null, allowXlsx: cfg.allowXlsx });
 }));
 
 // Uploaded trainee lists can contain ID numbers: remove abandoned wizard files after a few hours.
@@ -77,27 +76,26 @@ function purgeOldJobs() {
 r.get('/issue/template.csv', (req, res) => {
   res.type('text/csv; charset=utf-8').attachment('liv-trainees-template.csv').send(sampleCsv());
 });
+r.get('/issue/template.xlsx', wrap(async (req, res) => {
+  res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').attachment('liv-trainees-template.xlsx').send(await sampleXlsx(TEMPLATE_HEADER, TEMPLATE_ROWS));
+}));
 
 r.post('/issue/upload', csvUpload.single('csv'), csrfCheck, wrap(async (req, res) => {
   const tpls = await templates(pid(req));
-  const fail = (error) => res.status(400).render('portal/issue-upload', { title: 'Issuance Center', templates: tpls, error });
+  const fail = (error) => res.status(400).render('portal/issue-upload', { title: 'Issuance Center', templates: tpls, error, allowXlsx: cfg.allowXlsx });
   const tpl = tpls.find((t) => t.id === req.body.template_id);
   if (!tpl) return fail('Please choose a certificate template.');
   const link = String(req.body.source_url || '').trim();
   let buffer; let fileName;
   if (req.file) {
-    if (!/\.csv$/i.test(req.file.originalname)) return fail('Only .csv files are accepted. In Excel use Save As ▸ CSV UTF-8.');
+    const okExt = cfg.allowXlsx ? /\.(csv|xlsx)$/i : /\.csv$/i;
+    if (!okExt.test(req.file.originalname)) return fail(cfg.allowXlsx ? 'Upload a .csv or .xlsx file. Old .xls files are not supported.' : 'Only .csv files are accepted. In Excel use Save As ▸ CSV UTF-8.');
     buffer = req.file.buffer; fileName = req.file.originalname.slice(0, 200);
   } else if (link) {
     try { ({ buffer, fileName } = await fetchCsvFromLink(link)); } catch (e) { if (e instanceof SourceError) return fail(e.message); throw e; }
-  } else return fail('Choose a CSV file, or paste a Google Drive / Google Sheets link.');
+  } else return fail('Choose a file, or paste a Google Drive / Google Sheets link.');
   let records;
-  try {
-    // Excel in some regions saves CSV with ";" or tabs; accept them too.
-    records = parse(buffer, { bom: true, columns: true, skip_empty_lines: true, trim: true, relax_column_count: true, delimiter: [',', ';', '\t'] });
-  } catch (e) {
-    return fail(`Could not read the CSV: ${e.message}`);
-  }
+  try { ({ records } = await parseTraineeFile(buffer, { allowXlsx: cfg.allowXlsx })); } catch (e) { if (e instanceof FileError) return fail(e.message); throw e; }
   if (!records.length) return fail('The file has no data rows.');
   if (records.length > MAX_ROWS) return fail(`Maximum ${MAX_ROWS} rows per upload. Split the file and try again.`);
   const headers = Object.keys(records[0]);

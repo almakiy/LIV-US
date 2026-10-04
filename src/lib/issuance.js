@@ -15,20 +15,18 @@ const FIELD_LABELS = {
 };
 const hasName = (mapping) => !!(mapping.full_name || (mapping.first_name && mapping.last_name));
 
-// Header names are normalized (case, punctuation, Arabic letter variants) before matching.
-const norm = (h) => String(h || '').trim().toLowerCase()
-  .replace(/[ً-ٟـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
-  .replace(/[^a-z0-9؀-ۿ]+/g, '_').replace(/^_|_$/g, '');
+// Header names are normalized (case and punctuation) before matching. The platform is English-only for now.
+const norm = (h) => String(h || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 const SYNONYMS = Object.fromEntries(Object.entries({
-  serial_no: ['serial_no', 'serial', 'serial_number', 'no', 'number', 'ref', 'ref_no', 'reference', 'reference_no', 'trainee_no', 'م', 'رقم', 'الرقم', 'الرقم التسلسلي', 'رقم تسلسلي', 'رقم المتدرب', 'مرجع'],
-  full_name: ['full_name', 'fullname', 'name', 'trainee', 'trainee_name', 'student', 'student_name', 'participant', 'اسم', 'الاسم', 'الاسم الكامل', 'اسم المتدرب', 'اسم الطالب', 'اسم المشارك'],
-  first_name: ['first_name', 'firstname', 'first', 'given_name', 'fname', 'الاسم الاول', 'الاسم الأول'],
-  last_name: ['last_name', 'lastname', 'last', 'surname', 'family_name', 'lname', 'اسم العائلة', 'العائلة', 'الكنية', 'اللقب'],
-  national_id: ['national_id', 'id_number', 'id_no', 'id', 'identity', 'identity_number', 'iqama', 'nid', 'رقم الهوية', 'الهوية', 'رقم الاقامة', 'الاقامة', 'رقم البطاقة', 'السجل المدني'],
-  email: ['email', 'e_mail', 'email_address', 'mail', 'البريد', 'البريد الالكتروني', 'الايميل', 'ايميل', 'الإيميل'],
-  course_name: ['course_name', 'course', 'coursename', 'program', 'training', 'course_title', 'الدورة', 'اسم الدورة', 'البرنامج', 'اسم البرنامج', 'الدوره'],
-  completion_date: ['completion_date', 'completed', 'completed_on', 'date', 'completion', 'date_completed', 'تاريخ الاكمال', 'تاريخ الإكمال', 'تاريخ الدورة', 'تاريخ اتمام الدورة', 'التاريخ'],
-  grade: ['grade', 'score', 'result', 'mark', 'الدرجة', 'التقدير', 'النتيجة', 'الدرجه'],
+  serial_no: ['serial_no', 'serial', 'serial_number', 'no', 'number', 'ref', 'ref_no', 'reference', 'reference_no', 'trainee_no'],
+  full_name: ['full_name', 'fullname', 'name', 'trainee', 'trainee_name', 'student', 'student_name', 'participant', 'participant_name'],
+  first_name: ['first_name', 'firstname', 'first', 'given_name', 'fname'],
+  last_name: ['last_name', 'lastname', 'last', 'surname', 'family_name', 'lname'],
+  national_id: ['national_id', 'id_number', 'id_no', 'id', 'identity', 'identity_number', 'iqama', 'nid', 'government_id'],
+  email: ['email', 'e_mail', 'email_address', 'mail'],
+  course_name: ['course_name', 'course', 'coursename', 'program', 'training', 'course_title'],
+  completion_date: ['completion_date', 'completed', 'completed_on', 'date', 'completion', 'date_completed'],
+  grade: ['grade', 'score', 'result', 'mark'],
 }).map(([k, v]) => [k, v.map(norm)]));
 
 function autoMap(headers) {
@@ -43,13 +41,16 @@ function autoMap(headers) {
   return map;
 }
 
-/** Template the provider downloads: UTF-8 with BOM so Excel shows Arabic correctly. */
+/** Template the provider downloads: UTF-8 with BOM so Excel opens it correctly. */
 const TEMPLATE_HEADER = ['serial_no', 'full_name', 'national_id', 'email', 'course_name', 'completion_date', 'grade'];
-const sampleCsv = () => '﻿' + [
-  TEMPLATE_HEADER.join(','),
-  '1,Jane Doe,1234567890,jane.doe@example.com,Construction Site Safety Fundamentals,2026-09-15,Pass',
-  '2,أحمد محمد العلي,2987654321,ahmed.ali@example.com,ISO 45001 Lead Auditor,09/20/2026,92%',
-].join('\r\n') + '\r\n';
+const TEMPLATE_ROWS = [
+  ['1', 'Jane Doe', '1234567890', 'jane.doe@example.com', 'Construction Site Safety Fundamentals', '2026-09-15', 'Pass'],
+  ['2', 'John Smith', '2987654321', 'john.smith@example.com', 'ISO 45001 Lead Auditor', '09/20/2026', '92%'],
+];
+const sampleCsv = () => '\uFEFF' + [TEMPLATE_HEADER, ...TEMPLATE_ROWS].map((r) => r.join(',')).join('\r\n') + '\r\n';
+
+// The platform is English-only for now: letters and digits must be Latin script (accents such as in "Jose" are fine).
+const hasNonLatin = (v) => [...String(v || '')].some((ch) => /[\p{L}\p{N}]/u.test(ch) && !/[0-9]/.test(ch) && !/\p{Script=Latin}/u.test(ch));
 
 const maskId = (last4) => (last4 ? `•••• ${last4}` : '');
 
@@ -98,6 +99,9 @@ async function validateRows(rows, platformId) {
     data.full_name = `${data.first_name} ${data.last_name}`.trim();
     if (data.first_name.length > 100 || data.last_name.length > 100) errors.push('name too long (max 100)');
     if (data.serial_no.length > 50) errors.push('serial_no too long (max 50)');
+    for (const f of ['first_name', 'last_name', 'course_name', 'grade', 'serial_no', 'email']) {
+      if (hasNonLatin(data[f])) errors.push(`${f} must use English (Latin) letters only`);
+    }
     if (data.national_id) {
       data.national_id = normalizeId(data.national_id);
       if (!/^[A-Z0-9]{5,20}$/.test(data.national_id)) errors.push('national_id must be 5–20 letters or digits');
@@ -216,4 +220,4 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
   }
 }
 
-module.exports = { FIELDS, REQUIRED, FIELD_LABELS, hasName, sampleCsv, maskId, norm, autoMap, validateRows, issue, parseDate, addMonths, verifyUrl, fmtDate };
+module.exports = { FIELDS, REQUIRED, FIELD_LABELS, TEMPLATE_HEADER, TEMPLATE_ROWS, hasName, hasNonLatin, sampleCsv, maskId, norm, autoMap, validateRows, issue, parseDate, addMonths, verifyUrl, fmtDate };

@@ -1,5 +1,6 @@
 <%- include('../partials/app-start') %>
-<div class="page-head"><h1>Issuance Center</h1><a class="btn secondary" href="/portal/issue/template.csv">⬇ Download CSV template</a></div>
+<div class="page-head"><h1>Issuance Center</h1>
+  <div class="actions" style="margin:0"><a class="btn secondary" href="/portal/issue/template.csv">⬇ CSV template</a><% if (allowXlsx) { %><a class="btn secondary" href="/portal/issue/template.xlsx">⬇ Excel template</a><% } %></div></div>
 <%- include('_steps', { step: 0 }) %>
 <% if (error) { %><div class="alert error"><%= error %></div><% } %>
 <form class="card" method="post" action="/portal/issue/upload" enctype="multipart/form-data">
@@ -9,25 +10,27 @@
     <div class="hint"><a href="/portal/templates">Manage templates</a></div></div>
 
   <h3>Trainee list</h3>
-  <div class="field"><label>Option 1 — Upload a CSV file</label><input type="file" name="csv" accept=".csv,text/csv">
-    <div class="hint">From Excel: Save As ▸ <strong>CSV UTF-8</strong>. Commas, semicolons and tabs are accepted. Max 5,000 rows / 5 MB.</div></div>
+  <div class="field"><label>Option 1 — Upload a file</label><input type="file" name="csv" accept="<%= allowXlsx ? '.csv,.xlsx,text/csv' : '.csv,text/csv' %>">
+    <div class="hint"><% if (allowXlsx) { %>Accepted: <strong>CSV</strong> or <strong>Excel (.xlsx)</strong>. For Excel, the first sheet is used and the first row must contain the column headings. <% } else { %>Accepted: <strong>CSV</strong>. In Excel use Save As ▸ CSV UTF-8. <% } %>Max 5,000 rows / 5 MB.</div></div>
   <p class="muted small center" style="margin:6px 0">— or —</p>
   <div class="field"><label>Option 2 — Link to Google Drive / Google Sheets</label>
     <input type="url" name="source_url" placeholder="https://docs.google.com/spreadsheets/d/…  or  https://drive.google.com/file/d/…">
     <div class="hint">Set sharing to <strong>“Anyone with the link can view”</strong>. The file is read once to create your batch; nothing is changed in Google.</div></div>
+
+  <div class="alert info small"><strong>English only.</strong> Names, course titles and other text must use the English (Latin) alphabet. Rows containing other scripts are flagged and can be skipped.</div>
 
   <details class="mt"><summary class="small"><strong>Columns the file should contain</strong></summary>
     <div class="table-wrap mt"><table>
       <tr><th>Column</th><th>Required</th><th>Notes</th></tr>
       <tr><td class="mono">serial_no</td><td>No</td><td>Your own number or reference for the trainee (kept for your records).</td></tr>
       <tr><td class="mono">full_name</td><td>Yes*</td><td>Trainee name. The last word is used as the family name. *Or use <span class="mono">first_name</span> + <span class="mono">last_name</span> instead.</td></tr>
-      <tr><td class="mono">national_id</td><td>No</td><td>National / residence ID. Stored only as a protected hash plus the last 4 digits, never shown publicly.</td></tr>
+      <tr><td class="mono">national_id</td><td>No</td><td>National / ID number. Stored only as a protected hash plus the last 4 digits, never shown publicly. Format the column as text so Excel keeps leading zeros.</td></tr>
       <tr><td class="mono">email</td><td>Yes</td><td>Used to identify the trainee (and for email delivery in a later release).</td></tr>
       <tr><td class="mono">course_name</td><td>Yes</td><td>Course or program title.</td></tr>
       <tr><td class="mono">completion_date</td><td>Yes</td><td>YYYY-MM-DD or MM/DD/YYYY, not in the future.</td></tr>
       <tr><td class="mono">grade</td><td>No</td><td>Score or result, up to 50 characters.</td></tr>
     </table></div>
-    <p class="small muted">Arabic column headings are recognized too (الاسم، رقم الهوية، البريد الإلكتروني، الدورة، تاريخ الإكمال…). You can adjust the matching in the next step.</p>
+    <p class="small muted">Common headings such as “Name”, “ID Number”, “E-mail”, “Course” and “Date Completed” are matched automatically. You can adjust the matching in the next step.</p>
   </details>
   <div class="actions mt"><button class="btn">Upload &amp; continue →</button></div>
 </form>

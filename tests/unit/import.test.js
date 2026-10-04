@@ -30,12 +30,19 @@ test('fetchCsvFromLink follows redirects only to Google, rejects HTML and oversi
   await assert.rejects(fetchCsvFromLink(link, { fetchImpl: async () => resp(200, Buffer.alloc(5 * 1024 * 1024 + 10, 97), { 'content-type': 'text/csv' }) }), /5 MB/);
 });
 
-test('autoMap recognizes English and Arabic headings', () => {
-  const m = autoMap(['م', 'اسم المتدرب', 'رقم الهوية', 'البريد الإلكتروني', 'الدورة', 'تاريخ الإكمال', 'التقدير']);
-  assert.deepStrictEqual(m, { serial_no: 'م', full_name: 'اسم المتدرب', first_name: '', last_name: '', national_id: 'رقم الهوية', email: 'البريد الإلكتروني', course_name: 'الدورة', completion_date: 'تاريخ الإكمال', grade: 'التقدير' });
-  const e = autoMap(['Serial No', 'First Name', 'Surname', 'ID Number', 'E-mail', 'Course', 'Date Completed', 'Score']);
-  assert.strictEqual(e.first_name, 'First Name'); assert.strictEqual(e.last_name, 'Surname'); assert.strictEqual(e.full_name, ''); assert.strictEqual(e.national_id, 'ID Number');
-  assert.strictEqual(norm('البريد الإلكتروني'), norm('البريد الالكتروني'));
+test('autoMap recognizes common English headings', () => {
+  const m = autoMap(['Serial No', 'Trainee Name', 'ID Number', 'E-mail', 'Course', 'Date Completed', 'Result']);
+  assert.deepStrictEqual(m, { serial_no: 'Serial No', full_name: 'Trainee Name', first_name: '', last_name: '', national_id: 'ID Number', email: 'E-mail', course_name: 'Course', completion_date: 'Date Completed', grade: 'Result' });
+  const e = autoMap(['First Name', 'Surname', 'Email', 'Course', 'Date', 'Score']);
+  assert.strictEqual(e.first_name, 'First Name'); assert.strictEqual(e.last_name, 'Surname'); assert.strictEqual(e.full_name, '');
+  assert.strictEqual(norm('E-mail Address'), 'e_mail_address');
+});
+
+test('English-only: non-Latin letters and digits are rejected, accented Latin is fine', () => {
+  const { hasNonLatin } = require('../../src/lib/issuance');
+  assert.strictEqual(hasNonLatin('Jane O\'Neil-Smith Jr. #4 (2026)'), false);
+  assert.strictEqual(hasNonLatin('José Müller'), false);
+  for (const bad of ['\u0633\u0627\u0631\u0629', 'Sara \u0627\u0644\u0623\u062d\u0645\u062f', '\u5f20\u4f1f', '\u0418\u0432\u0430\u043d', '12\u0663']) assert.strictEqual(hasNonLatin(bad), true, bad);
 });
 
 test('validateRows splits full_name, validates ID, keeps ID out of the clear in hashes', async () => {
@@ -45,6 +52,7 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
     { full_name: 'Single', email: 'b@x.com', course_name: 'C', completion_date: '2026-01-05' },
     { full_name: 'Two Words', email: 'c@x.com', course_name: 'C', completion_date: '2026-01-05', national_id: '12' },
     { email: 'd@x.com', course_name: 'C', completion_date: '2026-01-05' },
+    { full_name: 'Sara \u0627\u0644\u0623\u062d\u0645\u062f', email: 'e@x.com', course_name: 'C', completion_date: '2026-01-05' },
   ];
   const { validateRows: v } = require('../../src/lib/issuance');
   const db = require('../../src/db');
@@ -55,6 +63,7 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
     assert.match(out[1].errors.join(), /full_name must include/);
     assert.match(out[2].errors.join(), /national_id/);
     assert.match(out[3].errors.join(), /name is required/);
+    assert.match(out[4].errors.join(), /last_name must use English/);
   } finally { db.pool.query = orig; }
   assert.strictEqual(idLast4('1234 567-890'), '7890');
   assert.strictEqual(normalizeId(' ab-12 '), 'AB12');
@@ -62,9 +71,33 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
   assert.match(idHash('1234567890'), /^[0-9a-f]{64}$/);
 });
 
-test('template CSV has a BOM, the expected header and an Arabic example', () => {
+test('template CSV has a BOM, the expected header and English-only examples', () => {
   const t = sampleCsv();
   assert.ok(t.startsWith('﻿'));
   assert.ok(t.includes('serial_no,full_name,national_id,email,course_name,completion_date,grade'));
-  assert.ok(t.includes('أحمد محمد العلي'));
+  assert.ok(!/[^\x00-\x7F]/.test(t.slice(1)), 'template contains only ASCII');
+});
+
+test('xlsx: reads dates, numbers, formulas and rich text; detects type by content; rejects junk and old .xls', async () => {
+  const ExcelJS = require('exceljs');
+  const { parseTraineeFile, sampleXlsx, FileError } = require('../../src/lib/trainee-file');
+  const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('S');
+  ws.addRow(['Serial No', 'Name', 'ID Number', 'Email', 'Course', 'Date Completed', 'Score']);
+  ws.addRow([11, { richText: [{ text: 'Ann ' }, { text: 'Lee' }] }, 2233445566, { text: 'ann@x.com', hyperlink: 'mailto:ann@x.com' }, 'First Aid', new Date(Date.UTC(2026, 8, 22)), { formula: '90+5', result: 95 }]);
+  ws.addRow([]);
+  ws.addRow([12, 'Bo Chan', '0099887766', 'bo@x.com', 'CPR', '2026-09-23', '']);
+  const buf = Buffer.from(await wb.xlsx.writeBuffer());
+  const { records, type } = await parseTraineeFile(buf);
+  assert.strictEqual(type, 'xlsx');
+  assert.deepStrictEqual(records, [
+    { 'Serial No': '11', Name: 'Ann Lee', 'ID Number': '2233445566', Email: 'ann@x.com', Course: 'First Aid', 'Date Completed': '2026-09-22', Score: '95' },
+    { 'Serial No': '12', Name: 'Bo Chan', 'ID Number': '0099887766', Email: 'bo@x.com', Course: 'CPR', 'Date Completed': '2026-09-23', Score: '' },
+  ]);
+  await assert.rejects(parseTraineeFile(buf, { allowXlsx: false }), FileError);
+  await assert.rejects(parseTraineeFile(Buffer.from('PK\x03\x04 this is not a workbook')), /valid Excel/);
+  await assert.rejects(parseTraineeFile(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0])), /97-2003/);
+  const csv = await parseTraineeFile(Buffer.from('﻿Name;Email\nA B;a@x.com\n'));
+  assert.deepStrictEqual(csv.records, [{ Name: 'A B', Email: 'a@x.com' }]);
+  const t = await parseTraineeFile(await sampleXlsx(['serial_no', 'full_name'], [['1', 'Jane Doe']]));
+  assert.deepStrictEqual(t.records, [{ serial_no: '1', full_name: 'Jane Doe' }]);
 });

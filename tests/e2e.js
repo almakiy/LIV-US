@@ -185,37 +185,67 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await ap.goto(BASE + '/portal');
   ok(!(await ap.isVisible('text=Accreditation status')), 'applicant now active');
 
-  console.log('Import: template, Arabic headers, ID privacy, link validation');
+  console.log('Import: templates, English-only, ID privacy, Excel, link validation');
   const tpl = await page.request.get(BASE + '/portal/issue/template.csv');
   const tplText = await tpl.text();
   ok(tpl.status() === 200 && tplText.includes('serial_no,full_name,national_id,email'), 'CSV template downloads with the expected columns');
-  const csv2 = path.join(os.tmpdir(), `arabic-${stamp}.csv`);
+  const tplX = await page.request.get(BASE + '/portal/issue/template.xlsx');
+  ok(tplX.status() === 200 && (await tplX.body()).subarray(0, 2).toString() === 'PK', 'Excel template downloads');
+  const nonLatin = String.fromCharCode(0x633, 0x627, 0x631, 0x629, 0x20, 0x627, 0x644, 0x623, 0x62d, 0x645, 0x62f); // a name in another script (code points, no literal text)
+  const csv2 = path.join(os.tmpdir(), `import-${stamp}.csv`);
   fs.writeFileSync(csv2, [
-    'م,اسم المتدرب,رقم الهوية,البريد الإلكتروني,الدورة,تاريخ الإكمال,التقدير',
-    `7,سارة خالد الأحمد,1098765432,sara.${stamp}@example.com,السلامة المهنية,2026-09-20,ممتاز`,
+    'Serial No,Trainee Name,ID Number,E-mail,Course,Date Completed,Result',
+    `7,Sarah Khaled Alahmad,1098765432,sara.${stamp}@example.com,Occupational Safety,2026-09-20,Excellent`,
     `8,Mark Lee,AB-12345,mark.${stamp}@example.com,First Aid,09/21/2026,`,
+    `9,${nonLatin},5555555555,x.${stamp}@example.com,Safety,2026-09-20,`,
   ].join('\n'));
   await page.goto(BASE + '/portal/issue');
   await page.setInputFiles('input[name=csv]', csv2);
   await page.click('button:has-text("Upload")');
-  ok(await page.$eval('select[name=full_name]', (e) => e.value) === 'اسم المتدرب', 'Arabic "name" heading auto-mapped to full name');
-  ok(await page.$eval('select[name=national_id]', (e) => e.value) === 'رقم الهوية', 'Arabic "ID number" heading auto-mapped');
+  ok(await page.$eval('select[name=full_name]', (e) => e.value) === 'Trainee Name', '"Trainee Name" auto-mapped to full name');
+  ok(await page.$eval('select[name=national_id]', (e) => e.value) === 'ID Number', '"ID Number" auto-mapped');
   await page.click('button:has-text("Validate rows")');
   ok(await see(page, 'text=•••• 5432'), 'review shows the ID masked');
+  ok(await see(page, 'text=must use English (Latin) letters only'), 'row in another script is flagged (English only)');
   ok(!(await page.content()).includes('1098765432'), 'full ID number is not shown on the review page');
+  await page.check('input[name=skip_invalid]');
   await page.click('button:has-text("Issue 2 certificate")');
-  ok(await see(page, 'text=2 certificate(s) issued'), 'two certificates issued from the Arabic file');
+  ok(await see(page, 'text=2 certificate(s) issued, 1 row(s) skipped'), 'valid rows issued, non-English row skipped');
   const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('text=Download results CSV')]);
   const res2 = fs.readFileSync(await dl2.path(), 'utf8');
   ok(res2.includes('id_last4') && res2.includes('5432') && !res2.includes('1098765432'), 'results CSV carries the last 4 digits only');
   ok(psql(`select holder_ref || '|' || id_last4 || '|' || length(id_hash) from certificates where recipient_email='sara.${stamp}@example.com'`) === '7|5432|64', 'serial kept; ID stored only as hash + last 4');
+
+  // Excel upload (temporarily enabled)
+  const ExcelJS = require('exceljs');
+  const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Trainees');
+  ws.addRow(['Serial No', 'First Name', 'Last Name', 'ID Number', 'E-mail', 'Course', 'Date Completed', 'Score']);
+  ws.addRow([11, 'Noah', 'Bennett', 2233445566, `noah.${stamp}@example.com`, 'Forklift Safety', new Date(Date.UTC(2026, 8, 22)), 95]);
+  const xlsxPath = path.join(os.tmpdir(), `import-${stamp}.xlsx`);
+  await wb.xlsx.writeFile(xlsxPath);
+  await page.goto(BASE + '/portal/issue');
+  await page.setInputFiles('input[name=csv]', xlsxPath);
+  await page.click('button:has-text("Upload")');
+  ok(await page.$eval('select[name=last_name]', (e) => e.value) === 'Last Name', 'Excel file read and columns auto-mapped');
+  await page.click('button:has-text("Validate rows")');
+  ok(await see(page, 'text=•••• 5566'), 'Excel numeric ID read as text and masked');
+  await page.click('button:has-text("Issue 1 certificate")');
+  ok(await see(page, 'text=1 certificate(s) issued'), 'certificate issued from an Excel file');
+  ok(psql(`select holder_ref || '|' || id_last4 || '|' || completion_date from certificates where recipient_email='noah.${stamp}@example.com'`) === '11|5566|2026-09-22', 'Excel date and numbers stored correctly');
+  const xlsPath = path.join(os.tmpdir(), `old-${stamp}.xls`);
+  fs.writeFileSync(xlsPath, 'x');
+  await page.goto(BASE + '/portal/issue');
+  await page.setInputFiles('input[name=csv]', xlsPath);
+  await page.click('button:has-text("Upload")');
+  ok(await see(page, 'text=Old .xls files are not supported'), 'old .xls is rejected with a clear message');
+
   await page.goto(BASE + '/portal/issue');
   await page.fill('input[name=source_url]', 'https://evil.example.com/list.csv');
   await page.click('button:has-text("Upload")');
   ok(await see(page, 'text=Only Google Drive and Google Sheets links are supported'), 'non-Google link is rejected');
   await page.goto(BASE + '/portal/issue');
   await page.click('button:has-text("Upload")');
-  ok(await see(page, 'text=Choose a CSV file, or paste a Google Drive'), 'empty submission asks for a file or link');
+  ok(await see(page, 'text=Choose a file, or paste a Google Drive'), 'empty submission asks for a file or link');
 
   console.log('Knowledge hub');
   const title = `E2E Article ${stamp}`; const slug = `e2e-article-${stamp}`;

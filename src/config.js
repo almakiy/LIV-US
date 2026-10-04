@@ -14,6 +14,8 @@ module.exports = {
   certHmacSecret: must('CERT_HMAC_SECRET', isProd ? undefined : 'dev-hmac-secret-change-me'),
   // Public provider application + provider login are hidden until the application gateway ships (roadmap Phase 2).
   publicApply: process.env.PUBLIC_APPLY === 'true',
+  // Excel (.xlsx) uploads are enabled for testing; set ALLOW_XLSX=false to accept CSV only.
+  allowXlsx: process.env.ALLOW_XLSX !== 'false',
   brand: process.env.BRAND_NAME || 'LIV',
   brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',
