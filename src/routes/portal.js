@@ -10,7 +10,9 @@ const { q } = require('../db');
 const { audit } = require('../lib/audit');
 const { newApiKey, randomToken, qrToken } = require('../lib/crypto');
 const { FIELDS, REQUIRED, autoMap, validateRows, issue } = require('../lib/issuance');
-const { renderCertificate } = require('../lib/pdf');
+const crypto = require('crypto');
+const { renderCertificate, THEMES } = require('../lib/pdf');
+const { normalizeConfig, RECOMMENDED } = require('../lib/pdf-security');
 const { requirePlatformAdmin, requireActivePlatform, wrap, flash } = require('../lib/guards');
 
 const r = express.Router();
@@ -235,29 +237,33 @@ function readTemplateForm(body) {
   const vm = String(body.validity_months || '').trim();
   return {
     name: String(body.name || '').trim().slice(0, 100) || 'Untitled template',
-    design: body.design === 'modern' ? 'modern' : 'classic',
+    design: THEMES[body.design] ? body.design : 'classic',
     signatory_name: String(body.signatory_name || '').trim().slice(0, 150) || null,
     signatory_title: String(body.signatory_title || '').trim().slice(0, 150) || null,
     validity_months: vm && /^\d+$/.test(vm) && +vm >= 1 && +vm <= 240 ? +vm : null,
+    security_config: normalizeConfig({
+      guilloche: body.guilloche, microtext: body.microtext === 'on', ghost: body.ghost === 'on',
+      tiled: body.tiled === 'on', fingerprint: body.fingerprint === 'on', verifyStrip: body.verifyStrip === 'on',
+    }),
   };
 }
 r.get('/templates', wrap(async (req, res) => {
-  res.render('portal/templates', { title: 'Certificate templates', templates: await templates(pid(req)), edit: null });
+  res.render('portal/templates', { title: 'Certificate templates', templates: await templates(pid(req)), edit: null, THEMES, sec: RECOMMENDED });
 }));
 r.get('/templates/:id', wrap(async (req, res, next) => {
   if (!UUID_RE.test(req.params.id)) return next();
   const t = await loadTemplate(pid(req), req.params.id);
   if (!t) return next();
-  res.render('portal/templates', { title: 'Edit template', templates: await templates(pid(req)), edit: t });
+  res.render('portal/templates', { title: 'Edit template', templates: await templates(pid(req)), edit: t, THEMES, sec: normalizeConfig(t.security_config) });
 }));
 r.post('/templates', wrap(async (req, res) => {
   const t = readTemplateForm(req.body);
   if (UUID_RE.test(req.body.id || '')) {
-    await q(`UPDATE certificate_templates SET name=$1, design=$2, signatory_name=$3, signatory_title=$4, validity_months=$5 WHERE id=$6 AND platform_id=$7`,
-      [t.name, t.design, t.signatory_name, t.signatory_title, t.validity_months, req.body.id, pid(req)]);
+    await q(`UPDATE certificate_templates SET name=$1, design=$2, signatory_name=$3, signatory_title=$4, validity_months=$5, security_config=$6 WHERE id=$7 AND platform_id=$8`,
+      [t.name, t.design, t.signatory_name, t.signatory_title, t.validity_months, t.security_config, req.body.id, pid(req)]);
   } else {
-    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months) VALUES ($1,$2,$3,$4,$5,$6)`,
-      [pid(req), t.name, t.design, t.signatory_name, t.signatory_title, t.validity_months]);
+    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months, security_config) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [pid(req), t.name, t.design, t.signatory_name, t.signatory_title, t.validity_months, t.security_config]);
   }
   await audit({ user: req.user, platformId: pid(req), action: 'template.save', target: t.name });
   flash(req, 'success', 'Template saved.');
@@ -271,6 +277,7 @@ r.post('/templates/preview', wrap(async (req, res) => {
     cert_number: 'LIV-2026-SAMPLE00', first_name: 'Jane', last_name: 'Doe', course_name: 'Sample Course Title',
     grade: 'Pass', completion_date: today, issue_date: today, expiry_date: t.validity_months ? require('../lib/issuance').addMonths(today, t.validity_months) : null,
     verify_url: `${cfg.baseUrl}/verify/LIV-2026-SAMPLE00`,
+    verification_hash: crypto.createHash('sha256').update('preview').digest('hex'),
   }, platform, t);
   res.type('application/pdf').set('Content-Disposition', 'inline; filename="preview.pdf"').send(pdf);
 }));

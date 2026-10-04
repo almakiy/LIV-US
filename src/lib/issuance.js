@@ -132,7 +132,7 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
           const hashInput = { cert_number: certNumber, platform_id: platform.id, ...data, issue_date: issueDate, expiry_date: expiry };
           const hash = certHmac(hashInput);
           const url = verifyUrl(certNumber, hash);
-          const pdf = await renderCertificate({ ...hashInput, verify_url: url }, platform, template);
+          const pdf = await renderCertificate({ ...hashInput, verify_url: url, verification_hash: hash }, platform, template);
           const rel = pdfRelPath(platform.id, certNumber);
           const abs = path.join(cfg.storageDir, rel);
           fs.mkdirSync(path.dirname(abs), { recursive: true });

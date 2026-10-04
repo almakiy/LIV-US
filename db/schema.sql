@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS certificate_templates (
   validity_months INT CHECK (validity_months IS NULL OR validity_months BETWEEN 1 AND 240),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Per-template anti-counterfeiting layers (see src/lib/pdf-security.js). '{}' = none (older templates).
+ALTER TABLE certificate_templates ADD COLUMN IF NOT EXISTS security_config JSONB NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS issuance_batches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

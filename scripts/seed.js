@@ -3,6 +3,7 @@ require('../src/config');
 const bcrypt = require('bcryptjs');
 const { pool, q } = require('../src/db');
 const { issue, validateRows } = require('../src/lib/issuance');
+const { RECOMMENDED } = require('../src/lib/pdf-security');
 
 (async () => {
   const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').toLowerCase();
@@ -20,8 +21,8 @@ const { issue, validateRows } = require('../src/lib/issuance');
     const { rows: [p] } = await q(`INSERT INTO platforms (company_name, website, country, contact_email, accreditation_status, primary_color)
       VALUES ('Demo Safety Training Co.','https://example.com','United States',$1,'active','#0B1F3A') RETURNING *`, [demoEmail]);
     await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin','Demo Admin',$2,$3)`, [p.id, demoEmail, await bcrypt.hash(demoPass, 12)]);
-    const { rows: [tpl] } = await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months)
-      VALUES ($1,'Classic – 3 year validity','classic','Dr. Sarah Mitchell','Director of Training',36) RETURNING *`, [p.id]);
+    const { rows: [tpl] } = await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months, security_config)
+      VALUES ($1,'Classic – 3 year validity','classic','Dr. Sarah Mitchell','Director of Training',36,$2) RETURNING *`, [p.id, RECOMMENDED]);
     await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title) VALUES ($1,'Modern – no expiry','modern','Dr. Sarah Mitchell','Director of Training')`, [p.id]);
     const sample = [
       ['Aisha', 'Rahman', 'aisha.rahman@example.com', 'Construction Site Safety Fundamentals', '2026-08-12', 'Pass'],

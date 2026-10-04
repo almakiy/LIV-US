@@ -61,10 +61,11 @@ Implementation notes:
 - Run the e2e suite in CI against a Postgres service; add `npm ci` and test jobs.
 - Fix remaining items from the pre-launch checklist (secrets, `BASE_URL`, HTTPS, backups).
 
-### Phase 1.2 — Certificate engine
+### Phase 1.2 — Certificate engine (done)
 - Theme registry and `security_config` per template.
 - Security-pattern designer form with live preview.
-- Tests: pattern is deterministic for a given hash and differs across certificates.
+- Tests: pattern is deterministic for a given hash and differs across certificates (`npm run test:unit`).
+- Shipped: theme registry (`THEMES` in `src/lib/pdf.js`), `src/lib/pdf-security.js`, per-template `security_config` with live preview in the template form. Adding a theme beyond classic/modern also needs the `design` CHECK constraint widened in `db/schema.sql`.
 
 ### Phase 2 — Provider gateway (designed later)
 - Public application with document uploads, review workflow, conditions, renewal reminders.

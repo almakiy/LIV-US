@@ -9,20 +9,31 @@
     </table></div>
     <p class="small muted mt">Logo and brand color come from <a href="/portal/settings">Settings</a>. Template changes apply to newly issued certificates only — issued certificates never change.</p>
   </div>
-  <form class="card" method="post" action="/portal/templates">
+  <form class="card" method="post" action="/portal/templates" data-live-preview="tplPreview">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <% if (edit) { %><input type="hidden" name="id" value="<%= edit.id %>"><% } %>
     <h3><%= edit ? 'Edit template' : 'New template' %></h3>
     <div class="field"><label>Template name</label><input name="name" value="<%= edit ? edit.name : '' %>" required></div>
     <div class="field"><label>Design</label><select name="design">
-      <option value="classic" <%= edit && edit.design === 'classic' ? 'selected' : '' %>>Classic (bordered, centered)</option>
-      <option value="modern" <%= edit && edit.design === 'modern' ? 'selected' : '' %>>Modern (color side panel)</option></select></div>
+      <% Object.entries(THEMES).forEach(([key, th]) => { %><option value="<%= key %>" <%= edit && edit.design === key ? 'selected' : '' %>><%= th.label %></option><% }) %></select></div>
     <div class="row"><div class="field"><label>Signatory name</label><input name="signatory_name" value="<%= edit ? (edit.signatory_name || '') : '' %>"></div>
     <div class="field"><label>Signatory title</label><input name="signatory_title" value="<%= edit ? (edit.signatory_title || '') : '' %>"></div></div>
     <div class="field"><label>Validity (months)</label><input type="number" name="validity_months" min="1" max="240" value="<%= edit && edit.validity_months ? edit.validity_months : '' %>"><div class="hint">Expiry = completion date + months. Leave blank for no expiry.</div></div>
+    <fieldset class="field" style="border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+      <legend class="small" style="padding:0 6px"><strong>Security layers</strong> (anti-counterfeiting)</legend>
+      <div class="field"><label>Guilloche pattern <span class="muted small">— unique per certificate</span></label>
+        <select name="guilloche"><% [['off','Off'],['light','Light'],['dense','Dense']].forEach(([v, l]) => { %><option value="<%= v %>" <%= sec.guilloche === v ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+      <label class="small"><input type="checkbox" name="microtext" <%= sec.microtext ? 'checked' : '' %>> Microtext lines (certificate ID, blurs when photocopied)</label><br>
+      <label class="small"><input type="checkbox" name="ghost" <%= sec.ghost ? 'checked' : '' %>> Ghost LIV seal watermark</label><br>
+      <label class="small"><input type="checkbox" name="tiled" <%= sec.tiled ? 'checked' : '' %>> Tiled diagonal text watermark</label><br>
+      <label class="small"><input type="checkbox" name="fingerprint" <%= sec.fingerprint ? 'checked' : '' %>> Printed fingerprint code (tied to the QR token)</label><br>
+      <label class="small"><input type="checkbox" name="verifyStrip" <%= sec.verifyStrip ? 'checked' : '' %>> “Validity confirmed only at…” strip</label>
+      <div class="hint">These layers deter casual copying. The authoritative check is always the online verification record.</div>
+    </fieldset>
     <div class="actions"><button class="btn">Save template</button>
       <button class="btn secondary" formaction="/portal/templates/preview" formtarget="_blank">Preview PDF</button>
       <% if (edit) { %><a class="btn secondary" href="/portal/templates">Cancel</a><% } %></div>
+    <iframe name="tplPreview" id="tplPreview" title="Certificate preview" style="width:100%;height:340px;border:1px solid var(--line);border-radius:8px;margin-top:14px;background:#fff"></iframe>
   </form>
 </div>
 <%- include('../partials/app-end') %>
