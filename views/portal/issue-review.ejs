@@ -8,9 +8,9 @@
 </div>
 <% if (invalid) { %><div class="alert warn">Fix the highlighted rows in your file and re-upload, or skip them and issue the valid rows now.</div><% } %>
 <div class="table-wrap mt"><table>
-  <tr><th>#</th><th>Name</th><th>Email</th><th>Course</th><th>Completed</th><th>Grade</th><th>Status</th></tr>
+  <tr><th>#</th><th>Ref</th><th>Name</th><th>ID</th><th>Email</th><th>Course</th><th>Completed</th><th>Grade</th><th>Status</th></tr>
   <% results.slice(0, 500).forEach(r => { %><tr class="<%= r.errors.length ? 'err' : '' %>">
-    <td><%= r.index + 2 %></td><td><%= r.data.first_name %> <%= r.data.last_name %></td><td><%= r.data.email %></td><td><%= r.data.course_name %></td>
+    <td><%= r.index + 2 %></td><td><%= r.data.serial_no %></td><td><%= r.data.full_name %></td><td class="mono"><%= r.data.national_id ? maskId(r.data.national_id.slice(-4)) : '' %></td><td><%= r.data.email %></td><td><%= r.data.course_name %></td>
     <td><%= usDate(r.data.completion_date) %></td><td><%= r.data.grade %></td>
     <td><% if (r.errors.length) { %><ul class="errs"><% r.errors.forEach(e => { %><li><%= e %></li><% }) %></ul><% } else { %><span class="badge b-valid">OK</span><% } %></td></tr><% }) %>
 </table></div>

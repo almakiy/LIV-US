@@ -98,12 +98,7 @@ r.post('/contact', limiter(15, 5), wrap(async (req, res) => {
   res.render('public/contact', { title: 'Contact & Support', sent: true, error: null, form: {} });
 }));
 
-r.get('/sample.csv', (req, res) => {
-  res.type('text/csv').attachment('liv-issuance-template.csv').send(
-    'first_name,last_name,email,course_name,completion_date,grade\n' +
-    'Jane,Doe,jane.doe@example.com,Construction Site Safety Fundamentals,2026-09-15,Pass\n' +
-    'John,Smith,john.smith@example.com,ISO 45001 Lead Auditor,09/20/2026,92%\n');
-});
+r.get('/sample.csv', (req, res) => res.type('text/csv; charset=utf-8').attachment('liv-trainees-template.csv').send(require('../lib/issuance').sampleCsv()));
 
 // Issuer logos (public: shown on verification pages)
 r.get('/logo/:platformId', wrap(async (req, res, next) => {

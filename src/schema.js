@@ -104,6 +104,11 @@ CREATE TABLE IF NOT EXISTS certificates (
 CREATE INDEX IF NOT EXISTS idx_cert_platform ON certificates(platform_id);
 CREATE INDEX IF NOT EXISTS idx_cert_status ON certificates(status);
 CREATE INDEX IF NOT EXISTS idx_cert_expiry ON certificates(expiry_date);
+-- Provider's own serial/reference number, and the holder's ID number kept only as a keyed hash + last 4 digits.
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS holder_ref VARCHAR(50);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS id_hash CHAR(64);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS id_last4 VARCHAR(4);
+CREATE INDEX IF NOT EXISTS idx_cert_holder_ref ON certificates(platform_id, holder_ref);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_cert_active_dup
   ON certificates(platform_id, trainee_id, lower(course_name), completion_date) WHERE status = 'active';
 

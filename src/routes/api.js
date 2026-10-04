@@ -33,7 +33,7 @@ r.use(wrap(async (req, res, next) => {
 r.use(limiter(1, 120, true));
 
 const certJson = (c) => ({
-  cert_number: c.cert_number, status: c.status,
+  cert_number: c.cert_number, serial_no: c.holder_ref, id_last4: c.id_last4, status: c.status,
   first_name: c.recipient_first_name, last_name: c.recipient_last_name, email: c.recipient_email,
   course_name: c.course_name, grade: c.grade, completion_date: c.completion_date, issue_date: c.issue_date, expiry_date: c.expiry_date,
   revoked_at: c.revoked_at, revocation_reason: c.revocation_reason,

@@ -7,7 +7,7 @@
   <p class="muted">We matched your columns automatically. Check each field and adjust if needed.</p>
   <div class="grid g3">
   <% FIELDS.forEach(f => { %>
-    <div class="field"><label><%= f %><%= REQUIRED.includes(f) ? ' *' : ' (optional)' %></label>
+    <div class="field"><label><%= FIELD_LABELS[f] %><%= REQUIRED.includes(f) ? ' *' : (f === 'full_name' || f === 'first_name' || f === 'last_name' ? ' (name: full, or first + last)' : ' (optional)') %></label>
       <select name="<%= f %>"><option value="">— not mapped —</option>
       <% job.headers.forEach(h => { %><option value="<%= h %>" <%= job.mapping[f] === h ? 'selected' : '' %>><%= h %></option><% }) %></select>
       <div class="hint">e.g. “<%= job.rows[0][job.mapping[f]] || '' %>”</div></div>

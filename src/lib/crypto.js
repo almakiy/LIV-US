@@ -42,7 +42,11 @@ function newApiKey() {
   const key = `${prefix}_${crypto.randomBytes(24).toString('base64url')}`;
   return { key, prefix, hash: sha256(key) };
 }
+// National / residence ID numbers are never stored in clear: only a keyed hash (for private matching) and the last 4 digits.
+const normalizeId = (s) => String(s || '').replace(/[\s-]+/g, '').toUpperCase();
+const idHash = (id) => crypto.createHmac('sha256', cfg.certHmacSecret).update(`id|${normalizeId(id)}`).digest('hex');
+const idLast4 = (id) => normalizeId(id).slice(-4);
 const ipHash = (ip) => sha256(`${cfg.certHmacSecret}:${ip || ''}`);
 const randomToken = () => crypto.randomBytes(24).toString('hex');
 
-module.exports = { newCertNumber, certHmac, qrToken, sha256, safeEqual, newApiKey, ipHash, randomToken, fmtDate, randomCode };
+module.exports = { normalizeId, idHash, idLast4, newCertNumber, certHmac, qrToken, sha256, safeEqual, newApiKey, ipHash, randomToken, fmtDate, randomCode };

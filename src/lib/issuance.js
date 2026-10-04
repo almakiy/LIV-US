@@ -2,30 +2,56 @@ const fs = require('fs');
 const path = require('path');
 const { q, tx } = require('../db');
 const cfg = require('../config');
-const { newCertNumber, certHmac, qrToken, fmtDate } = require('./crypto');
+const { newCertNumber, certHmac, qrToken, fmtDate, normalizeId, idHash, idLast4 } = require('./crypto');
 const { renderCertificate } = require('./pdf');
 const { audit } = require('./audit');
 
-const FIELDS = ['first_name', 'last_name', 'email', 'course_name', 'completion_date', 'grade'];
-const REQUIRED = ['first_name', 'last_name', 'email', 'course_name', 'completion_date'];
-const SYNONYMS = {
-  first_name: ['first_name', 'firstname', 'first', 'given_name', 'fname'],
-  last_name: ['last_name', 'lastname', 'last', 'surname', 'family_name', 'lname'],
-  email: ['email', 'e_mail', 'email_address', 'mail'],
-  course_name: ['course_name', 'course', 'coursename', 'program', 'training', 'course_title'],
-  completion_date: ['completion_date', 'completed', 'completed_on', 'date', 'completion', 'date_completed'],
-  grade: ['grade', 'score', 'result', 'mark'],
+const FIELDS = ['serial_no', 'full_name', 'first_name', 'last_name', 'national_id', 'email', 'course_name', 'completion_date', 'grade'];
+// email, course and date are always required; the name comes either as full_name or as first_name + last_name.
+const REQUIRED = ['email', 'course_name', 'completion_date'];
+const FIELD_LABELS = {
+  serial_no: 'Serial / reference no.', full_name: 'Full name', first_name: 'First name', last_name: 'Last name', national_id: 'National / ID number',
+  email: 'Email', course_name: 'Course name', completion_date: 'Completion date', grade: 'Grade',
 };
-const norm = (h) => String(h || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const hasName = (mapping) => !!(mapping.full_name || (mapping.first_name && mapping.last_name));
+
+// Header names are normalized (case, punctuation, Arabic letter variants) before matching.
+const norm = (h) => String(h || '').trim().toLowerCase()
+  .replace(/[ً-ٟـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+  .replace(/[^a-z0-9؀-ۿ]+/g, '_').replace(/^_|_$/g, '');
+const SYNONYMS = Object.fromEntries(Object.entries({
+  serial_no: ['serial_no', 'serial', 'serial_number', 'no', 'number', 'ref', 'ref_no', 'reference', 'reference_no', 'trainee_no', 'م', 'رقم', 'الرقم', 'الرقم التسلسلي', 'رقم تسلسلي', 'رقم المتدرب', 'مرجع'],
+  full_name: ['full_name', 'fullname', 'name', 'trainee', 'trainee_name', 'student', 'student_name', 'participant', 'اسم', 'الاسم', 'الاسم الكامل', 'اسم المتدرب', 'اسم الطالب', 'اسم المشارك'],
+  first_name: ['first_name', 'firstname', 'first', 'given_name', 'fname', 'الاسم الاول', 'الاسم الأول'],
+  last_name: ['last_name', 'lastname', 'last', 'surname', 'family_name', 'lname', 'اسم العائلة', 'العائلة', 'الكنية', 'اللقب'],
+  national_id: ['national_id', 'id_number', 'id_no', 'id', 'identity', 'identity_number', 'iqama', 'nid', 'رقم الهوية', 'الهوية', 'رقم الاقامة', 'الاقامة', 'رقم البطاقة', 'السجل المدني'],
+  email: ['email', 'e_mail', 'email_address', 'mail', 'البريد', 'البريد الالكتروني', 'الايميل', 'ايميل', 'الإيميل'],
+  course_name: ['course_name', 'course', 'coursename', 'program', 'training', 'course_title', 'الدورة', 'اسم الدورة', 'البرنامج', 'اسم البرنامج', 'الدوره'],
+  completion_date: ['completion_date', 'completed', 'completed_on', 'date', 'completion', 'date_completed', 'تاريخ الاكمال', 'تاريخ الإكمال', 'تاريخ الدورة', 'تاريخ اتمام الدورة', 'التاريخ'],
+  grade: ['grade', 'score', 'result', 'mark', 'الدرجة', 'التقدير', 'النتيجة', 'الدرجه'],
+}).map(([k, v]) => [k, v.map(norm)]));
 
 function autoMap(headers) {
-  const map = {};
+  const map = {}; const used = new Set();
   for (const f of FIELDS) {
-    const hit = headers.find((h) => SYNONYMS[f].includes(norm(h)));
+    const hit = headers.find((h) => !used.has(h) && SYNONYMS[f].includes(norm(h)));
     map[f] = hit || '';
+    if (hit) used.add(hit);
   }
+  // When first/last name columns exist, they win over a generic "name" column.
+  if (map.first_name && map.last_name) map.full_name = '';
   return map;
 }
+
+/** Template the provider downloads: UTF-8 with BOM so Excel shows Arabic correctly. */
+const TEMPLATE_HEADER = ['serial_no', 'full_name', 'national_id', 'email', 'course_name', 'completion_date', 'grade'];
+const sampleCsv = () => '﻿' + [
+  TEMPLATE_HEADER.join(','),
+  '1,Jane Doe,1234567890,jane.doe@example.com,Construction Site Safety Fundamentals,2026-09-15,Pass',
+  '2,أحمد محمد العلي,2987654321,ahmed.ali@example.com,ISO 45001 Lead Auditor,09/20/2026,92%',
+].join('\r\n') + '\r\n';
+
+const maskId = (last4) => (last4 ? `•••• ${last4}` : '');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -61,8 +87,21 @@ async function validateRows(rows, platformId) {
     for (const f of FIELDS) data[f] = r[f] == null ? '' : String(r[f]).trim();
     data.email = data.email.toLowerCase();
     const errors = [];
+    // Name: use first/last when both are given, otherwise split full_name (last word = last name).
+    if (!(data.first_name && data.last_name) && data.full_name) {
+      const words = data.full_name.split(/\s+/).filter(Boolean);
+      if (words.length >= 2) { data.first_name = words.slice(0, -1).join(' '); data.last_name = words[words.length - 1]; }
+      else errors.push('full_name must include at least a first and a last name');
+    }
+    if (!errors.length && !(data.first_name && data.last_name)) errors.push('name is required (a full name, or first and last name)');
     for (const f of REQUIRED) if (!data[f]) errors.push(`${f} is required`);
+    data.full_name = `${data.first_name} ${data.last_name}`.trim();
     if (data.first_name.length > 100 || data.last_name.length > 100) errors.push('name too long (max 100)');
+    if (data.serial_no.length > 50) errors.push('serial_no too long (max 50)');
+    if (data.national_id) {
+      data.national_id = normalizeId(data.national_id);
+      if (!/^[A-Z0-9]{5,20}$/.test(data.national_id)) errors.push('national_id must be 5–20 letters or digits');
+    }
     if (data.email && !EMAIL_RE.test(data.email)) errors.push('invalid email');
     if (data.course_name.length > 255) errors.push('course_name too long (max 255)');
     if (data.grade.length > 50) errors.push('grade too long (max 50)');
@@ -129,7 +168,10 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
         let cert;
         for (let attempt = 0; attempt < 5 && !cert; attempt++) {
           const certNumber = newCertNumber(Number(issueDate.slice(0, 4)));
-          const hashInput = { cert_number: certNumber, platform_id: platform.id, ...data, issue_date: issueDate, expiry_date: expiry };
+          const hashInput = {
+            cert_number: certNumber, platform_id: platform.id, first_name: data.first_name, last_name: data.last_name, email: data.email,
+            course_name: data.course_name, grade: data.grade, completion_date: data.completion_date, issue_date: issueDate, expiry_date: expiry,
+          };
           const hash = certHmac(hashInput);
           const url = verifyUrl(certNumber, hash);
           const pdf = await renderCertificate({ ...hashInput, verify_url: url, verification_hash: hash }, platform, template);
@@ -140,10 +182,12 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
           try {
             const { rows: [ins] } = await c.query(
               `INSERT INTO certificates (cert_number, platform_id, trainee_id, recipient_first_name, recipient_last_name, recipient_email,
-                 template_id, batch_id, course_name, grade, completion_date, issue_date, expiry_date, pdf_path, verification_hash)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id, cert_number`,
+                 template_id, batch_id, course_name, grade, completion_date, issue_date, expiry_date, pdf_path, verification_hash,
+                 holder_ref, id_hash, id_last4)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id, cert_number`,
               [certNumber, platform.id, trainee.id, data.first_name, data.last_name, data.email, template?.id || null, batch.id,
-                data.course_name, data.grade || null, data.completion_date, issueDate, expiry, rel, hash]
+                data.course_name, data.grade || null, data.completion_date, issueDate, expiry, rel, hash,
+                data.serial_no || null, data.national_id ? idHash(data.national_id) : null, data.national_id ? idLast4(data.national_id) : null]
             );
             fs.writeFileSync(abs, pdf);
             written.push(abs);
@@ -159,7 +203,7 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
         results.push({
           cert_number: cert.cert_number, first_name: data.first_name, last_name: data.last_name, email: data.email,
           course_name: data.course_name, completion_date: data.completion_date, issue_date: issueDate, expiry_date: expiry,
-          grade: data.grade || null, verify_url: cert.verify_url,
+          grade: data.grade || null, serial_no: data.serial_no || null, id_last4: data.national_id ? idLast4(data.national_id) : null, verify_url: cert.verify_url,
         });
       }
       await audit({ user, actorLabel, platformId: platform.id, action: 'certificates.issue', target: batch.id,
@@ -172,4 +216,4 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
   }
 }
 
-module.exports = { FIELDS, REQUIRED, autoMap, validateRows, issue, parseDate, addMonths, verifyUrl, fmtDate };
+module.exports = { FIELDS, REQUIRED, FIELD_LABELS, hasName, sampleCsv, maskId, norm, autoMap, validateRows, issue, parseDate, addMonths, verifyUrl, fmtDate };

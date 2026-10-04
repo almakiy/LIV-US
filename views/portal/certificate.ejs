@@ -4,6 +4,8 @@
   <div class="card details"><dl>
     <dt>Trainee</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
     <dt>Email</dt><dd><%= c.recipient_email %></dd>
+    <% if (c.holder_ref) { %><dt>Serial / ref.</dt><dd><%= c.holder_ref %></dd><% } %>
+    <% if (c.id_last4) { %><dt>ID number</dt><dd class="mono"><%= maskId(c.id_last4) %></dd><% } %>
     <dt>Course</dt><dd><%= c.course_name %></dd>
     <dt>Grade</dt><dd><%= c.grade || '—' %></dd>
     <dt>Completed</dt><dd><%= longDate(c.completion_date) %></dd>

@@ -9,7 +9,8 @@ const cfg = require('../config');
 const { q } = require('../db');
 const { audit } = require('../lib/audit');
 const { newApiKey, randomToken, qrToken } = require('../lib/crypto');
-const { FIELDS, REQUIRED, autoMap, validateRows, issue } = require('../lib/issuance');
+const { FIELDS, REQUIRED, FIELD_LABELS, hasName, sampleCsv, maskId, autoMap, validateRows, issue } = require('../lib/issuance');
+const { fetchCsvFromLink, SourceError } = require('../lib/csv-source');
 const crypto = require('crypto');
 const { renderCertificate, THEMES } = require('../lib/pdf');
 const { normalizeConfig, RECOMMENDED } = require('../lib/pdf-security');
@@ -62,24 +63,47 @@ r.get('/issue', wrap(async (req, res) => {
   res.render('portal/issue-upload', { title: 'Issuance Center', templates: await templates(pid(req)), error: null });
 }));
 
+// Uploaded trainee lists can contain ID numbers: remove abandoned wizard files after a few hours.
+function purgeOldJobs() {
+  const dir = path.join(cfg.storageDir, 'tmp');
+  try {
+    for (const f of fs.readdirSync(dir)) {
+      const fp = path.join(dir, f);
+      if (Date.now() - fs.statSync(fp).mtimeMs > 6 * 3600 * 1000) fs.rmSync(fp, { force: true });
+    }
+  } catch (_) { /* nothing to purge */ }
+}
+
+r.get('/issue/template.csv', (req, res) => {
+  res.type('text/csv; charset=utf-8').attachment('liv-trainees-template.csv').send(sampleCsv());
+});
+
 r.post('/issue/upload', csvUpload.single('csv'), csrfCheck, wrap(async (req, res) => {
   const tpls = await templates(pid(req));
   const fail = (error) => res.status(400).render('portal/issue-upload', { title: 'Issuance Center', templates: tpls, error });
-  if (!req.file) return fail('Please choose a CSV file.');
-  if (!/\.csv$/i.test(req.file.originalname)) return fail('Only .csv files are accepted.');
   const tpl = tpls.find((t) => t.id === req.body.template_id);
   if (!tpl) return fail('Please choose a certificate template.');
+  const link = String(req.body.source_url || '').trim();
+  let buffer; let fileName;
+  if (req.file) {
+    if (!/\.csv$/i.test(req.file.originalname)) return fail('Only .csv files are accepted. In Excel use Save As ▸ CSV UTF-8.');
+    buffer = req.file.buffer; fileName = req.file.originalname.slice(0, 200);
+  } else if (link) {
+    try { ({ buffer, fileName } = await fetchCsvFromLink(link)); } catch (e) { if (e instanceof SourceError) return fail(e.message); throw e; }
+  } else return fail('Choose a CSV file, or paste a Google Drive / Google Sheets link.');
   let records;
   try {
-    records = parse(req.file.buffer, { bom: true, columns: true, skip_empty_lines: true, trim: true, relax_column_count: true });
+    // Excel in some regions saves CSV with ";" or tabs; accept them too.
+    records = parse(buffer, { bom: true, columns: true, skip_empty_lines: true, trim: true, relax_column_count: true, delimiter: [',', ';', '\t'] });
   } catch (e) {
     return fail(`Could not read the CSV: ${e.message}`);
   }
-  if (!records.length) return fail('The CSV has no data rows.');
+  if (!records.length) return fail('The file has no data rows.');
   if (records.length > MAX_ROWS) return fail(`Maximum ${MAX_ROWS} rows per upload. Split the file and try again.`);
   const headers = Object.keys(records[0]);
+  purgeOldJobs();
   const token = randomToken();
-  saveJob(token, { platformId: pid(req), templateId: tpl.id, fileName: req.file.originalname.slice(0, 200), headers, rows: records, mapping: autoMap(headers) });
+  saveJob(token, { platformId: pid(req), templateId: tpl.id, fileName, headers, rows: records, mapping: autoMap(headers) });
   req.session.issueJob = token;
   res.redirect('/portal/issue/map');
 }));
@@ -87,7 +111,7 @@ r.post('/issue/upload', csvUpload.single('csv'), csrfCheck, wrap(async (req, res
 r.get('/issue/map', (req, res) => {
   const job = loadJob(req);
   if (!job) return res.redirect('/portal/issue');
-  res.render('portal/issue-map', { title: 'Map columns', job, FIELDS, REQUIRED, error: null });
+  res.render('portal/issue-map', { title: 'Map columns', job, FIELDS, REQUIRED, FIELD_LABELS, error: null });
 });
 
 r.post('/issue/map', (req, res) => {
@@ -95,8 +119,9 @@ r.post('/issue/map', (req, res) => {
   if (!job) return res.redirect('/portal/issue');
   const mapping = {};
   for (const f of FIELDS) mapping[f] = job.headers.includes(req.body[f]) ? req.body[f] : '';
-  const missing = REQUIRED.filter((f) => !mapping[f]);
-  if (missing.length) return res.status(400).render('portal/issue-map', { title: 'Map columns', job: { ...job, mapping }, FIELDS, REQUIRED, error: `Map the required fields: ${missing.join(', ')}` });
+  const missing = REQUIRED.filter((f) => !mapping[f]).map((f) => FIELD_LABELS[f]);
+  if (!hasName(mapping)) missing.unshift('Full name (or First name + Last name)');
+  if (missing.length) return res.status(400).render('portal/issue-map', { title: 'Map columns', job: { ...job, mapping }, FIELDS, REQUIRED, FIELD_LABELS, error: `Map the required fields: ${missing.join(', ')}` });
   job.mapping = mapping;
   saveJob(req.session.issueJob, job);
   res.redirect('/portal/issue/review');
@@ -108,7 +133,7 @@ r.get('/issue/review', wrap(async (req, res) => {
   const results = await validateRows(mappedRows(job), pid(req));
   const tpl = await loadTemplate(pid(req), job.templateId);
   const valid = results.filter((x) => !x.errors.length).length;
-  res.render('portal/issue-review', { title: 'Review & issue', job, tpl, results, valid, invalid: results.length - valid });
+  res.render('portal/issue-review', { title: 'Review & issue', job, tpl, results, valid, invalid: results.length - valid, maskId });
 }));
 
 r.post('/issue/confirm', requireActivePlatform, wrap(async (req, res) => {
@@ -160,9 +185,9 @@ r.get('/batches/:id', wrap(async (req, res, next) => {
 r.get('/batches/:id/results.csv', wrap(async (req, res, next) => {
   const d = await batchWithCerts(req);
   if (!d) return next();
-  const head = ['cert_number', 'first_name', 'last_name', 'email', 'course_name', 'completion_date', 'issue_date', 'expiry_date', 'grade', 'status', 'verify_url'];
-  const lines = d.certs.map((c) => [c.cert_number, c.recipient_first_name, c.recipient_last_name, c.recipient_email, c.course_name, c.completion_date, c.issue_date, c.expiry_date, c.grade, c.status, verifyLink(c)].map(csvCell).join(','));
-  res.type('text/csv').attachment(`batch-${d.batch.id.slice(0, 8)}-results.csv`).send([head.join(','), ...lines].join('\n') + '\n');
+  const head = ['cert_number', 'serial_no', 'first_name', 'last_name', 'id_last4', 'email', 'course_name', 'completion_date', 'issue_date', 'expiry_date', 'grade', 'status', 'verify_url'];
+  const lines = d.certs.map((c) => [c.cert_number, c.holder_ref, c.recipient_first_name, c.recipient_last_name, c.id_last4, c.recipient_email, c.course_name, c.completion_date, c.issue_date, c.expiry_date, c.grade, c.status, verifyLink(c)].map(csvCell).join(','));
+  res.type('text/csv').attachment(`batch-${d.batch.id.slice(0, 8)}-results.csv`).send(['\uFEFF' + head.join(','), ...lines].join('\r\n') + '\r\n');
 }));
 
 r.get('/batches/:id/pdfs.zip', wrap(async (req, res, next) => {
@@ -187,7 +212,7 @@ r.get('/certificates', wrap(async (req, res) => {
   const where = ['platform_id = $1']; const params = [pid(req)];
   if (search) {
     params.push(`%${search.toLowerCase()}%`);
-    where.push(`(lower(recipient_first_name || ' ' || recipient_last_name) LIKE $${params.length} OR lower(recipient_email) LIKE $${params.length} OR lower(cert_number) LIKE $${params.length} OR lower(course_name) LIKE $${params.length})`);
+    where.push(`(lower(recipient_first_name || ' ' || recipient_last_name) LIKE $${params.length} OR lower(recipient_email) LIKE $${params.length} OR lower(cert_number) LIKE $${params.length} OR lower(course_name) LIKE $${params.length} OR lower(coalesce(holder_ref,'')) LIKE $${params.length})`);
   }
   if (status === 'active') where.push(`status='active' AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE)`);
   if (status === 'revoked') where.push(`status='revoked'`);
@@ -211,7 +236,7 @@ r.get('/certificates/:num', wrap(async (req, res, next) => {
   const c = await ownCert(req);
   if (!c) return next();
   const { rows: [v] } = await q(`SELECT count(*)::int AS n, max(created_at) AS last FROM verification_logs WHERE certificate_id = $1`, [c.id]);
-  res.render('portal/certificate', { title: c.cert_number, c, v, verifyLink });
+  res.render('portal/certificate', { title: c.cert_number, c, v, verifyLink, maskId });
 }));
 
 r.get('/certificates/:num/pdf', wrap(async (req, res, next) => {

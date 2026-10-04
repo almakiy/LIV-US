@@ -1,5 +1,5 @@
 <%- include('../partials/app-start') %>
-<div class="page-head"><h1>Issuance Center</h1></div>
+<div class="page-head"><h1>Issuance Center</h1><a class="btn secondary" href="/portal/issue/template.csv">⬇ Download CSV template</a></div>
 <%- include('_steps', { step: 0 }) %>
 <% if (error) { %><div class="alert error"><%= error %></div><% } %>
 <form class="card" method="post" action="/portal/issue/upload" enctype="multipart/form-data">
@@ -7,8 +7,28 @@
   <div class="field"><label>Certificate template</label>
     <select name="template_id" required><% templates.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.design %><%= t.validity_months ? ', valid ' + t.validity_months + ' months' : ', no expiry' %>)</option><% }) %></select>
     <div class="hint"><a href="/portal/templates">Manage templates</a></div></div>
-  <div class="field"><label>Trainee data (CSV)</label><input type="file" name="csv" accept=".csv,text/csv" required>
-    <div class="hint">Columns: first_name, last_name, email, course_name, completion_date (YYYY-MM-DD or MM/DD/YYYY), grade (optional). Max 5,000 rows / 5 MB. <a href="/sample.csv">Download sample CSV</a></div></div>
-  <button class="btn">Upload &amp; continue →</button>
+
+  <h3>Trainee list</h3>
+  <div class="field"><label>Option 1 — Upload a CSV file</label><input type="file" name="csv" accept=".csv,text/csv">
+    <div class="hint">From Excel: Save As ▸ <strong>CSV UTF-8</strong>. Commas, semicolons and tabs are accepted. Max 5,000 rows / 5 MB.</div></div>
+  <p class="muted small center" style="margin:6px 0">— or —</p>
+  <div class="field"><label>Option 2 — Link to Google Drive / Google Sheets</label>
+    <input type="url" name="source_url" placeholder="https://docs.google.com/spreadsheets/d/…  or  https://drive.google.com/file/d/…">
+    <div class="hint">Set sharing to <strong>“Anyone with the link can view”</strong>. The file is read once to create your batch; nothing is changed in Google.</div></div>
+
+  <details class="mt"><summary class="small"><strong>Columns the file should contain</strong></summary>
+    <div class="table-wrap mt"><table>
+      <tr><th>Column</th><th>Required</th><th>Notes</th></tr>
+      <tr><td class="mono">serial_no</td><td>No</td><td>Your own number or reference for the trainee (kept for your records).</td></tr>
+      <tr><td class="mono">full_name</td><td>Yes*</td><td>Trainee name. The last word is used as the family name. *Or use <span class="mono">first_name</span> + <span class="mono">last_name</span> instead.</td></tr>
+      <tr><td class="mono">national_id</td><td>No</td><td>National / residence ID. Stored only as a protected hash plus the last 4 digits, never shown publicly.</td></tr>
+      <tr><td class="mono">email</td><td>Yes</td><td>Used to identify the trainee (and for email delivery in a later release).</td></tr>
+      <tr><td class="mono">course_name</td><td>Yes</td><td>Course or program title.</td></tr>
+      <tr><td class="mono">completion_date</td><td>Yes</td><td>YYYY-MM-DD or MM/DD/YYYY, not in the future.</td></tr>
+      <tr><td class="mono">grade</td><td>No</td><td>Score or result, up to 50 characters.</td></tr>
+    </table></div>
+    <p class="small muted">Arabic column headings are recognized too (الاسم، رقم الهوية، البريد الإلكتروني، الدورة، تاريخ الإكمال…). You can adjust the matching in the next step.</p>
+  </details>
+  <div class="actions mt"><button class="btn">Upload &amp; continue →</button></div>
 </form>
 <%- include('../partials/app-end') %>

@@ -72,6 +72,16 @@ Implementation notes:
 - Email delivery of the certificate to the trainee; password reset and 2FA.
 - Open Badges 3.0 export and LinkedIn add-to-profile with a badge.
 
+### Phase 2a — Trainee import (done)
+Shipped: CSV upload or Google Drive / Google Sheets link (server-side, Google hosts only, 5 MB cap, public "anyone with the link" files), downloadable CSV template (`/portal/issue/template.csv`, UTF-8 with BOM), `serial_no` and `national_id` columns, `full_name` or first + last name, English and Arabic column headings, `;` and tab delimiters. Holder ID numbers are stored only as a keyed HMAC hash plus the last 4 digits; never shown publicly or exported in full. Abandoned wizard files (which hold the raw rows) are purged after 6 hours.
+
+### Phase 2b — Official email to the certificate holder (next)
+- Provider: transactional email service (Postmark, Amazon SES or Resend) with the LIV sending domain verified (SPF, DKIM, DMARC). Needs a decision and credentials.
+- Message: LIV-branded HTML + plain-text email: "Your certificate has been issued" with course, date, certificate ID, a **View & verify** button (verify URL with QR token), and the PDF attached or linked. Revocation notice template as well.
+- Control: per-batch checkbox "Email certificates to trainees" (default off), per-provider sender name and reply-to, resend button on the certificate page.
+- Reliability: `email_outbox` table (queued / sent / failed, attempts, provider message id), background worker with retry and rate limit, bounce and complaint webhooks, suppression list, audit log entries.
+- Privacy and compliance: lawful basis and unsubscribe/footer text reviewed with counsel; no marketing content in transactional mail.
+
 ### Phase 3 — Knowledge hub (done)
 Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/publish and preview, public `/knowledge` with topic/type filters and search, article pages, RSS (`/rss.xml`), `sitemap.xml`, `robots.txt`, sanitized Markdown (`src/lib/content.js`). Built inside this app, as recommended. First-run bootstrap creates the first super admin and, outside production, three starter articles.
 - Content model: articles, research papers, guides; categories (Quality, Safety, Project Management);

@@ -185,6 +185,38 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await ap.goto(BASE + '/portal');
   ok(!(await ap.isVisible('text=Accreditation status')), 'applicant now active');
 
+  console.log('Import: template, Arabic headers, ID privacy, link validation');
+  const tpl = await page.request.get(BASE + '/portal/issue/template.csv');
+  const tplText = await tpl.text();
+  ok(tpl.status() === 200 && tplText.includes('serial_no,full_name,national_id,email'), 'CSV template downloads with the expected columns');
+  const csv2 = path.join(os.tmpdir(), `arabic-${stamp}.csv`);
+  fs.writeFileSync(csv2, [
+    'م,اسم المتدرب,رقم الهوية,البريد الإلكتروني,الدورة,تاريخ الإكمال,التقدير',
+    `7,سارة خالد الأحمد,1098765432,sara.${stamp}@example.com,السلامة المهنية,2026-09-20,ممتاز`,
+    `8,Mark Lee,AB-12345,mark.${stamp}@example.com,First Aid,09/21/2026,`,
+  ].join('\n'));
+  await page.goto(BASE + '/portal/issue');
+  await page.setInputFiles('input[name=csv]', csv2);
+  await page.click('button:has-text("Upload")');
+  ok(await page.$eval('select[name=full_name]', (e) => e.value) === 'اسم المتدرب', 'Arabic "name" heading auto-mapped to full name');
+  ok(await page.$eval('select[name=national_id]', (e) => e.value) === 'رقم الهوية', 'Arabic "ID number" heading auto-mapped');
+  await page.click('button:has-text("Validate rows")');
+  ok(await see(page, 'text=•••• 5432'), 'review shows the ID masked');
+  ok(!(await page.content()).includes('1098765432'), 'full ID number is not shown on the review page');
+  await page.click('button:has-text("Issue 2 certificate")');
+  ok(await see(page, 'text=2 certificate(s) issued'), 'two certificates issued from the Arabic file');
+  const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('text=Download results CSV')]);
+  const res2 = fs.readFileSync(await dl2.path(), 'utf8');
+  ok(res2.includes('id_last4') && res2.includes('5432') && !res2.includes('1098765432'), 'results CSV carries the last 4 digits only');
+  ok(psql(`select holder_ref || '|' || id_last4 || '|' || length(id_hash) from certificates where recipient_email='sara.${stamp}@example.com'`) === '7|5432|64', 'serial kept; ID stored only as hash + last 4');
+  await page.goto(BASE + '/portal/issue');
+  await page.fill('input[name=source_url]', 'https://evil.example.com/list.csv');
+  await page.click('button:has-text("Upload")');
+  ok(await see(page, 'text=Only Google Drive and Google Sheets links are supported'), 'non-Google link is rejected');
+  await page.goto(BASE + '/portal/issue');
+  await page.click('button:has-text("Upload")');
+  ok(await see(page, 'text=Choose a CSV file, or paste a Google Drive'), 'empty submission asks for a file or link');
+
   console.log('Knowledge hub');
   const title = `E2E Article ${stamp}`; const slug = `e2e-article-${stamp}`;
   await adm.goto(BASE + '/admin/content/new');
