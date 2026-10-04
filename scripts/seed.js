@@ -9,7 +9,7 @@ const { RECOMMENDED } = require('../src/lib/pdf-security');
   const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').toLowerCase();
   const adminPass = process.env.SEED_ADMIN_PASSWORD || 'ChangeMe-Admin-2026';
   const demoEmail = 'demo@trainingco.example';
-  const demoPass = 'ChangeMe-Demo-2026';
+  const demoPass = process.env.SEED_DEMO_PASSWORD || 'ChangeMe-Demo-2026';
 
   const { rows: ex } = await q('SELECT 1 FROM users WHERE email = $1', [adminEmail]);
   if (!ex.length) {

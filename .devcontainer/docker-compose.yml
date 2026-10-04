@@ -1,0 +1,23 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:22
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    environment:
+      DATABASE_URL: postgres://liv:liv@db:5432/liv
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment: { POSTGRES_USER: liv, POSTGRES_PASSWORD: liv, POSTGRES_DB: liv }
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "liv"]
+      interval: 5s
+      retries: 10
+volumes:
+  pgdata:
