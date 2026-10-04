@@ -9,7 +9,11 @@ const { SAMPLE_ARTICLES } = require('./sample-content');
 
 async function bootstrapAdmin() {
   const { rows } = await q("SELECT 1 FROM users WHERE role = 'super_admin' LIMIT 1");
-  if (rows.length) return;
+  if (rows.length) {
+    const { rows: admins } = await q("SELECT email FROM users WHERE role = 'super_admin' ORDER BY created_at");
+    console.log(`[bootstrap] super admin exists (${admins.map((a) => a.email).join(', ')}); SEED_ADMIN_PASSWORD is not applied. To reset: npm run reset-admin`);
+    return;
+  }
   const email = (process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').trim().toLowerCase();
   const fromEnv = !!process.env.SEED_ADMIN_PASSWORD;
   const password = process.env.SEED_ADMIN_PASSWORD || `${crypto.randomBytes(9).toString('base64url')}Aa1`;
