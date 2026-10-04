@@ -39,7 +39,8 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
   }
   const status = out.result === 'not_found' || out.result === 'invalid_format' ? 404 : 200;
   res.status(status).render('public/verify-result', {
-    title: 'Certificate Verification', out, c, linkedin, token: req.query.t || (c ? qrToken(c.verification_hash) : ''),
+    // Only echo a token the visitor already holds (from the QR code) and that verified; never derive it here.
+    title: 'Certificate Verification', out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
     shareUrl: c ? `${cfg.baseUrl}/verify/${c.cert_number}` : '',
   });
 }));

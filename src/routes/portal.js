@@ -50,7 +50,10 @@ function loadJob(req) {
   const job = JSON.parse(fs.readFileSync(jobPath(t), 'utf8'));
   return job.platformId === pid(req) ? job : null;
 }
-const saveJob = (token, job) => fs.writeFileSync(jobPath(token), JSON.stringify(job));
+const saveJob = (token, job) => {
+  fs.mkdirSync(path.dirname(jobPath(token)), { recursive: true });
+  fs.writeFileSync(jobPath(token), JSON.stringify(job));
+};
 const mappedRows = (job) => job.rows.map((row) => Object.fromEntries(FIELDS.map((f) => [f, job.mapping[f] ? row[job.mapping[f]] : ''])));
 
 r.get('/issue', wrap(async (req, res) => {

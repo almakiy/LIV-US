@@ -62,7 +62,7 @@ LIV accredits training providers. Accredited providers issue certificates for th
 | Layer | Choice |
 |---|---|
 | Runtime | Node.js 20+ |
-| Web framework | Express 4 |
+| Web framework | Express 5 |
 | Views | EJS (server-rendered, no build step) |
 | Database | PostgreSQL 14+ (`pgcrypto`) |
 | Sessions | `express-session` + `connect-pg-simple` (stored in Postgres) |
