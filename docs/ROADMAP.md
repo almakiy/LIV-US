@@ -72,7 +72,8 @@ Implementation notes:
 - Email delivery of the certificate to the trainee; password reset and 2FA.
 - Open Badges 3.0 export and LinkedIn add-to-profile with a badge.
 
-### Phase 3 — Knowledge hub
+### Phase 3 — Knowledge hub (done)
+Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/publish and preview, public `/knowledge` with topic/type filters and search, article pages, RSS (`/rss.xml`), `sitemap.xml`, `robots.txt`, sanitized Markdown (`src/lib/content.js`). Built inside this app, as recommended. First-run bootstrap creates the first super admin and, outside production, three starter articles.
 - Content model: articles, research papers, guides; categories (Quality, Safety, Project Management);
   authors, tags, SEO metadata, sitemap, RSS.
 - Admin editor (Markdown) with draft/publish; public listing and article pages in the same US brand.

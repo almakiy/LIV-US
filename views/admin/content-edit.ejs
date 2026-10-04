@@ -1,0 +1,29 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= a.id ? 'Edit article' : 'New article' %></h1>
+  <% if (a.id) { %><span class="badge <%= a.status === 'published' ? 'b-active' : 'b-pending' %>"><%= a.status %></span><% } %></div>
+<form method="post" action="/admin/content" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (a.id) { %><input type="hidden" name="id" value="<%= a.id %>"><% } %>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="field"><label>Title *</label><input type="text" name="title" required maxlength="200" value="<%= a.title %>"></div>
+  <div class="row">
+    <div class="field"><label>Topic</label><select name="category"><% Object.entries(CATEGORIES).forEach(([k, l]) => { %><option value="<%= k %>" <%= a.category === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Type</label><select name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= a.kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+  </div>
+  <div class="field"><label>Summary * <span class="muted small">(shown in lists and search results, max 300 characters)</span></label><textarea name="summary" rows="2" maxlength="300"><%= a.summary %></textarea></div>
+  <div class="field"><label>Body (Markdown) *</label><textarea name="body_md" rows="18" style="font-family:ui-monospace,Menlo,monospace"><%= a.body_md %></textarea>
+    <div class="hint">Supports headings (##), lists, tables, links and quotes. Raw HTML, scripts and images are removed for safety.</div></div>
+  <div class="row">
+    <div class="field"><label>Author</label><input type="text" name="author_name" maxlength="150" value="<%= a.author_name %>"></div>
+    <div class="field"><label>Tags (comma separated)</label><input type="text" name="tags" value="<%= (a.tags || []).join(', ') %>"></div>
+  </div>
+  <div class="field"><label>URL slug <span class="muted small">(optional, generated from the title)</span></label><input type="text" name="slug" value="<%= a.slug %>"></div>
+  <div class="actions">
+    <button class="btn secondary" name="action" value="draft">Save draft</button>
+    <button class="btn" name="action" value="publish"><%= a.status === 'published' ? 'Save & keep published' : 'Publish' %></button>
+    <% if (a.status === 'published') { %><button class="btn secondary" name="action" value="unpublish">Unpublish</button><% } %>
+    <button class="btn secondary" formaction="/admin/content/preview" formtarget="_blank">Preview</button>
+  </div>
+</form>
+<% if (a.id) { %><form method="post" action="/admin/content/<%= a.id %>/delete" data-confirm="Delete this article permanently?" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Delete article</button></form><% } %>
+<%- include('../partials/app-end') %>

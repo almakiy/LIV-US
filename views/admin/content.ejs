@@ -1,0 +1,12 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Knowledge hub content</h1><a class="btn" href="/admin/content/new">+ New article</a></div>
+<div class="table-wrap"><table>
+  <tr><th>Title</th><th>Topic</th><th>Type</th><th>Status</th><th>Updated</th><th></th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">Nothing here yet. Write the first article.</td></tr><% } %>
+  <% rows.forEach(a => { %><tr><td><a href="/admin/content/<%= a.id %>"><%= a.title %></a><div class="small muted">/knowledge/<%= a.slug %></div></td>
+  <td><%= CATEGORIES[a.category] %></td><td><%= KINDS[a.kind] %></td>
+  <td><span class="badge <%= a.status === 'published' ? 'b-active' : 'b-pending' %>"><%= a.status %></span></td>
+  <td><%= usDate(a.updated_at) %></td>
+  <td class="right"><% if (a.status === 'published') { %><a href="/knowledge/<%= a.slug %>" target="_blank" rel="noopener">View</a><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

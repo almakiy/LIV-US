@@ -83,6 +83,7 @@ app.use((req, res, next) => {
 app.locals.csrfCheck = csrfCheck;
 
 app.use(require('./routes/public'));
+app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/portal', require('./routes/portal'));
 app.use('/admin', require('./routes/admin'));

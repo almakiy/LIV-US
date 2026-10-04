@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title><%= title %> · <%= brand %> | <%= brandLong %></title>
-<meta name="description" content="<%= brand %> (<%= brandLong %>) is an independent US accreditation body for training providers, with official certificate verification.">
+<meta name="description" content="<%= (typeof description !== 'undefined' && description) ? description : brand + ' (' + brandLong + ') is an independent US accreditation body for training providers, with official certificate verification.' %>">
 <link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
 <link rel="icon" type="image/png" href="/static/brand/favicon.png">
 <meta name="theme-color" content="#0B1F3A">
@@ -19,6 +19,7 @@
     <nav class="nav">
       <a href="/verify" class="<%= path.startsWith('/verify') ? 'on' : '' %>">Verify</a>
       <a href="/accreditation" class="<%= path === '/accreditation' ? 'on' : '' %>">Accreditation</a>
+      <a href="/knowledge" class="<%= path.startsWith('/knowledge') ? 'on' : '' %>">Knowledge</a>
       <a href="/about" class="<%= path === '/about' ? 'on' : '' %>">About</a>
       <a href="/contact" class="<%= path === '/contact' ? 'on' : '' %>">Contact</a>
       <% if (user) { %>

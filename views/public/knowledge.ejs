@@ -1,0 +1,28 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:48px 0 56px"><div class="container">
+  <span class="eyebrow"><%= brand %> Knowledge Hub</span>
+  <h1>Quality, safety and project management knowledge</h1>
+  <p>Practical articles, research notes and guides for professionals who run safe, well-managed work.</p>
+</div></section>
+<section class="section"><div class="container">
+  <form method="get" class="filters">
+    <input type="search" name="q" value="<%= search %>" placeholder="Search articles">
+    <select name="category" data-autosubmit><option value="">All topics</option><% Object.entries(CATEGORIES).forEach(([k, l]) => { %><option value="<%= k %>" <%= category === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+    <select name="kind" data-autosubmit><option value="">All types</option><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+    <button class="btn">Search</button>
+  </form>
+  <% if (!rows.length) { %><div class="card center muted">No articles found. <a href="/knowledge">Clear filters</a></div><% } %>
+  <div class="grid g3">
+    <% rows.forEach(a => { %>
+    <a class="card article-card" href="/knowledge/<%= a.slug %>" style="text-decoration:none;color:inherit;display:block">
+      <div class="small"><span class="badge b-active"><%= KINDS[a.kind] %></span> <span class="muted"><%= CATEGORIES[a.category] %></span></div>
+      <h3 style="margin:10px 0 6px"><%= a.title %></h3>
+      <p class="muted small"><%= a.summary %></p>
+      <div class="small muted"><%= a.author_name || brand %> · <%= longDate(a.published_at) %></div>
+    </a>
+    <% }) %>
+  </div>
+  <% if (pages > 1) { %><p class="center mt small"><% for (let i = 1; i <= pages; i++) { %><a class="btn sm <%= i === page ? '' : 'secondary' %>" href="/knowledge?<%= new URLSearchParams({ q: search, category, kind, page: i }).toString() %>"><%= i %></a> <% } %></p><% } %>
+  <p class="small muted mt">Educational content only. It is not legal, engineering or professional advice and does not imply endorsement by any standards body or government agency. <a href="/rss.xml">RSS</a></p>
+</div></section>
+<%- include('../partials/foot') %>

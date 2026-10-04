@@ -136,3 +136,22 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   handled BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Knowledge hub (Phase 3): articles, research notes and guides in Quality, Safety and Project Management.
+CREATE TABLE IF NOT EXISTS articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  summary VARCHAR(300) NOT NULL DEFAULT '',
+  body_md TEXT NOT NULL DEFAULT '',
+  category VARCHAR(30) NOT NULL CHECK (category IN ('quality','safety','project-management')),
+  kind VARCHAR(20) NOT NULL DEFAULT 'article' CHECK (kind IN ('article','research','guide')),
+  status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published')),
+  author_name VARCHAR(150) NOT NULL DEFAULT '',
+  tags TEXT[] NOT NULL DEFAULT '{}',
+  published_at TIMESTAMPTZ,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_articles_pub ON articles(status, published_at DESC);

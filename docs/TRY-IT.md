@@ -24,6 +24,7 @@
 | 8 | افتح `/verify` وجرّب رقم الشهادة مع اسم عائلة صحيح ثم خاطئ | الاسم الخاطئ يعطي NOT FOUND |
 | 9 | **History & Records ▸ الشهادة ▸ Revoke** بسبب | صفحة التحقق تتحول إلى REVOKED |
 | 10 | **Return to admin ▸ Audit log** | كل الخطوات مسجّلة باسم حساب الإدارة |
+| 11 | **Admin ▸ Content ▸ + New article**: اكتب بصيغة Markdown، ثم **Preview** ثم **Publish** | يظهر المقال في `/knowledge` فوراً، وتختفي المسودات عن العامة |
 
 ## 3) بيانات جاهزة للتجربة
 - بعد أول تشغيل توجد ثلاث شهادات تجريبية للمزوّد `demo@trainingco.example`. أرقامها تظهر في **Admin ▸ All certificates**.

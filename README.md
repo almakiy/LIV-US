@@ -55,6 +55,11 @@ docker compose exec app node scripts/seed.js
 - **Accreditation:** benefits, the four-step process, and standards alignment with a non-endorsement disclaimer.
 - **About**, **Contact** (messages are saved to the admin inbox), and **Apply** (creates a pending platform and its admin account).
 
+### Knowledge hub
+- Public `/knowledge`: articles, research and guides on Quality, Health & Safety and Project Management, with search and filters, RSS (`/rss.xml`) and `sitemap.xml`.
+- Admin editor at `/admin/content`: Markdown, draft/publish, preview. Raw HTML, scripts and images are stripped.
+- First run: if no super admin exists, one is created from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (or a random password printed once in the server console). Outside production, three starter articles are added when the hub is empty (`SEED_SAMPLE_CONTENT=false` disables this).
+
 ### Client portal (training providers)
 - **Dashboard:** totals for issued, valid, expiring in 30 days and revoked; trainee count; verification checks; recent batches.
 - **Issuance Center wizard:**

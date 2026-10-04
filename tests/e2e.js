@@ -185,6 +185,35 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await ap.goto(BASE + '/portal');
   ok(!(await ap.isVisible('text=Accreditation status')), 'applicant now active');
 
+  console.log('Knowledge hub');
+  const title = `E2E Article ${stamp}`; const slug = `e2e-article-${stamp}`;
+  await adm.goto(BASE + '/admin/content/new');
+  await adm.fill('input[name=title]', title);
+  await adm.fill('textarea[name=summary]', 'A test summary for the knowledge hub.');
+  await adm.fill('textarea[name=body_md]', '## Heading\n\nSafe **bold** text.\n\n<script>window.__xss=1</script>\n\n[bad](javascript:alert(1)) [ok](https://example.com)');
+  await adm.selectOption('select[name=category]', 'safety');
+  await adm.click('button:has-text("Save draft")');
+  ok(await see(adm, 'text=Draft saved'), 'article saved as draft');
+  const anon = await browser.newPage();
+  ok((await anon.goto(`${BASE}/knowledge/${slug}`)).status() === 404, 'draft article is not public');
+  await adm.click('button:has-text("Publish")');
+  ok(await see(adm, 'text=Saved and published'), 'article published');
+  const resp = await anon.goto(`${BASE}/knowledge/${slug}`);
+  ok(resp.status() === 200 && await see(anon, 'h2:has-text("Heading")'), 'published article renders Markdown');
+  const html = await anon.content();
+  ok(!html.includes('__xss') && !html.includes('javascript:alert'), 'script and javascript: links are stripped');
+  await anon.goto(`${BASE}/knowledge?category=safety`);
+  ok(await see(anon, `text=${title}`), 'article listed under its topic');
+  const sm = await anon.request.get(BASE + '/sitemap.xml');
+  ok((await sm.text()).includes(`/knowledge/${slug}`), 'sitemap includes the article');
+  ok((await (await anon.request.get(BASE + '/rss.xml')).text()).includes(title), 'RSS includes the article');
+  await adm.click('button:has-text("Unpublish")');
+  ok((await anon.goto(`${BASE}/knowledge/${slug}`)).status() === 404, 'unpublished article is hidden again');
+  await adm.click('button:has-text("Delete article")');
+  ok(await see(adm, 'text=Article deleted'), 'article deleted');
+  const anonAdmin = await anon.request.get(BASE + '/admin/content', { maxRedirects: 0 });
+  ok(anonAdmin.status() === 302, 'content admin requires login');
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');
