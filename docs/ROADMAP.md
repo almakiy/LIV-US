@@ -65,7 +65,7 @@ Implementation notes:
 - Theme registry and `security_config` per template.
 - Security-pattern designer form with live preview.
 - Tests: pattern is deterministic for a given hash and differs across certificates (`npm run test:unit`).
-- Shipped: theme registry (`THEMES` in `src/lib/pdf.js`), `src/lib/pdf-security.js`, per-template `security_config` with live preview in the template form. Adding a theme beyond classic/modern also needs the `design` CHECK constraint widened in `src/schema.sql`.
+- Shipped: theme registry (`THEMES` in `src/lib/pdf.js`), `src/lib/pdf-security.js`, per-template `security_config` with live preview in the template form. Adding a theme beyond classic/modern also needs the `design` CHECK constraint widened in `src/schema.js`.
 
 ### Phase 2 — Provider gateway (designed later)
 - Public application with document uploads, review workflow, conditions, renewal reminders.

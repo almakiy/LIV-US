@@ -107,7 +107,7 @@ liv-cert/
 │   └── error.ejs
 ├── public/                  # style.css, app.js, brand/ (SVG), fonts/ (WOFF2)
 ├── assets/                  # Server-side PDF assets: brand/ (PNG seal), fonts/ (WOFF)
-├── src/schema.sql           # Full schema (idempotent; applied by npm run migrate)
+├── src/schema.js            # Full schema as SQL (idempotent; applied by npm run migrate)
 ├── scripts/                 # migrate.js, seed.js
 ├── tests/e2e.js             # Playwright end-to-end suite
 ├── docs/                    # This document

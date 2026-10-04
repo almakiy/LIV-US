@@ -1,3 +1,6 @@
+// Full database schema (idempotent). Kept as a JS module, not a .sql file, so it travels with the code
+// through git/hosting tools and cannot be lost by folder clean-ups. Applied by `npm run migrate`.
+module.exports = `
 -- LIV LLC Certification Platform — PostgreSQL schema
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -155,3 +158,4 @@ CREATE TABLE IF NOT EXISTS articles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_articles_pub ON articles(status, published_at DESC);
+`;
