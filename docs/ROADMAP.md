@@ -55,7 +55,7 @@ Implementation notes:
 
 ## Delivery order (owner's priority, October 5, 2026)
 1. Knowledge engines (Producer, Scout; Reviewer scaffold built) → 2. Commerce → 3. Partner gateway → 4. Badges (Open Badges 3.0, LinkedIn) → 5. Examinations (candidate accounts, exams, LIV credential) → 6. Course catalogue and curriculum studio → 7. Recognition by other bodies (ISO 9001/21001, CPD/IACET, ANAB/NCCA) → 8. Printing and shipping.
-Adjustments recommended: pull the account-security and agreement parts of the gateway (agreement acceptance, password reset, 2FA, billing contact) forward into the commerce step; start the non-software work for exams (job-task analysis, content outline, item writers, proctoring vendor, governance board) and the ISO 9001/21001 and CPD paperwork in parallel, since they have long lead times. Market, site structure, marketing and operations plan for the non-US market: `docs/GLOBAL-STRATEGY.md`.
+Adjustments recommended: pull the account-security and agreement parts of the gateway (agreement acceptance, password reset, 2FA, billing contact) forward into the commerce step; start the non-software work for exams (job-task analysis, content outline, item writers, proctoring vendor, governance board) and the ISO 9001/21001 and CPD paperwork in parallel, since they have long lead times. Market, site structure, marketing and operations plan for the non-US market: `docs/GLOBAL-STRATEGY.md`. **Target markets (decided): GCC and MENA**; Arabic versions of key public pages planned; attestation (apostille) service arrives with printing and shipping.
 
 ## Phases
 

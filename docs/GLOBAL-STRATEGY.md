@@ -100,3 +100,33 @@ Accredited partners (by country), applications and time to decision, certificate
 5. Appoint a governance board and an advisory committee (names and credentials to publish).
 6. Pricing approach: pilot cohort terms and the fee schedule.
 7. Budget for the engines and for marketing in the first year.
+
+## 12. Owner decisions (October 5, 2026): GCC and MENA first
+
+**Decided:** delivery order and the two adjustments in §1 approved. Target markets for the first 12 months: **GCC and the wider MENA region**. Advisers: LIV already works with a US business-services agent that has lawyers available on request, so no separate appointments for now. **No governance board exists yet.**
+
+### 12.1 What this means for the plan (confirm each point with the agent's lawyers and local advisers)
+- **Language.** English remains the primary language of the platform and certificates. For GCC/MENA, plan **Arabic (right-to-left) versions of the key public pages** (home, how accreditation works, register, verify, local-acceptance guides, contact) and, as an open decision, an optional Arabic line on certificates (for example the holder's name). Arabic names appear on the certificate in Latin letters as in the holder's passport, with a stated transliteration policy. This revisits the earlier "English only" rule for the public site; the certificate rule stays English until the owner decides.
+- **Local acceptance guides** for each target country: what LIV is and is not, and which local authority approves or licenses training providers or recognises credentials for work permits and employers (for example training regulators and education quality authorities in Saudi Arabia, the UAE, Bahrain, Oman and others; the exact bodies and rules must be confirmed per country and per sector before publication). Employers in the region commonly ask for established safety and quality credentials; LIV must not present itself as a replacement for those or for local approval.
+- **Weekend and hours.** Support hours that cover Sunday-Thursday and Monday-Friday working weeks; Ramadan and holiday schedules for partner onboarding.
+- **Payments.** Cards are widespread in the Gulf; also offer bank-transfer invoicing and confirm which local card schemes and wallets can be accepted by a US merchant. Prices in USD.
+- **Indirect tax.** Several Gulf states charge VAT on digital services (rates and rules differ; some have none). The tax adviser sets registration and collection for foreign suppliers.
+- **Privacy.** Saudi Arabia and the UAE have their own personal-data laws, with rules on cross-border transfers; the privacy notice and partner data-processing terms must reflect them.
+- **Sanctions.** Screen partners and payers by country; some countries in the region are subject to US sanctions and the rules change over time.
+- **Relationships and channels.** Regional business is relationship-led: a regional representative or distributor (with the impartiality safeguard in §5), WhatsApp Business for partner support, regional events, and Arabic-language marketing content.
+
+### 12.2 Document attestation (apostille and legalization), in plain terms
+A foreign authority will often want proof that the signature on a document is genuine before it accepts it. This is **attestation**. It proves **who signed**, not that the content is approved or recognised.
+1. **Notarization.** An authorized LIV signatory signs the document (for example a "certificate of authenticity" or a printed certificate) in front of a notary.
+2. **Apostille.** For countries in the **Hague Apostille Convention**, the Virginia Secretary of the Commonwealth issues one apostille certificate that confirms the notary's authority. Several Gulf states have joined in recent years; the list changes, so check it for each destination.
+3. **Legalization (non-Hague destinations).** The document is authenticated by the US State Department and then legalized by the destination country's embassy or consulate; the destination country's foreign ministry may add its own stamp in-country.
+**Offer:** an optional paid service for partners and holders: "notarized and apostilled/legalized copy" with courier delivery. It depends on printing and shipping (Phase 8), so it arrives with that phase. A lighter option available earlier: a **signed digital verification letter** that states the certificate's details and verification link (it is not an apostille). The US agent may already handle notarization and apostille by courier; ask them for price and turnaround. LIV must state clearly that attestation does not create local recognition.
+
+### 12.3 Advisers: use the existing agent and lawyers
+Ask the agent and their lawyers (in writing) to cover: Virginia assumed-name filing and good standing; trademark searches and filings in the US and the target countries; the Partner Agreement, exam candidate terms, Terms, Privacy and cookie texts; sanctions-screening policy; data-processing terms for GCC/MENA; insurance (professional liability and cyber); apostille handling and cost; and a tax adviser referral for VAT/digital services and US filings. Keep the answers in the controlled documents (Admin → Compliance) so there is a record.
+
+### 12.4 Governance while there is no board
+- Until a board exists, do **not** publish the words "board" or "committee" on the site; say "governance in formation".
+- The quality records (Compliance dashboard) will show impartiality committee and management review as "needs attention": that is accurate and expected.
+- **Recommended interim step:** a **founding advisory panel** of 3 to 5 volunteers (at least one each from safety, quality and project management, plus one person independent of LIV's business), appointed for one year by written terms (confidentiality, conflict-of-interest declaration, no pay tied to decisions). Publish names only with each person's written consent. The panel reviews the accreditation criteria, impartiality policy and complaints/appeals outcomes, and its meetings are recorded under "Reviews and audits".
+- Before any exam scheme (Phase 5) the owner should not be the sole decision-maker on credentials: a separate credential committee is expected by assessors.
