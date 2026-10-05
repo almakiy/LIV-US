@@ -183,14 +183,14 @@ function drawExecutive({ doc, data, platform, template, color, qr, name }) {
     `Issued by ${platform.company_name} through the ${cfg.brand} verification platform. The holder's details and the current status of this certificate can be confirmed online at any time.`,
     150, dy + 44, { width: W - 300, align: 'center', lineGap: 2 });
 
-  // Bottom row: signature | LIV seal | QR badge
+  // Bottom row (same places as the Classic design): QR badge left | signature center | LIV seal right
   const sy = 498;
-  doc.moveTo(86, sy).lineTo(286, sy).lineWidth(0.8).strokeColor('#9CA3AF').stroke();
-  doc.fillColor('#8A93A3').font('Sans').fontSize(6.2).text('AUTHORISED BY', 86, sy - 12, { width: 200, align: 'center', characterSpacing: 1.1, lineBreak: false });
-  doc.fillColor('#111827').font('Sans-Bold').fontSize(9.5).text(template?.signatory_name || platform.company_name, 66, sy + 6, { width: 240, align: 'center', lineBreak: false });
-  doc.fillColor('#6B7280').font('Sans').fontSize(8).text(template?.signatory_title || 'Authorized Signatory', 66, sy + 19, { width: 240, align: 'center', lineBreak: false });
-  drawSeal(doc, W / 2, 460);
-  drawQrBadge(doc, qr, { x: W - 58 - 104, y: 410, size: 104, color });
+  drawQrBadge(doc, qr, { x: 62, y: 410, size: 104, color });
+  doc.moveTo(W / 2 - 100, sy).lineTo(W / 2 + 100, sy).lineWidth(0.8).strokeColor('#9CA3AF').stroke();
+  doc.fillColor('#8A93A3').font('Sans').fontSize(6.2).text('AUTHORISED BY', W / 2 - 100, sy - 12, { width: 200, align: 'center', characterSpacing: 1.1, lineBreak: false });
+  doc.fillColor('#111827').font('Sans-Bold').fontSize(9.5).text(template?.signatory_name || platform.company_name, W / 2 - 130, sy + 6, { width: 260, align: 'center', lineBreak: false });
+  doc.fillColor('#6B7280').font('Sans').fontSize(8).text(template?.signatory_title || 'Authorized Signatory', W / 2 - 130, sy + 19, { width: 260, align: 'center', lineBreak: false });
+  drawSeal(doc, W - 62 - 52, 462);
 }
 
 /** Theme registry. `size` is the page size; `area` the region security patterns may fill; layout hints place the legal note and fingerprint. */
