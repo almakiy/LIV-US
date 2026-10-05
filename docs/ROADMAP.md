@@ -108,6 +108,14 @@ Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/
 - Provider billing: accreditation fee and per-certificate issuance fee, invoices, usage metering.
 - Object storage (S3/R2) for PDFs and downloadable products, with signed URLs.
 
+### Phase 5 — Printed certificates and fulfillment (later; decided October 5, 2026)
+Today certificates are **digital only** (PDF with a signed QR and the online verification page). In a later phase LIV may offer a **printing and shipping service** to education partners:
+- **Physical security:** a real holographic foil strip applied by the printer in the position of the digital strip (the digital strip is then replaced by a blank foil zone in the print file), and a prominent mark (raised/embossed seal or a serialised seal sticker). The foil or sticker serial number is recorded against the certificate number so it can be checked on the verification page.
+- **Print-ready output:** vector PDF at US Letter landscape with bleed and crop marks, a print file variant with the foil zone left blank, colour profile agreed with the printer, and proofing before volume runs.
+- **Order flow:** partner selects certificates (one or a batch), quantity, paper/finish and shipping address; payment via Stripe through LIV LLC (Phase 4); order status, carrier tracking and a delivery record; reprints and replacements tied to the original certificate.
+- **Operations:** a print vendor or in-house production (decision needed), stock and serial-number control for foil/stickers and security paper, packaging, shipping to international partners (customs, restricted-destination screening), returns and damage handling.
+- **Legal and wording:** a printed certificate has the same wording rules as the digital one (no government implication; the foil is a security feature, not an endorsement); partner terms for fees and delivery times; keep the online record as the authoritative check for printed and digital copies alike.
+
 ## Legal guardrails (carry across all phases)
 - Keep the non-government and non-college disclaimers on every page.
 - ISO-style wording must not imply LIV is accredited by, or equivalent to, an IAF/ANAB-recognized
