@@ -1,0 +1,19 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Management reviews, internal audits and impartiality committee</h1></div>
+<%- include('_nav') %>
+<form method="post" action="/admin/qms/meetings" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Record a meeting or audit</h3>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="row"><div class="field"><label>Kind *</label><select name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Held on *</label><input type="date" name="held_on" value="<%= f.held_on || '' %>"></div>
+    <div class="field"><label>Next due</label><input type="date" name="next_due" value="<%= f.next_due || '' %>"></div></div>
+  <div class="field"><label>Participants *</label><input type="text" name="participants" value="<%= f.participants || '' %>"></div>
+  <div class="field"><label>Inputs reviewed <span class="muted small">(complaints, audit results, partner reviews, objectives, risks)</span></label><textarea name="inputs" rows="3"><%= f.inputs || '' %></textarea></div>
+  <div class="field"><label>Decisions, findings and actions *</label><textarea name="decisions" rows="3"><%= f.decisions || '' %></textarea></div>
+  <button class="btn">Save record</button>
+</form>
+<div class="table-wrap mt"><table><tr><th>Date</th><th>Kind</th><th>Participants</th><th>Decisions</th><th>Next due</th></tr>
+<% if (!rows.length) { %><tr><td colspan="5" class="muted center">Nothing recorded.</td></tr><% } %>
+<% rows.forEach(m => { %><tr><td><%= usDate(m.held_on) %></td><td><%= KINDS[m.kind] %></td><td class="small"><%= m.participants %></td><td class="small"><%= m.decisions %></td><td><%= m.next_due ? usDate(m.next_due) : '—' %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

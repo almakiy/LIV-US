@@ -16,6 +16,8 @@ module.exports = {
   publicApply: process.env.PUBLIC_APPLY === 'true',
   // Excel (.xlsx) uploads are enabled for testing; set ALLOW_XLSX=false to accept CSV only.
   allowXlsx: process.env.ALLOW_XLSX !== 'false',
+  // Quality records: allow one person to author and approve a document / verify their own action while the team is small (recorded on the record). Set false when staff grows.
+  qmsAllowSelfApproval: process.env.QMS_ALLOW_SELF_APPROVAL !== 'false',
   brand: process.env.BRAND_NAME || 'LIV',
   brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',

@@ -1,0 +1,12 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>New nonconformity</h1></div>
+<form method="post" action="/admin/qms/actions" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="row"><div class="field"><label>Source *</label><select name="source"><% Object.entries(SOURCES).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.source === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Reference <span class="muted small">(case no., audit no.)</span></label><input type="text" name="source_ref" value="<%= f.source_ref || '' %>"></div></div>
+  <div class="field"><label>Description *</label><textarea name="description" rows="5"><%= f.description || '' %></textarea></div>
+  <div class="row"><div class="field"><label>Owner</label><input type="text" name="owner_name" value="<%= f.owner_name || '' %>"></div><div class="field"><label>Due date</label><input type="date" name="due_date" value="<%= f.due_date || '' %>"></div></div>
+  <button class="btn">Open</button>
+</form>
+<%- include('../../partials/app-end') %>

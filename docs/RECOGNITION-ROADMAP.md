@@ -38,7 +38,10 @@ General public knowledge; confirm each item with the body concerned and a qualif
 ## What the credential scheme must be able to show an assessor
 Impartiality (committee, risk register, conflict-of-interest declarations), job-task analysis and a published exam content outline, psychometrically sound exam development and item-bank security, candidate handbook and rules, appeals and complaints procedure, records and retention, management system documents and internal audits, management review, surveillance of approved partners, and a track record of operation (assessors typically expect a period of live operation before accreditation).
 
-## Engineering readiness we can build in now (cheap now, expensive later)
+## Engineering readiness (built October 5, 2026: see `QMS-RECORDS.md`)
+Immutable audit log, version history, named human sign-off, document control, complaints and appeals, partner surveillance, impartiality declarations, management review and corrective-action records are now in the system. Still open: records-retention tooling beyond the export, and the exam-related records that arrive with Phase 9.
+
+## Original readiness list (kept for reference)
 - Immutable **audit logs** and **version history** for content, partner decisions and credential decisions (content versions exist now).
 - **Named human sign-off** on content and, later, on credential decisions (exists for content).
 - **Records retention** policy and export tools.

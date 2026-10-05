@@ -1,0 +1,16 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Impartiality declarations <%= year %></h1></div>
+<%- include('_nav') %>
+<% if (mine && mine.declared_at == null) { %>
+<form method="post" action="/admin/qms/declarations" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Your declaration for <%= year %></h3>
+  <p class="small muted">Declare any financial, personal or professional interest that could affect impartiality in accreditation, curriculum, examination or credential decisions. A declaration cannot be altered once recorded.</p>
+  <div class="field"><label><input type="radio" name="has_conflict" value="no" checked> I have no conflict of interest to declare</label><br><label><input type="radio" name="has_conflict" value="yes"> I have interests to declare</label></div>
+  <div class="field"><label>Details (required if you declare an interest)</label><textarea name="details" rows="3"></textarea></div>
+  <button class="btn">Record declaration</button>
+</form>
+<% } %>
+<div class="table-wrap mt"><table><tr><th>Staff</th><th>Declared</th><th>Conflict</th><th>Details</th></tr>
+<% rows.forEach(x => { %><tr><td><%= x.full_name %></td><td><%= x.declared_at ? usDate(x.declared_at) : 'Not yet' %></td><td><%= x.declared_at ? (x.has_conflict ? 'Yes' : 'None') : '—' %></td><td class="small"><%= x.details || '' %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

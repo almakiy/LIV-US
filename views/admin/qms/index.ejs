@@ -1,0 +1,10 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Compliance and quality records</h1><a class="btn gold" href="/admin/qms/export.zip">Download assessor pack (ZIP)</a></div>
+<%- include('_nav') %>
+<p class="muted">Working records that show LIV follows its own procedures: controlled documents, complaints and appeals, corrective actions, partner surveillance, impartiality declarations, management reviews, and a tamper-evident audit log. This page is a readiness view, not a certification: no recognition is claimed until it is granted.</p>
+<% if (allowSelf) { %><div class="alert warn">Self-approval is allowed while the team is small (<code>QMS_ALLOW_SELF_APPROVAL</code>). It is recorded on each approved version. Assessors expect separation of duties once more people are involved.</div><% } %>
+<div class="table-wrap"><table>
+  <tr><th>Area</th><th>Status</th><th>Detail</th></tr>
+  <% items.forEach(i => { %><tr><td><a href="<%= i.href %>"><%= i.name %></a></td><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'in order' : 'needs attention' %></span></td><td class="small"><%= i.detail %></td></tr><% }) %>
+</table></div>
+<%- include('../../partials/app-end') %>

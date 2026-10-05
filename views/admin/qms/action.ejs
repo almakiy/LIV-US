@@ -1,0 +1,24 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= a.ref_no %></h1><span class="badge <%= a.status === 'closed' ? 'b-active' : 'b-pending' %>"><%= a.status.replace('_', ' ') %></span></div>
+<%- include('_nav') %>
+<p class="small muted"><%= SOURCES[a.source] %><%= a.source_ref ? ' · ' + a.source_ref : '' %> · Opened <%= usDate(a.created_at) %></p>
+<div class="card"><h4>Nonconformity</h4><p><%= a.description %></p></div>
+<% if (a.status !== 'closed') { %>
+<form method="post" action="/admin/qms/actions/<%= a.id %>/update" class="card mt">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label>Correction (immediate containment)</label><textarea name="correction" rows="2"><%= a.correction %></textarea></div>
+  <div class="field"><label>Root cause</label><textarea name="root_cause" rows="3"><%= a.root_cause %></textarea></div>
+  <div class="field"><label>Corrective action</label><textarea name="corrective_action" rows="3"><%= a.corrective_action %></textarea></div>
+  <div class="row"><div class="field"><label>Owner</label><input type="text" name="owner_name" value="<%= a.owner_name %>"></div><div class="field"><label>Due date</label><input type="date" name="due_date" value="<%= a.due_date || '' %>"></div></div>
+  <div class="field"><label>Stage</label><select name="status"><option value="in_progress" <%= a.status !== 'awaiting_verification' ? 'selected' : '' %>>In progress</option><option value="awaiting_verification" <%= a.status === 'awaiting_verification' ? 'selected' : '' %>>Awaiting verification</option></select></div>
+  <button class="btn secondary">Save</button>
+</form>
+<form method="post" action="/admin/qms/actions/<%= a.id %>/close" class="card mt">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h4>Verify and close</h4>
+  <div class="field"><label>How was effectiveness verified? *</label><textarea name="effectiveness_note" rows="3"></textarea></div>
+  <div class="field"><label>Verified by *</label><input type="text" name="verified_by_name"><div class="hint"><%= allowSelf ? 'Self-verification is allowed while the team is small.' : 'The verifier must differ from the owner.' %></div></div>
+  <button class="btn">Close action</button>
+</form>
+<% } else { %><div class="card mt"><dl class="details"><dt>Correction</dt><dd><%= a.correction || '—' %></dd><dt>Root cause</dt><dd><%= a.root_cause %></dd><dt>Corrective action</dt><dd><%= a.corrective_action %></dd><dt>Effectiveness</dt><dd><%= a.effectiveness_note %></dd><dt>Verified by</dt><dd><%= a.verified_by_name %> on <%= usDate(a.verified_at) %></dd></dl></div><% } %>
+<%- include('../../partials/app-end') %>

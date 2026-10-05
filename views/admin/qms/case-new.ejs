@@ -1,0 +1,17 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Log a complaint, appeal or feedback</h1></div>
+<form method="post" action="/admin/qms/cases" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="row"><div class="field"><label>Type *</label><select name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Received by</label><select name="channel"><% ['email','phone','web','partner','other'].forEach(c => { %><option value="<%= c %>" <%= f.channel === c ? 'selected' : '' %>><%= c %></option><% }) %></select></div></div>
+  <div class="row"><div class="field"><label>Complainant name</label><input type="text" name="complainant_name" value="<%= f.complainant_name || '' %>"></div>
+    <div class="field"><label>Complainant email</label><input type="email" name="complainant_email" value="<%= f.complainant_email || '' %>"></div></div>
+  <div class="row"><div class="field"><label>About</label><select name="subject_type"><% [['liv','LIV'],['partner','An education partner'],['certificate','A certificate'],['other','Other']].forEach(([v, l]) => { %><option value="<%= v %>" <%= f.subject_type === v ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Partner</label><select name="platform_id"><option value="">—</option><% partners.forEach(p => { %><option value="<%= p.id %>" <%= f.platform_id === p.id ? 'selected' : '' %>><%= p.company_name %></option><% }) %></select></div></div>
+  <div class="field"><label>Certificate number (if any)</label><input type="text" name="cert_number" value="<%= f.cert_number || '' %>" placeholder="LIV-2026-XXXXXXXX"></div>
+  <div class="field"><label>Summary *</label><textarea name="summary" rows="5"><%= f.summary || '' %></textarea></div>
+  <div class="field"><label>Original decision-maker <span class="muted small">(appeals only; guarantees an independent reviewer)</span></label><input type="text" name="original_decider_name" value="<%= f.original_decider_name || '' %>"></div>
+  <button class="btn">Open case</button>
+</form>
+<%- include('../../partials/app-end') %>

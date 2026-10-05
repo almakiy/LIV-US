@@ -1,0 +1,30 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= d.doc_no %> · <%= d.title %></h1><span class="badge <%= d.status === 'approved' ? 'b-active' : 'b-pending' %>"><%= d.status %><%= d.current_version ? ' v' + d.current_version : '' %></span></div>
+<%- include('_nav') %>
+<p class="small muted"><%= DOC_TYPES[d.doc_type] %> · Owner: <%= d.owner_name || '—' %> · Review every <%= d.review_months %> months<%= d.next_review_at ? ' · Next review ' + usDate(d.next_review_at) : '' %></p>
+<% if (draft) { %>
+<form method="post" action="/admin/qms/documents/<%= d.id %>/save" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Draft version <%= draft.version %></h3>
+  <div class="field"><label>Title</label><input type="text" name="title" value="<%= d.title %>"></div>
+  <div class="row"><div class="field"><label>Owner</label><input type="text" name="owner_name" value="<%= d.owner_name %>"></div>
+    <div class="field"><label>Review every (months)</label><input type="number" name="review_months" min="1" max="60" value="<%= d.review_months %>"></div></div>
+  <div class="field"><label>Text (Markdown)</label><textarea name="body_md" rows="22" style="font-family:ui-monospace,Menlo,monospace"><%= draft.body_md %></textarea></div>
+  <div class="field"><label>Summary of change</label><input type="text" name="change_summary" maxlength="300" value="<%= draft.change_summary %>"></div>
+  <div class="actions"><button class="btn secondary">Save draft</button></div>
+</form>
+<form method="post" action="/admin/qms/documents/<%= d.id %>/approve" class="mt" data-confirm="Approve this version? Approved versions can no longer be edited.">
+  <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Approve version <%= draft.version %></button>
+  <span class="small muted">Authored by <%= draft.author_name %>. <%= allowSelf ? 'Self-approval is allowed and will be recorded.' : 'A different person must approve.' %></span>
+</form>
+<% } else { %>
+<div class="card"><div class="prose"><%- html %></div></div>
+<div class="actions mt">
+  <form method="post" action="/admin/qms/documents/<%= d.id %>/revise" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary">Start a new revision</button></form>
+  <% if (d.status !== 'obsolete') { %><form method="post" action="/admin/qms/documents/<%= d.id %>/obsolete" style="display:inline" data-confirm="Mark this document obsolete?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Mark obsolete</button></form><% } %>
+</div>
+<% } %>
+<h3 class="mt">Version history</h3>
+<div class="table-wrap"><table><tr><th>Version</th><th>Status</th><th>Change</th><th>Author</th><th>Approved by</th><th>Effective</th></tr>
+<% versions.forEach(v => { %><tr><td><%= v.version %></td><td><%= v.status %></td><td><%= v.change_summary %></td><td><%= v.author_name %></td><td><%= v.approver_name || '—' %><%= v.self_approved ? ' (self-approved)' : '' %></td><td><%= v.effective_date ? usDate(v.effective_date) : '—' %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

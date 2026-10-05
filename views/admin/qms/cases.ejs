@@ -1,0 +1,13 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Complaints and appeals</h1><a class="btn" href="/admin/qms/cases/new">+ Log a case</a></div>
+<%- include('_nav') %>
+<p class="small muted">Acknowledge within 5 business days and decide within 30 days. Complaints sent through the public contact form (topic "Complaint" or "Appeal") are opened here automatically.</p>
+<div class="table-wrap"><table>
+  <tr><th>Case</th><th>Type</th><th>Received</th><th>Summary</th><th>Status</th><th>Deadlines</th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No cases recorded.</td></tr><% } %>
+  <% rows.forEach(c => { %><tr><td><a href="/admin/qms/cases/<%= c.id %>"><%= c.case_no %></a></td><td><%= KINDS[c.kind] %></td><td><%= usDate(c.received_at) %></td>
+    <td class="small"><%= c.summary.slice(0, 90) %><%= c.summary.length > 90 ? '…' : '' %></td>
+    <td><span class="badge <%= c.status === 'closed' ? 'b-active' : 'b-pending' %>"><%= c.status %></span></td>
+    <td class="small">Ack <%= usDate(c.ack_due) %><% if (c.ack_late) { %> <span class="badge b-suspended">late</span><% } %> · Decision <%= usDate(c.decision_due) %><% if (c.decision_late) { %> <span class="badge b-suspended">late</span><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../../partials/app-end') %>

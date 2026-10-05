@@ -322,6 +322,101 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const anonAdmin = await anon.request.get(BASE + '/admin/content', { maxRedirects: 0 });
   ok(anonAdmin.status() === 302, 'content admin requires login');
 
+  console.log('Quality records');
+  await adm.goto(BASE + '/admin/qms');
+  ok(await see(adm, 'text=Compliance and quality records') && await see(adm, 'text=Audit log integrity'), 'compliance dashboard renders');
+  ok(await see(adm, 'text=chained entries verified'), 'audit log chain verifies');
+  await adm.goto(BASE + '/admin/qms/documents');
+  await adm.click('button:has-text("Create starter set")');
+  ok(await see(adm, 'text=starter documents created'), 'starter controlled documents created');
+  await adm.click('a:has-text("Impartiality policy")');
+  await adm.click('button:has-text("Approve version 1")');
+  ok(await see(adm, 'text=Complete the document before approving'), 'document with placeholders cannot be approved');
+  await adm.fill('textarea[name=body_md]', '# Impartiality policy\n\nLIV is committed to impartial accreditation and examination decisions.');
+  await adm.click('button:has-text("Save draft")');
+  await adm.click('button:has-text("Approve version 1")');
+  ok(await see(adm, 'text=Version 1 approved') && await see(adm, 'td:has-text("(self-approved)")'), 'document approved and self-approval recorded');
+  await adm.click('button:has-text("Start a new revision")');
+  ok(await see(adm, 'text=Draft version 2'), 'approved document can be revised as a new draft version');
+
+  const sinceCases = psql("SELECT count(*) FROM qms_cases");
+  const pubc = await browser.newPage();
+  await pubc.goto(BASE + '/contact');
+  await pubc.selectOption('select[name=topic]', 'complaint');
+  await pubc.fill('input[name=name]', 'Casey Complainant'); await pubc.fill('input[name=email]', 'casey@example.com');
+  await pubc.fill('textarea[name=message]', 'A partner issued my certificate with the wrong course name.');
+  await pubc.click('button:has-text("Send message")');
+  ok(await see(pubc, 'text=Your message has been received'), 'public complaint submitted');
+  ok(Number(psql("SELECT count(*) FROM qms_cases")) === Number(sinceCases) + 1, 'public complaint opened a case automatically');
+
+  await adm.goto(BASE + '/admin/qms/cases/new');
+  await adm.selectOption('select[name=kind]', 'appeal');
+  await adm.fill('textarea[name=summary]', 'Appeal against the decision to reject my application.');
+  await adm.click('button:has-text("Open case")');
+  ok(await see(adm, 'text=An appeal needs') || await see(adm, 'text=name the person who made the original decision'), 'appeal requires the original decision-maker');
+  await adm.fill('input[name=original_decider_name]', 'Omar Decider');
+  await adm.click('button:has-text("Open case")');
+  ok(await see(adm, 'text=CMP-'), 'appeal case opened with a case number');
+  await adm.fill('input[name=handler_name]', 'Ana Handler');
+  await adm.click('button:has-text("Record investigation")');
+  ok(await see(adm, 'text=Investigation recorded'), 'investigation recorded');
+  await adm.selectOption('select[name=outcome]', 'not_upheld');
+  await adm.fill('input[name=reviewer_name]', 'omar decider');
+  await adm.fill('textarea[name=decision]', 'The original decision stands because the evidence was incomplete.');
+  await adm.click('button:has-text("Record decision")');
+  ok(await see(adm, 'text=must be independent'), 'appeal reviewer must be independent of the original decision-maker');
+  await adm.selectOption('select[name=outcome]', 'not_upheld');
+  await adm.fill('input[name=reviewer_name]', 'Dr. Independent');
+  await adm.fill('textarea[name=decision]', 'The original decision stands because the evidence was incomplete.');
+  await adm.click('button:has-text("Record decision")');
+  ok(await see(adm, 'text=Decision recorded'), 'appeal decided by an independent reviewer');
+  await adm.click('button:has-text("Close case")');
+  ok(await see(adm, 'td:has-text("closed")') || await see(adm, '.badge:has-text("closed")'), 'case closed with a full timeline');
+
+  await adm.goto(BASE + '/admin/qms/actions/new');
+  await adm.fill('textarea[name=description]', 'Certificate preview was approved without a second check.');
+  await adm.click('button:has-text("Open")');
+  ok(await see(adm, 'text=CAR-'), 'nonconformity opened');
+  await adm.fill('textarea[name=effectiveness_note]', 'Checked 20 certificates.'); await adm.fill('input[name=verified_by_name]', 'Lee Verifier');
+  await adm.click('button:has-text("Close action")');
+  ok(await see(adm, 'text=Record the root cause first'), 'action cannot close without root cause and corrective action');
+  await adm.fill('textarea[name=root_cause]', 'No second-person check in the procedure.'); await adm.fill('textarea[name=corrective_action]', 'Add a second check to the issuance procedure.');
+  await adm.click('button:has-text("Save")');
+  await adm.fill('textarea[name=effectiveness_note]', 'Checked 20 certificates after the change; no repeats.'); await adm.fill('input[name=verified_by_name]', 'Lee Verifier');
+  await adm.click('button:has-text("Close action")');
+  ok(await see(adm, 'text=closed with verified effectiveness'), 'corrective action closed with verified effectiveness');
+
+  await adm.goto(BASE + '/admin/qms/partners');
+  ok(await see(adm, '.badge:has-text("due")'), 'active partner without a review is flagged as due');
+  await adm.locator('table a').first().click();
+  await adm.fill('textarea[name=findings]', 'Trainer CVs and syllabus reviewed; no concerns.');
+  await adm.click('button:has-text("Save review")');
+  ok(await see(adm, 'text=Review recorded'), 'partner surveillance review recorded');
+
+  await adm.goto(BASE + '/admin/qms/declarations');
+  await adm.click('button:has-text("Record declaration")');
+  ok(await see(adm, 'text=Declaration recorded'), 'impartiality declaration recorded');
+  await adm.goto(BASE + '/admin/qms/meetings');
+  await adm.fill('input[name=participants]', 'A. Director, B. Quality');
+  await adm.fill('textarea[name=decisions]', 'Objectives confirmed; one corrective action opened.');
+  await adm.click('button:has-text("Save record")');
+  ok(await see(adm, 'text=Recorded'), 'management review recorded');
+
+  const qzip = await adm.request.get(BASE + '/admin/qms/export.zip');
+  const zbuf = Buffer.from(await qzip.body()).toString('latin1');
+  ok(qzip.status() === 200 && /zip/.test(qzip.headers()['content-type']) && zbuf.includes('cases.csv') && zbuf.includes('audit_log.csv') && zbuf.includes('README.txt'), 'assessor pack ZIP downloads with registers and audit log');
+
+  let blocked = false;
+  try { psql("UPDATE audit_logs SET target = 'x'"); } catch (e) { blocked = /append-only/.test(String(e.stderr || e.message)); }
+  ok(blocked, 'audit log rows cannot be updated');
+  const arow = psql("SELECT id || '|' || COALESCE(target, '') FROM audit_logs WHERE entry_hash IS NOT NULL ORDER BY id LIMIT 1").split('|');
+  psql(`ALTER TABLE audit_logs DISABLE TRIGGER audit_no_change; UPDATE audit_logs SET target = 'tampered' WHERE id = ${Number(arow[0])}; ALTER TABLE audit_logs ENABLE TRIGGER audit_no_change`);
+  await adm.goto(BASE + '/admin/qms');
+  ok(await see(adm, 'text=Chain broken at entry'), 'tampering with the audit log is detected');
+  psql(`ALTER TABLE audit_logs DISABLE TRIGGER audit_no_change; UPDATE audit_logs SET target = '${(arow[1] || '').replace(/'/g, "''")}' WHERE id = ${Number(arow[0])}; ALTER TABLE audit_logs ENABLE TRIGGER audit_no_change`);
+  await adm.goto(BASE + '/admin/qms');
+  ok(await see(adm, 'text=chained entries verified'), 'audit chain verifies again after the original value is restored');
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

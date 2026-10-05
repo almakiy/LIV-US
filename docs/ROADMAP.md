@@ -131,6 +131,9 @@ Today certificates are **digital only** (PDF with a signed QR and the online ver
 - Complete the Virginia assumed-name filing and USPTO clearance before launch (see §13 of the
   architecture document).
 
+## Quality records (built; readiness for recognition)
+Built: controlled documents with immutable approved versions, complaints and appeals register with independent-reviewer rule and deadlines (public contact form feeds it), corrective actions with verified effectiveness, partner surveillance reviews, yearly impartiality declarations, management review / internal audit / impartiality committee records, a tamper-evident audit log (hash chain, append-only), a readiness dashboard and an assessor ZIP. See `docs/QMS-RECORDS.md` (Admin → Compliance).
+
 ## Recognition track (later)
 CPD recognition (for example CPD Standards Office or IACET) and ISO/IEC 17024 accreditation of the credential scheme, to strengthen LIV's standing. The PMI-style credential model is built in the later phases (6–9). Plan, targets and readiness work: `docs/RECOGNITION-ROADMAP.md`. No recognition is claimed on the site or on certificates until granted.
 

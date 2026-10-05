@@ -1,0 +1,29 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= c.case_no %> · <%= KINDS[c.kind] %></h1><span class="badge <%= c.status === 'closed' ? 'b-active' : 'b-pending' %>"><%= c.status %></span></div>
+<%- include('_nav') %>
+<div class="grid g2">
+  <div class="card details"><dl>
+    <dt>Received</dt><dd><%= usDateTime(c.received_at) %> via <%= c.channel %></dd>
+    <dt>Complainant</dt><dd><%= c.complainant_name || '—' %> <%= c.complainant_email ? '(' + c.complainant_email + ')' : '' %></dd>
+    <dt>About</dt><dd><%= c.subject_type %><%= c.company_name ? ' · ' + c.company_name : '' %><%= c.cert_number ? ' · ' + c.cert_number : '' %></dd>
+    <dt>Acknowledge by</dt><dd><%= usDate(c.ack_due) %><%= c.ack_at ? ' (done ' + usDate(c.ack_at) + ')' : '' %></dd>
+    <dt>Decide by</dt><dd><%= usDate(c.decision_due) %></dd>
+    <dt>Handler</dt><dd><%= c.handler_name || '—' %></dd>
+    <% if (c.kind === 'appeal') { %><dt>Original decision-maker</dt><dd><%= c.original_decider_name || '—' %></dd><dt>Independent reviewer</dt><dd><%= c.reviewer_name || '—' %></dd><% } %>
+    <% if (c.outcome) { %><dt>Outcome</dt><dd><%= OUTCOMES[c.outcome] %></dd><% } %>
+  </dl><p><%= c.summary %></p><% if (c.decision) { %><h4>Decision</h4><p><%= c.decision %></p><% } %></div>
+  <div class="card">
+    <h3>Actions</h3>
+    <% if (c.status === 'received') { %><form method="post" action="/admin/qms/cases/<%= c.id %>/acknowledge" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label>Note (how the complainant was acknowledged)</label><input type="text" name="note"></div><button class="btn secondary">Record acknowledgement</button></form><% } %>
+    <% if (['received','acknowledged','investigating'].includes(c.status)) { %><form method="post" action="/admin/qms/cases/<%= c.id %>/investigate" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label>Handler</label><input type="text" name="handler_name" value="<%= c.handler_name %>"></div><div class="field"><label>Note</label><input type="text" name="note"></div><button class="btn secondary">Record investigation</button></form><% } %>
+    <% if (['acknowledged','investigating'].includes(c.status)) { %><form method="post" action="/admin/qms/cases/<%= c.id %>/decide" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="field"><label>Outcome</label><select name="outcome"><% Object.entries(OUTCOMES).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+      <% if (c.kind === 'appeal') { %><div class="field"><label>Independent reviewer *</label><input type="text" name="reviewer_name"></div><% } %>
+      <div class="field"><label>Decision and reasons *</label><textarea name="decision" rows="4"></textarea></div><button class="btn">Record decision</button></form><% } %>
+    <% if (c.status === 'decided') { %><form method="post" action="/admin/qms/cases/<%= c.id %>/close" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label>Note (how the outcome was communicated)</label><input type="text" name="note"></div><button class="btn">Close case</button></form><% } %>
+  </div>
+</div>
+<h3 class="mt">Timeline</h3>
+<div class="table-wrap"><table><tr><th>When</th><th>By</th><th>Event</th><th>Note</th></tr>
+<% events.forEach(e => { %><tr><td><%= usDateTime(e.at) %></td><td><%= e.actor_name %></td><td><%= e.event %></td><td class="small"><%= e.note %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

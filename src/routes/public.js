@@ -9,6 +9,7 @@ const { qrToken, safeEqual } = require('../lib/crypto');
 const { audit } = require('../lib/audit');
 const { RECOMMENDED } = require('../lib/pdf-security');
 const { limiter, wrap, flash } = require('../lib/guards');
+const { createCase } = require('../lib/qms-store');
 
 const r = express.Router();
 const verifyLimiter = limiter(1, 30);
@@ -89,11 +90,16 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
 
 r.get('/contact', (req, res) => res.render('public/contact', { title: 'Contact & Support', sent: false, error: null, form: {} }));
 r.post('/contact', limiter(15, 5), wrap(async (req, res) => {
-  const f = { name: String(req.body.name || '').trim(), email: String(req.body.email || '').trim(), topic: ['general', 'technical', 'accreditation', 'verification'].includes(req.body.topic) ? req.body.topic : 'general', message: String(req.body.message || '').trim() };
+  const f = { name: String(req.body.name || '').trim(), email: String(req.body.email || '').trim(), topic: ['general', 'technical', 'accreditation', 'verification', 'complaint', 'appeal'].includes(req.body.topic) ? req.body.topic : 'general', message: String(req.body.message || '').trim() };
   if (!f.name || !f.email || f.message.length < 10 || f.message.length > 5000) {
     return res.status(400).render('public/contact', { title: 'Contact & Support', sent: false, error: 'Please provide your name, email and a message (10–5000 characters).', form: f });
   }
   await q(`INSERT INTO contact_messages (name, email, topic, message) VALUES ($1,$2,$3,$4)`, [f.name, f.email, f.topic, f.message]);
+  // Complaints and appeals go straight into the quality register with their deadlines.
+  if (f.topic === 'complaint' || f.topic === 'appeal') {
+    const c = await createCase({ kind: f.topic, channel: 'web', complainant_name: f.name, complainant_email: f.email, subject_type: 'other', summary: f.message });
+    await audit({ actorLabel: 'public contact form', action: 'qms.case.open', target: c.case_no });
+  }
   res.render('public/contact', { title: 'Contact & Support', sent: true, error: null, form: {} });
 }));
 

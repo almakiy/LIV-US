@@ -1,0 +1,13 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Controlled documents</h1><div>
+  <form method="post" action="/admin/qms/documents/starter" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary">Create starter set (11 outlines)</button></form>
+  <a class="btn" href="/admin/qms/documents/new">+ New document</a></div></div>
+<%- include('_nav') %>
+<div class="table-wrap"><table>
+  <tr><th>No.</th><th>Title</th><th>Type</th><th>Status</th><th>Version</th><th>Next review</th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No documents yet. Create the starter set of policy and procedure outlines.</td></tr><% } %>
+  <% rows.forEach(d => { %><tr><td><%= d.doc_no %></td><td><a href="/admin/qms/documents/<%= d.id %>"><%= d.title %></a></td><td><%= DOC_TYPES[d.doc_type] %></td>
+    <td><span class="badge <%= d.status === 'approved' ? 'b-active' : 'b-pending' %>"><%= d.status %></span></td><td><%= d.current_version || '—' %></td>
+    <td><%= d.next_review_at ? usDate(d.next_review_at) : '—' %><% if (d.overdue) { %> <span class="badge b-suspended">overdue</span><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../../partials/app-end') %>

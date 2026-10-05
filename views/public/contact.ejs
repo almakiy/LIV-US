@@ -9,7 +9,7 @@
     <div class="row"><div class="field"><label>Name</label><input name="name" value="<%= form.name || '' %>" required></div>
     <div class="field"><label>Email</label><input type="email" name="email" value="<%= form.email || '' %>" required></div></div>
     <div class="field"><label>Topic</label><select name="topic">
-      <% [['general','General inquiry'],['accreditation','Accreditation'],['technical','Technical support'],['verification','Verification issue']].forEach(([v,l]) => { %><option value="<%= v %>" <%= form.topic === v ? 'selected' : '' %>><%= l %></option><% }) %>
+      <% [['general','General inquiry'],['accreditation','Accreditation'],['technical','Technical support'],['verification','Verification issue'],['complaint','Complaint'],['appeal','Appeal of a decision']].forEach(([v,l]) => { %><option value="<%= v %>" <%= form.topic === v ? 'selected' : '' %>><%= l %></option><% }) %>
     </select></div>
     <div class="field"><label>Message</label><textarea name="message" rows="6" required><%= form.message || '' %></textarea></div>
     <button class="btn">Send message</button>

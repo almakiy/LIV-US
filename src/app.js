@@ -86,6 +86,7 @@ app.use(require('./routes/public'));
 app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/portal', require('./routes/portal'));
+app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin', require('./routes/admin'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));

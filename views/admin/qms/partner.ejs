@@ -1,0 +1,21 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= p.company_name %></h1><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span></div>
+<%- include('_nav') %>
+<form method="post" action="/admin/qms/partners/<%= p.id %>/reviews" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Record a review</h3>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="row"><div class="field"><label>Type *</label><select name="review_type"><% Object.entries(TYPES).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.review_type === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Date *</label><input type="date" name="reviewed_on" value="<%= f.reviewed_on || '' %>"></div>
+    <div class="field"><label>Reviewer *</label><input type="text" name="reviewer_name" value="<%= f.reviewer_name || '' %>"></div></div>
+  <div class="field"><label>Scope (trainers, curricula, methods, records reviewed)</label><textarea name="scope" rows="2"><%= f.scope || '' %></textarea></div>
+  <div class="field"><label>Findings</label><textarea name="findings" rows="3"><%= f.findings || '' %></textarea></div>
+  <div class="row"><div class="field"><label>Outcome *</label><select name="outcome"><% Object.entries(OUTCOMES).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.outcome === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Next review due *</label><input type="date" name="next_review_due" value="<%= f.next_review_due || '' %>"></div></div>
+  <button class="btn">Save review</button>
+</form>
+<h3 class="mt">History</h3>
+<div class="table-wrap"><table><tr><th>Date</th><th>Type</th><th>Reviewer</th><th>Outcome</th><th>Findings</th><th>Next due</th></tr>
+<% if (!reviews.length) { %><tr><td colspan="6" class="muted center">No reviews recorded.</td></tr><% } %>
+<% reviews.forEach(v => { %><tr><td><%= usDate(v.reviewed_on) %></td><td><%= TYPES[v.review_type] %></td><td><%= v.reviewer_name %></td><td><%= OUTCOMES[v.outcome] %></td><td class="small"><%= v.findings %></td><td><%= usDate(v.next_review_due) %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>
