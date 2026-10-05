@@ -111,3 +111,31 @@ Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/
   of training providers.
 - Complete the Virginia assumed-name filing and USPTO clearance before launch (see §13 of the
   architecture document).
+
+## Phase 9 — LIV examinations (planned)
+
+**Principle:** a trainee receives a certificate only after passing an examination run and supervised by **LIV**, not by the education partner. The partner delivers the training and reports completion; LIV controls assessment. Process design follows the public principles used by professional certification bodies such as CQI/IRCA (registration, candidate guidance, controlled exams, marking and moderation, fees, resits, appeals). We use the process ideas only; we do **not** copy their documents or branding, and we do not state or imply IRCA approval or equivalence unless it is granted.
+
+### Candidate journey
+1. **Eligibility** — the partner submits the completion report (today's CSV/Excel/Sheets import becomes a *completion report* that creates eligible candidates instead of issuing certificates).
+2. **Registration** — candidate account, identity details, accommodations request, exam fee payment, choice of exam window or slot.
+3. **Candidate guidance pack** — what the exam covers, format and duration, allowed materials, identification required, conduct rules, how it is marked, pass criteria, results timing, resit and appeal rules. Shown at registration and again before the exam starts, with a recorded acknowledgement.
+4. **Exam delivery** — secure browser-based exam with identity check and proctoring (remote or at an approved venue).
+5. **Marking** — automatic marking for objective items; named markers for written/scenario answers; sample double-marking and moderation; marker audit trail.
+6. **Result** — pass or fail with the result letter. A pass releases the certificate automatically; no score is printed on the certificate (decision above).
+7. **Fail path** — resit fee, alternative exam paper (different version from the question bank), waiting period and attempt limits, then re-registration.
+8. **Appeals and complaints** — formal procedure with a deadline, reviewer independent of the original marker, outcome recorded.
+
+### Building blocks
+- **Data:** candidates, registrations, payments, exam papers and versions, question bank with metadata, exam sessions, attempts, answers, marks, markers, results, appeals, accommodation requests.
+- **Roles:** candidate, proctor, marker, moderator, exam administrator (alongside super admin and partner admin).
+- **Payments:** Stripe via LIV LLC (exam fee, resit fee, refunds, receipts), reconciled to registrations.
+- **Proctoring:** integrate an established proctoring service rather than build one; decide remote vs in-person.
+- **Exam security:** question-bank rotation, randomization, item analysis, access logs, incident log.
+- **Certificate integration:** issuance gated on a pass; the verification page can show "Examination passed" with the date. The certificate statement changes from "issued on the basis of the completion report" to "issued following successful completion of the LIV examination".
+
+### Legal and compliance (needs counsel)
+Consent for identity checks and any recording or biometric processing (state laws such as Illinois BIPA), data retention, accessibility and accommodations (ADA), refund and fee terms, complaints and appeals procedure, and wording that avoids implying government or third-party endorsement.
+
+### Decisions needed before building
+Exam format and duration; pass mark and marking scheme; remote vs in-person; fee amounts and resit rules (attempt limits, waiting period); who writes and reviews the question bank; accommodations policy; data retention period; whether partners get a share of fees.
