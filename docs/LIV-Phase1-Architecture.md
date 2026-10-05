@@ -321,6 +321,7 @@ Revocation is available from the portal, the admin console or the API. It sets `
 - [ ] Legal review of the accreditation wording, Terms of Service, Privacy Policy and accreditation agreement.
 - [ ] Never describe LIV as a "college" or "university"; don't deliver courses under the LIV name in Virginia (SCHEV scope).
 - [ ] Fill in the About page placeholders: leadership names and registered address.
+- [ ] **Accuracy of claims:** the website and every certificate state that LIV reviews partners' trainers, curricula and training methods and audits them periodically. Do not publish or issue until that process actually exists (written criteria, review records, audit schedule); misleading accreditation claims create consumer-protection exposure (FTC Act §5 and state laws). Counsel should approve the disclaimers (not a government agency; not recognized by the U.S. Department of Education or CHEA; no guarantee of individual competence) and the use of third-party names (ISO, ANSI, OSHA, CQI, IRCA).
 
 **Technical**
 - [ ] Generate and vault `SESSION_SECRET` and `CERT_HMAC_SECRET`, with an offline backup of the HMAC secret.
