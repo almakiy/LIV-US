@@ -17,6 +17,22 @@
     <div class="field"><label>Author</label><input type="text" name="author_name" maxlength="150" value="<%= a.author_name %>"></div>
     <div class="field"><label>Tags (comma separated)</label><input type="text" name="tags" value="<%= (a.tags || []).join(', ') %>"></div>
   </div>
+  <fieldset class="field" style="border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+    <legend class="small" style="padding:0 6px"><strong>Evidence and review</strong></legend>
+    <div class="field"><label>Sources <span class="muted small">(one per line: Title | https://link | Publisher)</span></label>
+      <textarea name="sources_text" rows="4" style="font-family:ui-monospace,Menlo,monospace"><%= sourcesText %></textarea>
+      <div class="hint">Cite primary sources (regulators, standards bodies, peer-reviewed research). Lines without a valid http(s) link are ignored.</div></div>
+    <div class="row">
+      <div class="field"><label>Standards referenced <span class="muted small">(comma separated, with edition)</span></label><input type="text" name="standards" value="<%= (a.standards || []).join(', ') %>" placeholder="ISO 45001:2018, ISO 19011:2018"></div>
+      <div class="field"><label>Next review due</label><input type="date" name="next_review_at" value="<%= a.next_review_at ? String(a.next_review_at.toISOString ? a.next_review_at.toISOString().slice(0, 10) : a.next_review_at).slice(0, 10) : '' %>"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Reviewed by <span class="muted small">(named human subject-matter reviewer; required to publish)</span></label><input type="text" name="reviewed_by" maxlength="150" value="<%= a.reviewed_by || '' %>"></div>
+      <div class="field"><label>Change note <span class="muted small">(saved in the version history)</span></label><input type="text" name="change_note" maxlength="300"></div>
+    </div>
+    <label class="small"><input type="checkbox" name="ai_assisted" <%= a.ai_assisted ? 'checked' : '' %>> Prepared with AI assistance (shows a disclosure on the public page)</label>
+    <% if (a.id) { %><p class="small muted mt">Version <%= a.version %><%= a.origin === 'engine' ? ' · created by an engine' : '' %><%= a.reviewed_at ? ' · reviewed ' + usDate(a.reviewed_at) : '' %>. If the text changes after review, re-enter the reviewer's name to confirm the sign-off still stands.</p><% } %>
+  </fieldset>
   <div class="field"><label>URL slug <span class="muted small">(optional, generated from the title)</span></label><input type="text" name="slug" value="<%= a.slug %>"></div>
   <div class="actions">
     <button class="btn secondary" name="action" value="draft">Save draft</button>
@@ -25,5 +41,7 @@
     <button class="btn secondary" formaction="/admin/content/preview" formtarget="_blank">Preview</button>
   </div>
 </form>
+<% if (versions && versions.length) { %><h3 class="mt">Version history</h3><div class="table-wrap"><table><tr><th>Version</th><th>By</th><th>Note</th><th>Date</th></tr>
+  <% versions.forEach(v => { %><tr><td><%= v.version %></td><td><%= v.changed_by %></td><td><%= v.change_note %></td><td><%= usDate(v.created_at) %></td></tr><% }) %></table></div><% } %>
 <% if (a.id) { %><form method="post" action="/admin/content/<%= a.id %>/delete" data-confirm="Delete this article permanently?" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Delete article</button></form><% } %>
 <%- include('../partials/app-end') %>

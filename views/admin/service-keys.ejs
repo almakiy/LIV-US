@@ -1,0 +1,17 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Service keys</h1></div>
+<p class="muted">Keys for the knowledge engines (scouting, drafting, review). A key can create and update its own <strong>drafts</strong> through <code>/api/v1/content</code> and read their status. It can never publish, delete or edit published content: a named human reviewer publishes from the Content editor.</p>
+<% if (newKey) { %><div class="alert success"><strong>Copy this key now. It will not be shown again.</strong><div class="keybox mt"><%= newKey %></div><button class="btn sm secondary mt" data-copy="<%= newKey %>">Copy key</button></div><% } %>
+<form method="post" action="/admin/service-keys" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label>Label <span class="muted small">(which engine uses it)</span></label><input type="text" name="label" maxlength="100" placeholder="e.g. Producer engine"></div>
+  <button class="btn">Create service key</button>
+</form>
+<div class="table-wrap mt"><table>
+  <tr><th>Label</th><th>Key</th><th>Scopes</th><th>Created</th><th>Last used</th><th></th></tr>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No service keys yet.</td></tr><% } %>
+  <% rows.forEach(k => { %><tr><td><%= k.label %></td><td><code><%= k.prefix %>…</code></td><td class="small"><%= k.scopes.join(', ') %></td>
+    <td><%= usDate(k.created_at) %></td><td><%= k.last_used_at ? usDate(k.last_used_at) : '—' %></td>
+    <td class="right"><% if (k.revoked_at) { %><span class="badge b-suspended">revoked</span><% } else { %><form method="post" action="/admin/service-keys/<%= k.id %>/revoke" data-confirm="Revoke this key? Engines using it will stop working." style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Revoke</button></form><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

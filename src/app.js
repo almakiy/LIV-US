@@ -87,6 +87,7 @@ app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/portal', require('./routes/portal'));
 app.use('/admin', require('./routes/admin'));
+app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 
 app.use((req, res) => res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' }));

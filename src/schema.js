@@ -164,6 +164,55 @@ CREATE TABLE IF NOT EXISTS articles (
 );
 CREATE INDEX IF NOT EXISTS idx_articles_pub ON articles(status, published_at DESC);
 
+-- Knowledge hub, step 1 of the engines design (docs/KNOWLEDGE-ENGINES.md): content types, human review sign-off,
+-- freshness, version history and scoped service keys for the Content API. Engines may only create drafts.
+ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_kind_check;
+ALTER TABLE articles ADD CONSTRAINT articles_kind_check CHECK (kind IN ('article','research','guide','standards','case-study','briefing','tool','news','glossary'));
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS reviewed_by VARCHAR(150) NOT NULL DEFAULT '';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS next_review_at DATE;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 1;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS ai_assisted BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS sources JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS standards TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS origin VARCHAR(10) NOT NULL DEFAULT 'editor';
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS external_id VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS service_key_id UUID;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES users(id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_articles_external ON articles(service_key_id, external_id) WHERE external_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS service_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  label VARCHAR(100) NOT NULL,
+  prefix VARCHAR(16) NOT NULL,
+  key_hash CHAR(64) NOT NULL UNIQUE,      -- SHA-256 of the full key; plaintext never stored
+  scopes TEXT[] NOT NULL DEFAULT '{content:draft,content:read}',
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_used_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'articles_service_key_fk') THEN
+    ALTER TABLE articles ADD CONSTRAINT articles_service_key_fk FOREIGN KEY (service_key_id) REFERENCES service_keys(id);
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS article_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  version INT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  summary VARCHAR(300) NOT NULL DEFAULT '',
+  body_md TEXT NOT NULL DEFAULT '',
+  sources JSONB NOT NULL DEFAULT '[]',
+  standards TEXT[] NOT NULL DEFAULT '{}',
+  changed_by VARCHAR(150) NOT NULL DEFAULT '',
+  change_note VARCHAR(300) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (article_id, version)
+);
+
 -- Certificate designs available to templates.
 ALTER TABLE certificate_templates DROP CONSTRAINT IF EXISTS certificate_templates_design_check;
 ALTER TABLE certificate_templates ADD CONSTRAINT certificate_templates_design_check CHECK (design IN ('classic','modern','executive'));

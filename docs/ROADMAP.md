@@ -103,10 +103,11 @@ Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/
 - Decision needed: build inside this app (EJS + Postgres) or run a separate CMS. Default
   recommendation: build inside this app to keep one brand, one domain and one deploy.
 
-### Phase 3b — Knowledge engines (design only)
+### Phase 3b — Knowledge engines (step 1 built; rest design only)
+Built (step 1): content types, named human reviewer required to publish, sources and standards on each article, freshness date, version history, "AI-assisted" disclosure, scoped service keys and the draft-only Content API (`docs/CONTENT-API.md`). Next: Reviewer engine, then Producer, then Scout.
 Scout (horizon scanning), Producer (drafting) and Reviewer (scientific and editorial audit) as an external service that talks to the site through a scoped Content API, with humans approving every publication. Full design, content types, build order and open decisions: `docs/KNOWLEDGE-ENGINES.md`.
 
-### Phases 6–8 — Course catalogue, curriculum studio, candidate accounts (design only)
+### Phases 6–8 — Course catalogue, curriculum studio, candidate accounts (design only; later phases by owner decision)
 LIV designs curricula and course packs with accredited partners; partners train and issue completion certificates; candidates then register with LIV for the examination (Phase 9) and receive the LIV credential. Two different certificates: completion (partner) and credential (LIV, after exam). Full model, journey, safeguards and open decisions: `docs/CREDENTIAL-MODEL.md`.
 
 ### Phase 4 — Commerce
@@ -129,6 +130,9 @@ Today certificates are **digital only** (PDF with a signed QR and the online ver
   of training providers.
 - Complete the Virginia assumed-name filing and USPTO clearance before launch (see §13 of the
   architecture document).
+
+## Recognition track (later)
+CPD recognition (for example CPD Standards Office or IACET) and ISO/IEC 17024 accreditation of the credential scheme, to strengthen LIV's standing. The PMI-style credential model is built in the later phases (6–9). Plan, targets and readiness work: `docs/RECOGNITION-ROADMAP.md`. No recognition is claimed on the site or on certificates until granted.
 
 ## Phase 9 — LIV examinations (planned)
 

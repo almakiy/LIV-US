@@ -6,7 +6,9 @@ const { RECOMMENDED } = require('../lib/pdf-security');
 const { qrToken } = require('../lib/crypto');
 const bcrypt = require('bcryptjs');
 const { tx } = require('../db');
-const { CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags } = require('../lib/content');
+const { CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards } = require('../lib/content');
+const { uniqueSlug, snapshot, contentChanged } = require('../lib/article-store');
+const { newApiKey } = require('../lib/crypto');
 const { requireSuper, wrap, flash } = require('../lib/guards');
 
 const r = express.Router();
@@ -142,53 +144,67 @@ function readArticleForm(b) {
     kind: KINDS[b.kind] ? b.kind : 'article',
     author_name: String(b.author_name || '').trim().slice(0, 150),
     tags: parseTags(b.tags),
+    reviewed_by: String(b.reviewed_by || '').trim().slice(0, 150),
+    next_review_at: /^\d{4}-\d{2}-\d{2}$/.test(b.next_review_at || '') ? b.next_review_at : null,
+    standards: parseStandards(b.standards),
+    sources: parseSourcesText(b.sources_text),
+    ai_assisted: b.ai_assisted === 'on',
+    change_note: String(b.change_note || '').trim().slice(0, 300),
   };
 }
-async function uniqueSlug(base, exceptId) {
-  let slug = base || 'untitled'; let i = 2;
-  for (;;) {
-    const { rows } = await q('SELECT 1 FROM articles WHERE slug = $1 AND id <> COALESCE($2::uuid, gen_random_uuid())', [slug, exceptId || null]);
-    if (!rows.length) return slug;
-    slug = `${base}-${i++}`.slice(0, 100);
-  }
-}
-const editForm = (res, a, error) => res.status(error ? 400 : 200).render('admin/content-edit', { title: a.id ? 'Edit article' : 'New article', a, error: error || null, CATEGORIES, KINDS });
+const editForm = async (res, a, error) => {
+  const { rows: versions } = a.id ? await q('SELECT version, changed_by, change_note, created_at FROM article_versions WHERE article_id = $1 ORDER BY version DESC LIMIT 30', [a.id]) : { rows: [] };
+  res.status(error ? 400 : 200).render('admin/content-edit', { title: a.id ? 'Edit article' : 'New article', a, error: error || null, CATEGORIES, KINDS, versions, sourcesText: sourcesToText(a.sources) });
+};
 
 r.get('/content', wrap(async (req, res) => {
-  const { rows } = await q('SELECT id, slug, title, category, kind, status, published_at, updated_at FROM articles ORDER BY updated_at DESC LIMIT 200');
+  const { rows } = await q(`SELECT id, slug, title, category, kind, status, published_at, updated_at, origin, ai_assisted, reviewed_by, next_review_at, (next_review_at IS NOT NULL AND next_review_at < CURRENT_DATE) AS stale FROM articles ORDER BY updated_at DESC LIMIT 200`);
   res.render('admin/content', { title: 'Knowledge hub content', rows, CATEGORIES, KINDS });
 }));
-r.get('/content/new', (req, res) => editForm(res, { title: '', slug: '', summary: '', body_md: '', category: 'quality', kind: 'article', author_name: req.user.full_name, tags: [], status: 'draft' }));
+r.get('/content/new', wrap((req, res) => editForm(res, { title: '', slug: '', summary: '', body_md: '', category: 'quality', kind: 'article', author_name: req.user.full_name, tags: [], status: 'draft', reviewed_by: '', sources: [], standards: [], ai_assisted: false, version: 1 })));
 r.post('/content/preview', wrap(async (req, res) => {
-  const a = { ...readArticleForm(req.body), status: 'draft', published_at: null };
+  const a = { ...readArticleForm(req.body), status: 'draft', published_at: null, reviewed_at: null, version: 1 };
   res.render('public/knowledge-article', { title: a.title || 'Preview', description: a.summary, a, html: renderMarkdown(a.body_md), minutes: readingMinutes(a.body_md), related: [], CATEGORIES, KINDS, preview: true });
 }));
 r.get('/content/:id', wrap(async (req, res, next) => {
   if (!UUID_RE.test(req.params.id)) return next();
   const { rows: [a] } = await q('SELECT * FROM articles WHERE id = $1', [req.params.id]);
   if (!a) return next();
-  editForm(res, a);
+  await editForm(res, a);
 }));
 r.post('/content', wrap(async (req, res) => {
   const f = readArticleForm(req.body);
   const publish = req.body.action === 'publish';
   const id = UUID_RE.test(req.body.id || '') ? req.body.id : null;
-  if (!f.title) return editForm(res, { ...f, id, status: 'draft' }, 'A title is required.');
-  if (publish && (!f.body_md.trim() || !f.summary)) return editForm(res, { ...f, id, status: 'draft' }, 'A summary and body are required to publish.');
+  const back = { ...f, id, status: 'draft', version: 1 };
+  if (!f.title) return editForm(res, back, 'A title is required.');
+  if (publish && (!f.body_md.trim() || !f.summary)) return editForm(res, back, 'A summary and body are required to publish.');
+  if (publish && !f.reviewed_by) return editForm(res, back, 'Every published item needs a named human subject-matter reviewer. Fill in "Reviewed by" first.');
   const slug = await uniqueSlug(f.slug, id);
+  const by = req.user.full_name || req.user.email;
   let saved;
   if (id) {
+    const { rows: [old] } = await q('SELECT * FROM articles WHERE id = $1', [id]);
+    if (!old) return res.redirect('/admin/content');
+    const changed = contentChanged(old, f);
+    // A reviewer's sign-off covers the content they saw: if the text changed and the name was not re-entered, it no longer stands.
+    const reviewerKept = f.reviewed_by && (f.reviewed_by !== old.reviewed_by || !changed);
     const { rows: [x] } = await q(`UPDATE articles SET slug=$1, title=$2, summary=$3, body_md=$4, category=$5, kind=$6, author_name=$7, tags=$8, updated_at=now(),
+        sources=$12, standards=$13, ai_assisted=$14, next_review_at=$15, version = version + $16,
+        reviewed_by = $17::varchar, reviewed_at = CASE WHEN $17::varchar = '' THEN NULL WHEN $17::varchar <> reviewed_by OR reviewed_at IS NULL THEN now() ELSE reviewed_at END, approved_by = CASE WHEN $17::varchar = '' THEN NULL ELSE $18::uuid END,
         status = CASE WHEN $9 THEN 'published' WHEN $10 THEN 'draft' ELSE status END,
         published_at = CASE WHEN $9 AND published_at IS NULL THEN now() ELSE published_at END
-      WHERE id=$11 RETURNING id, status`, [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish, req.body.action === 'unpublish', id]);
-    if (!x) return res.redirect('/admin/content');
+      WHERE id=$11 RETURNING id, status, slug`, [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish, req.body.action === 'unpublish', id,
+      JSON.stringify(f.sources), f.standards, f.ai_assisted, f.next_review_at, changed ? 1 : 0, reviewerKept ? f.reviewed_by : '', req.user.id]);
     saved = x;
+    if (changed) await snapshot(id, by, f.change_note || 'Edited');
   } else {
-    const { rows: [x] } = await q(`INSERT INTO articles (slug, title, summary, body_md, category, kind, author_name, tags, status, published_at, created_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id, status`,
-    [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish ? 'published' : 'draft', publish ? new Date() : null, req.user.id]);
+    const { rows: [x] } = await q(`INSERT INTO articles (slug, title, summary, body_md, category, kind, author_name, tags, status, published_at, created_by, sources, standards, ai_assisted, next_review_at, reviewed_by, reviewed_at, approved_by)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::varchar, CASE WHEN $16::varchar = '' THEN NULL ELSE now() END, CASE WHEN $16::varchar = '' THEN NULL ELSE $11::uuid END) RETURNING id, status, slug`,
+    [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish ? 'published' : 'draft', publish ? new Date() : null, req.user.id,
+      JSON.stringify(f.sources), f.standards, f.ai_assisted, f.next_review_at, f.reviewed_by]);
     saved = x;
+    await snapshot(x.id, by, f.change_note || 'Created');
   }
   await audit({ user: req.user, action: `content.${saved.status === 'published' ? 'publish' : 'save'}`, target: slug });
   flash(req, 'success', saved.status === 'published' ? 'Saved and published.' : 'Draft saved.');
@@ -201,6 +217,30 @@ r.post('/content/:id/delete', wrap(async (req, res, next) => {
   await audit({ user: req.user, action: 'content.delete', target: a.slug });
   flash(req, 'success', 'Article deleted.');
   res.redirect('/admin/content');
+}));
+
+
+// ---------- Service keys for the knowledge engines (Content API) ----------
+r.get('/service-keys', wrap(async (req, res) => {
+  const { rows } = await q('SELECT id, label, prefix, scopes, created_at, last_used_at, revoked_at FROM service_keys ORDER BY created_at DESC');
+  const newKey = req.session.newServiceKey || null; delete req.session.newServiceKey;
+  res.render('admin/service-keys', { title: 'Service keys', rows, newKey });
+}));
+r.post('/service-keys', wrap(async (req, res) => {
+  const { key, prefix, hash } = newApiKey();
+  const label = String(req.body.label || '').trim().slice(0, 100) || 'Engine';
+  await q('INSERT INTO service_keys (label, prefix, key_hash, created_by) VALUES ($1,$2,$3,$4)', [label, prefix, hash, req.user.id]);
+  await audit({ user: req.user, action: 'service_key.create', target: `${label} (${prefix})` });
+  req.session.newServiceKey = key;
+  res.redirect('/admin/service-keys');
+}));
+r.post('/service-keys/:id/revoke', wrap(async (req, res) => {
+  if (UUID_RE.test(req.params.id)) {
+    const { rowCount } = await q('UPDATE service_keys SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [req.params.id]);
+    if (rowCount) await audit({ user: req.user, action: 'service_key.revoke', target: req.params.id });
+  }
+  flash(req, 'success', 'Service key revoked.');
+  res.redirect('/admin/service-keys');
 }));
 
 module.exports = r;
