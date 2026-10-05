@@ -78,14 +78,8 @@ New tables (site): `sources`, `signals`, `evidence_items`, `briefs`, `content_ve
 4. **Scout** feeding signals to editors, then to the Producer.
 Controls throughout: per-engine budget caps, logs of prompts and sources, kill switch, and a rule that engine output is always a draft.
 
-## 7. Direction: courses and learner enrollment (Phases 6–8)
-Target model: a platform that **lists courses with full details, designs complete courses, and lets a trainee enroll directly and register for the examination**.
-- **Phase 6 — Course catalogue:** structured course records (provider, level, outcomes, syllabus, duration, mode, language, price, schedule, accreditation status, certificate issued). Public course finder; each course shows its LIV accreditation status.
-- **Phase 7 — Course design studio:** curriculum builder (learning outcomes, modules, assessment blueprint, trainer requirements). The Producer drafts, the Reviewer checks against LIV accreditation criteria, humans approve. Also used to author and review exam question banks (Phase 9).
-- **Phase 8 — Learner accounts and enrollment:** trainee accounts, enrollment and payment (Stripe via LIV LLC), progress, exam registration (Phase 9), certificate delivery (Phase 2b), certificate wallet and LinkedIn badge.
-
-### Impartiality warning (needs counsel and an accreditation consultant)
-If LIV designs courses, accredits partners and examines and certifies candidates, it faces a **conflict of interest**. Bodies that accredit or certify persons (the ISO/IEC 17011 and 17024 families, and CQI/IRCA practice) require impartiality and separation between training and assessment. Recommended safeguards: keep LIV-designed courses as a clearly separate offering; examiners and question-bank authors independent of course designers; publish an impartiality policy and a complaints and appeals procedure; keep partner accreditation decisions with a governance board. Decide this **before** building Phases 7 and 9.
+## 7. Direction: curricula, approved partners and examination
+Superseded by `CREDENTIAL-MODEL.md` (owner decision, October 5, 2026): LIV does not deliver training; it designs its own curricula and course packs with its accredited partners, partners train and issue completion certificates, and candidates register with LIV for the examination and the official LIV credential. The Producer and Reviewer engines support the curriculum studio and exam-bank authoring described there, under the impartiality safeguards in that document.
 
 ## 8. Decisions needed from the owner
 1. Approve the hybrid architecture (external engines, site as source of truth).
@@ -93,4 +87,4 @@ If LIV designs courses, accredits partners and examines and certifies candidates
 3. Who are the human reviewers (at least one SME per topic: Quality, Safety, Project Management) and the editor.
 4. Approve the initial Tier 1 source watch list.
 5. Priority topics and content types for the first 90 days.
-6. Impartiality position on LIV-designed courses (section 7).
+6. Impartiality safeguards (see `CREDENTIAL-MODEL.md` §4).
