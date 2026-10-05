@@ -110,3 +110,26 @@ test('Stripe events map to payments only when they carry a LIV invoice id', () =
   assert.strictEqual(stripe.paymentFromEvent(ev('customer.created', { id: 'c' })), null);
   assert.strictEqual(stripe.paymentFromEvent({}), null);
 });
+
+test('Stripe Checkout session request is built correctly and failures are reported', async () => {
+  let seen;
+  const ok = async (url, init) => { seen = { url, init }; return { ok: true, status: 200, json: async () => ({ id: 'cs_test_1', url: 'https://checkout.stripe.com/c/pay/cs_test_1' }) }; };
+  const inv = { id: '11111111-2222-3333-4444-555555555555', number: 'INV-2026-0001' };
+  const s = await stripe.createCheckoutSession({ secretKey: 'sk_test_x', invoice: inv, balanceCents: 123456, customerEmail: 'a@b.co', baseUrl: 'https://liv.example', fetchImpl: ok });
+  assert.strictEqual(s.url, 'https://checkout.stripe.com/c/pay/cs_test_1');
+  assert.strictEqual(seen.url, 'https://api.stripe.com/v1/checkout/sessions');
+  assert.strictEqual(seen.init.headers.authorization, 'Bearer sk_test_x');
+  const p = new URLSearchParams(seen.init.body);
+  assert.strictEqual(p.get('line_items[0][price_data][unit_amount]'), '123456');
+  assert.strictEqual(p.get('line_items[0][price_data][currency]'), 'usd');
+  assert.strictEqual(p.get('metadata[liv_invoice_id]'), inv.id);
+  assert.strictEqual(p.get('payment_intent_data[metadata][liv_invoice_id]'), inv.id);
+  assert.strictEqual(p.get('success_url'), `https://liv.example/portal/billing/invoices/${inv.id}?paid=1`);
+  const bad = async () => ({ ok: false, status: 402, json: async () => ({ error: { message: 'Card declined' } }) });
+  await assert.rejects(stripe.createCheckoutSession({ secretKey: 'k', invoice: inv, balanceCents: 1000, baseUrl: 'x', fetchImpl: bad }), /Card declined/);
+  await assert.rejects(stripe.createCheckoutSession({ secretKey: 'k', invoice: inv, balanceCents: 10, baseUrl: 'x', fetchImpl: ok }), /minimum/);
+  await assert.rejects(stripe.createCheckoutSession({ secretKey: '', invoice: inv, balanceCents: 1000, baseUrl: 'x', fetchImpl: ok }), /not configured/);
+  // the webhook maps the completed session back to the invoice
+  const pay = stripe.paymentFromEvent({ type: 'checkout.session.completed', data: { object: { id: 'cs_1', payment_status: 'paid', amount_total: 123456, payment_intent: 'pi_1', metadata: { liv_invoice_id: inv.id } } } });
+  assert.deepStrictEqual([pay.invoiceId, pay.amount_cents, pay.provider_payment_id], [inv.id, 123456, 'pi_1']);
+});

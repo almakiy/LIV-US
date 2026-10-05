@@ -1,6 +1,6 @@
 # LIV — Fee structure (proposal)
 
-Status: **proposal for the owner's decision** (October 5, 2026). All amounts are in **US dollars** and are **starting points to test with the first partners**, not market quotes: no competitor's prices were checked. Before publishing, review with your US agent's lawyers and a tax adviser (see §10). The system's price catalog (Admin → Billing → Price catalog) is seeded with these numbers and every price can be changed there without code; old prices keep their history.
+Status: **prices approved by the owner on October 5, 2026** (still subject to the adviser checks in §10 before publication; `PUBLIC_FEES` stays off until the owner decides to publish). All amounts are in **US dollars** and are **starting points to test with the first partners**, not market quotes: no competitor's prices were checked. Before publishing, review with your US agent's lawyers and a tax adviser (see §10). The system's price catalog (Admin → Billing → Price catalog) is seeded with these numbers and every price can be changed there without code; old prices keep their history.
 
 ## 1. Principles
 1. **Fees pay for work, never for outcomes.** No fee depends on a decision being favorable. The application fee is charged whether the decision is yes or no; exam fees are the same for everyone; nobody (agent, partner, trainer) is paid by results.

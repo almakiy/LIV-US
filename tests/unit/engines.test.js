@@ -134,3 +134,23 @@ test('site client sends the service key and surfaces API errors', async () => {
   await assert.rejects(c.postReport('id1', { version: 1 }), /409.*stale/);
   await assert.rejects(client({ serviceKey: '' }).reviewQueue(), /ENGINE_SERVICE_KEY/);
 });
+
+test('Gemini provider refuses without key, explicit model, prices and budget; records spend when it runs', async () => {
+  const fs = require('fs'); const os = require('os'); const path = require('path');
+  const { gemini } = require('../../engines/lib/llm');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gem-'));
+  const base = { dataDir: dir, monthlyBudgetUsd: 5, priceInPerMTok: 1, priceOutPerMTok: 4, geminiApiKey: 'k', modelExplicit: true, model: 'some-model', enabled: true, maxOutputTokens: 100 };
+  const reply = async (url, init) => { reply.last = { url, init }; return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: 'hello ' }, { text: 'thought', thought: true }, { text: 'world' }] } }], usageMetadata: { promptTokenCount: 1000, candidatesTokenCount: 200, thoughtsTokenCount: 300 } }) }; };
+  await assert.rejects(gemini({ ...base, geminiApiKey: '' }).complete({ prompt: 'x' }), /GEMINI_API_KEY/);
+  await assert.rejects(gemini({ ...base, modelExplicit: false }).complete({ prompt: 'x' }), /ENGINE_MODEL/);
+  await assert.rejects(gemini({ ...base, priceInPerMTok: NaN }).complete({ prompt: 'x' }), /PRICE/);
+  await assert.rejects(gemini({ ...base, monthlyBudgetUsd: 0 }).complete({ prompt: 'x' }), /budget/i);
+  const out = await gemini({ ...base, fetch: reply }).complete({ system: 's', prompt: 'x', engine: 't' });
+  assert.strictEqual(out.text, 'hello world');
+  assert.ok(reply.last.url.includes('/models/some-model:generateContent'));
+  assert.strictEqual(reply.last.init.headers['x-goog-api-key'], 'k');
+  assert.ok(!reply.last.url.includes('key='), 'the key is never put in the URL');
+  const ledger = fs.readFileSync(path.join(dir, 'usage.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+  assert.strictEqual(ledger[0].output_tokens, 500);
+  assert.ok(Math.abs(ledger[0].cost_usd - (1000 * 1 + 500 * 4) / 1e6) < 1e-12);
+});

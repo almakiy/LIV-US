@@ -372,6 +372,14 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   ok(await see(pb, `text=${invNo}`) && await see(pb, `text=${money(26250)}`), 'partner sees the invoice and the balance owed');
   const pdfP = await pb.request.get(`${BASE}/portal/billing/invoices/${invId}/pdf`);
   ok(pdfP.status() === 200 && Buffer.from(await pdfP.body()).slice(0, 4).toString() === '%PDF', 'partner downloads the invoice PDF');
+  { // card payment button depends on STRIPE_SECRET_KEY; the pay route must be safe either way
+    const page = await pb.request.get(`${BASE}/portal/billing/invoices/${invId}`); const html = await page.text();
+    const csrfM = html.match(/name="_csrf" value="([^"]+)"/);
+    if (!process.env.STRIPE_SECRET_KEY) {
+      ok(!/by card/.test(html), 'no card button while Stripe is not configured');
+      if (csrfM) { const r = await pb.request.post(`${BASE}/portal/billing/invoices/${invId}/pay`, { form: { _csrf: csrfM[1] }, maxRedirects: 0 }); ok([302, 303].includes(r.status()), 'pay route redirects back with a message when Stripe is off'); }
+    }
+  }
 
   await adm.goto(invUrl);
   await adm.fill('input[name=amount]', '999.00'); await adm.click('button:has-text("Record payment")');

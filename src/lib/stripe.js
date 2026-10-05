@@ -1,5 +1,4 @@
-// Stripe readiness (not connected yet). Verifies webhook signatures and maps events to LIV payments without any SDK or network call.
-// Creating customers, invoices or checkout sessions through Stripe is the next step and needs the owner's Stripe account.
+// Stripe integration without an SDK: verifies webhook signatures, maps events to LIV payments, and creates hosted Checkout sessions for open invoices.
 const crypto = require('crypto');
 
 /** Stripe-Signature header: "t=timestamp,v1=hexsig[,v1=...]". Signature = HMAC-SHA256(secret, `${t}.${payload}`). */
@@ -30,4 +29,41 @@ function paymentFromEvent(event) {
     return { invoiceId: meta.liv_invoice_id, amount_cents: o.amount_paid, provider_payment_id: String(o.payment_intent || o.id), method: 'card' };
   return null;
 }
-module.exports = { verifySignature, signHeader, paymentFromEvent };
+
+const STRIPE_MIN_CENTS = 50;
+/** Stripe's form encoding: nested keys as a[b][c]=v. */
+function formEncode(obj, prefix = '', out = []) {
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null || v === '') continue;
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (typeof v === 'object') formEncode(v, key, out); else out.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+  }
+  return out;
+}
+/**
+ * Creates a Stripe Checkout Session for the open balance of an invoice (card payment, USD). Returns { id, url }.
+ * metadata.liv_invoice_id is how the webhook finds the invoice. The idempotency key stops duplicate sessions on double clicks.
+ */
+async function createCheckoutSession({ secretKey, invoice, balanceCents, customerEmail, baseUrl, fetchImpl = fetch }) {
+  if (!secretKey) throw new Error('Stripe is not configured.');
+  if (!(balanceCents >= STRIPE_MIN_CENTS)) throw new Error('The balance is below the minimum card payment.');
+  const body = formEncode({
+    mode: 'payment',
+    customer_email: customerEmail,
+    client_reference_id: invoice.id,
+    success_url: `${baseUrl}/portal/billing/invoices/${invoice.id}?paid=1`,
+    cancel_url: `${baseUrl}/portal/billing/invoices/${invoice.id}`,
+    line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: balanceCents, product_data: { name: `LIV invoice ${invoice.number}` } } }],
+    metadata: { liv_invoice_id: invoice.id, liv_invoice_number: invoice.number },
+    payment_intent_data: { description: `LIV invoice ${invoice.number}`, metadata: { liv_invoice_id: invoice.id } },
+  }).join('&');
+  const res = await fetchImpl('https://api.stripe.com/v1/checkout/sessions', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${secretKey}`, 'content-type': 'application/x-www-form-urlencoded', 'idempotency-key': `liv-${invoice.id}-${balanceCents}-${Math.floor(Date.now() / 600000)}` },
+    body,
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || !j.url) throw new Error(`Stripe error ${res.status}: ${j?.error?.message || 'unknown'}`);
+  return { id: j.id, url: j.url };
+}
+module.exports = { verifySignature, signHeader, paymentFromEvent, createCheckoutSession, formEncode, STRIPE_MIN_CENTS };

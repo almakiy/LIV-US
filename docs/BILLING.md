@@ -33,13 +33,19 @@ Where: **Admin → Billing** (`/admin/billing`) and, for partners, **Billing** i
 - Webhook receiver at `POST /api/webhooks/stripe`: verifies the `Stripe-Signature` header (HMAC-SHA256, 5-minute tolerance), reads the raw body, and records a payment for events that carry `metadata.liv_invoice_id` (`payment_intent.succeeded`, `checkout.session.completed` when paid, `invoice.paid`). Repeated deliveries are idempotent (unique provider payment id); business-rule problems (overpayment, invoice not open) are logged and answered with 200 so Stripe does not retry forever; database errors return 500 so Stripe retries. Answers 501 until `STRIPE_WEBHOOK_SECRET` is set.
 - Data model fields: `invoices.provider`, `provider_invoice_id`, `provider_url`, `payments.provider` and `provider_payment_id`, `platforms.stripe_customer_id`.
 
-**Not built yet (needs your Stripe account and an owner decision):**
-1. Create or find the Stripe **Customer** for each partner (`stripe_customer_id`).
-2. When an invoice is issued, create the Stripe **Checkout Session** or hosted invoice with `metadata.liv_invoice_id`, and show a "Pay by card" button in the portal and a link in the PDF.
-3. Stripe **Tax** (or your own rates) and the countries you will accept; payment methods for the Gulf (cards, wallets) and their fees.
-4. Refund and dispute handling mapped to credit notes.
-5. Payouts, reconciliation report, and recurring subscription billing for the annual fee (optional; invoices work without it).
-Setup when ready: create the account in the name of LIV LLC, add the webhook endpoint `https://<your domain>/api/webhooks/stripe`, copy its signing secret into `STRIPE_WEBHOOK_SECRET`, keep the secret API key only in Secrets, and test with Stripe's test mode first.
+- **Pay by card (Stripe Checkout):** when `STRIPE_SECRET_KEY` is set, an open invoice in the partner portal shows "Pay ... by card". It creates a hosted Checkout Session for the open balance (USD, minimum $0.50) with `metadata.liv_invoice_id`, and the webhook above records the payment and closes the invoice. Partial payments by card are not offered: the card pays the full balance. Bank transfer instructions stay on the page. The request is built and tested without calling Stripe (unit test with a fake transport); the live round trip must be tried once in Stripe test mode.
+
+**Not built yet:**
+1. Stripe **Customer** records (`stripe_customer_id`): Checkout works without them, using the billing email.
+2. Stripe **Tax** or per-country invoice wording, and the payment methods for the Gulf (cards, wallets) and their fees.
+3. Refund and dispute handling mapped to credit notes.
+4. Payouts reconciliation report and recurring subscription billing for the annual fee (optional; invoices work without it).
+
+## Turning Stripe on (test mode first)
+1. In Stripe (account in the name of LIV LLC) switch to **test mode**. Copy the secret key (`sk_test_...`) into Replit Secrets as `STRIPE_SECRET_KEY`. Never put it in code or chat.
+2. Developers, Webhooks, add endpoint `https://<your domain>/api/webhooks/stripe` for the events `checkout.session.completed` and `payment_intent.succeeded`. Copy its signing secret (`whsec_...`) into `STRIPE_WEBHOOK_SECRET`. Set `BASE_URL` to your public address (used for the return links).
+3. Stop and Run. Issue a test invoice to a partner, open it in the portal, press "Pay by card" and use Stripe's test card `4242 4242 4242 4242`. The invoice should become paid within a minute.
+4. When it works, repeat with the live keys. Stripe's own fees are not modeled here.
 
 ## Limits and cautions
 - Tax is a single rate per partner set by an administrator; the system does not decide tax. Get adviser confirmation before setting any non-zero rate or issuing to a country where tax may apply.

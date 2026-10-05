@@ -332,6 +332,24 @@ r.get('/billing/invoices/:id', wrap(async (req, res, next) => {
   const d = await ownInvoice(req); if (!d) return next();
   res.render('portal/billing-invoice', { title: d.inv.number, ...d, money: billingLib.money, isOverdue: billingLib.isOverdue, cfg });
 }));
+r.post('/billing/invoices/:id/pay', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d) return next();
+  const back = `/portal/billing/invoices/${d.inv.id}`;
+  const balance = Number(d.inv.total_cents) - Number(d.inv.amount_paid_cents);
+  if (!cfg.stripeSecretKey) { flash(req, 'error', 'Card payment is not available yet. Please pay by bank transfer.'); return res.redirect(back); }
+  if (d.inv.status !== 'open' || balance <= 0) { flash(req, 'error', 'This invoice is not open for payment.'); return res.redirect(back); }
+  try {
+    const stripe = require('../lib/stripe');
+    const { rows: [p] } = await q('SELECT billing_email, contact_email FROM platforms WHERE id = $1', [pid(req)]);
+    const s = await stripe.createCheckoutSession({ secretKey: cfg.stripeSecretKey, invoice: d.inv, balanceCents: balance, customerEmail: (p && (p.billing_email || p.contact_email)) || req.user.email, baseUrl: cfg.baseUrl });
+    await audit({ user: req.user, platformId: pid(req), action: 'billing.checkout_started', target: d.inv.id, metadata: { session: s.id } });
+    return res.redirect(303, s.url);
+  } catch (e) {
+    console.error('Stripe checkout failed:', e.message);
+    flash(req, 'error', 'Card payment could not be started. Please try again or pay by bank transfer.');
+    return res.redirect(back);
+  }
+}));
 r.get('/billing/invoices/:id/pdf', wrap(async (req, res, next) => {
   const d = await ownInvoice(req); if (!d) return next();
   const pdf = await require('../lib/invoice-pdf').renderInvoice(d.inv, d.lines, d.payments);

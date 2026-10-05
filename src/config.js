@@ -23,6 +23,7 @@ module.exports = {
   // Billing. Fee schedule page stays hidden until the owner approves the fees. Stripe is not connected yet: these only enable the webhook receiver.
   publicFees: process.env.PUBLIC_FEES === 'true',
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || '', // enables the "Pay by card" button (Stripe Checkout)
   legalAddress: process.env.LEGAL_ADDRESS || '',
   billingEmail: process.env.BILLING_EMAIL || '',
   bankDetails: (process.env.BILLING_BANK_DETAILS || '').replace(/\\n/g, '\n'),
