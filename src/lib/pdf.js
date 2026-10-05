@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const cfg = require('../config');
 const { drawBackLayers, drawFrontLayers, drawQrBadge, normalizeConfig } = require('./pdf-security');
+const { drawSecurityStrip } = require('./pdf-strip');
 
 const W = 792, H = 612; // US Letter landscape
 const ASSETS = path.join(__dirname, '..', '..', 'assets');
@@ -137,8 +138,10 @@ function drawClassic({ doc, data, platform, template, color, qr, name, config })
 // signature, LIV seal and a framed QR badge. Original design.
 function drawExecutive({ doc, data, platform, template, color, qr, name, config }) {
   const gold = '#B08D4C';
-  // Accent bars and double frame
-  doc.rect(14, 36, 9, 150).fill(color); doc.rect(14, 186, 9, 80).fill(gold); doc.rect(14, 266, 9, 310).fill('#5B6B7F');
+  // Left margin: the holographic security strip (same height as the gold frame, 9pt wide), or plain accent bars
+  if (config.strip) drawSecurityStrip(doc, { x: 14, w: 9, y0: 28, y1: H - 28, seed: data.verification_hash || data.cert_number, text: data.cert_number });
+  else { doc.rect(14, 36, 9, 150).fill(color); doc.rect(14, 186, 9, 80).fill(gold); doc.rect(14, 266, 9, 310).fill('#5B6B7F'); }
+  // Double frame
   doc.rect(34, 28, W - 68, H - 56).lineWidth(0.8).strokeColor(gold).stroke();
   doc.rect(38.5, 32.5, W - 77, H - 65).lineWidth(0.3).strokeColor(color).stroke();
 

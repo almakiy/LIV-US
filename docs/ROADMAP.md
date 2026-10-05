@@ -72,6 +72,8 @@ Implementation notes:
 Shipped: **Executive** landscape theme (US Letter, accent bars, double frame, signature, LIV seal), **framed QR badge** ("LIV VERIFIED / SCAN TO VERIFY"), **iris** multi-color guilloche (passport-style blend), and a **legal authenticity note**. All themes stay US Letter landscape.
 Deferred by decision: education-partner block (name, address, approval number, left/right placement), accreditation-body logos (after ISO accreditation is obtained), and a security emblem illustration (needs professional artwork; a first in-house eagle drawing was rejected as not good enough and removed).
 
+**Security strip (Executive, done):** a 9pt holographic-look strip on the left margin, same height as the gold frame, fading in from 0% to 100% over 70pt at both ends with the same opacity along every horizontal line. Navy/steel-blue foil with a muted gold band, banknote-style mesh, scattered curls, the LIV seal, a padlock, micro-text with the certificate number, and gold edges. Every choice is drawn from the certificate's verification hash (unique per certificate, reproducible). It is a printed visual deterrent, not a physical hologram, and uses the LIV seal only (no government or federal emblems). Toggle: "Holographic security strip" in the template form. A real foil can be applied by the printer at the same position.
+
 ### Phase 1.2 — Certificate engine (done)
 - Theme registry and `security_config` per template.
 - Security-pattern designer form with live preview.

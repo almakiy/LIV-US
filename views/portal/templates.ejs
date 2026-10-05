@@ -25,6 +25,7 @@
       <div class="field"><label>Print colors</label>
         <select name="colors"><option value="brand" <%= sec.colors !== 'iris' ? 'selected' : '' %>>Brand color</option><option value="iris" <%= sec.colors === 'iris' ? 'selected' : '' %>>Iris (multi-color blend, like passports)</option></select></div>
       <label class="small"><input type="checkbox" name="qrBadge" <%= sec.qrBadge ? 'checked' : '' %>> Framed QR verification badge (“SCAN TO VERIFY”)</label><br>
+      <label class="small"><input type="checkbox" name="strip" <%= sec.strip ? 'checked' : '' %>> Holographic security strip on the left edge (Executive design; unique weave per certificate)</label><br>
       <label class="small"><input type="checkbox" name="legalNote" <%= sec.legalNote ? 'checked' : '' %>> Legal authenticity note at the foot of the certificate</label><br>
       <label class="small"><input type="checkbox" name="microtext" <%= sec.microtext ? 'checked' : '' %>> Microtext lines (certificate ID, blurs when photocopied)</label><br>
       <label class="small"><input type="checkbox" name="ghost" <%= sec.ghost ? 'checked' : '' %>> Ghost LIV seal watermark</label><br>

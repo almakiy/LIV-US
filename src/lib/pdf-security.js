@@ -13,7 +13,7 @@ const COLORS = ['brand', 'iris'];
 const IRIS = ['#1E5AA8', '#17A2A2', '#4CAF50', '#E6B422', '#E8742E', '#C2437A'];
 
 /** Layers an admin can toggle per template. Defaults for old templates (empty config) are all off. */
-const RECOMMENDED = { guilloche: 'light', colors: 'iris', microtext: true, ghost: true, tiled: false, fingerprint: true, verifyStrip: true, qrBadge: true, legalNote: true };
+const RECOMMENDED = { guilloche: 'light', colors: 'iris', microtext: true, ghost: true, tiled: false, fingerprint: true, verifyStrip: true, qrBadge: true, legalNote: true, strip: true };
 
 function normalizeConfig(input = {}) {
   const i = input && typeof input === 'object' ? input : {};
@@ -22,6 +22,7 @@ function normalizeConfig(input = {}) {
     colors: COLORS.includes(i.colors) ? i.colors : 'brand',
     qrBadge: i.qrBadge === true,
     legalNote: i.legalNote === true,
+    strip: i.strip === true,
     microtext: i.microtext === true,
     ghost: i.ghost === true,
     tiled: i.tiled === true,

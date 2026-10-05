@@ -19,7 +19,7 @@ test('pattern is deterministic for a seed and differs across seeds', () => {
 });
 
 test('normalizeConfig defaults to everything off and rejects junk', () => {
-  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, strip: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
   assert.strictEqual(normalizeConfig({ colors: 'neon' }).colors, 'brand');
   assert.strictEqual(normalizeConfig({ colors: 'iris', qrBadge: true }).qrBadge, true);
   assert.strictEqual(normalizeConfig({ guilloche: 'evil' }).guilloche, 'off');
@@ -50,4 +50,23 @@ test('accreditation statement is one short official line and never names the par
   const note = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: true });
   assert.ok(!note.includes('Gulf Safety'));
   assert.match(note, /^Issued by LIV on the basis of the completion report of an accredited education partner\.$/);
+});
+
+test('security strip: deterministic per fingerprint, different across certificates', () => {
+  const { drawSecurityStrip } = require('../../src/lib/pdf-strip');
+  const record = (seed) => {
+    const ops = [];
+    const doc = new Proxy({}, { get: (_, name) => (...args) => { ops.push(`${String(name)}:${JSON.stringify(args)}`); return name === 'widthOfString' ? 100 : doc; } });
+    drawSecurityStrip(doc, { x: 14, w: 9, y0: 28, y1: 584, seed, text: 'LIV-2026-DEMO0001' });
+    return ops.join('|');
+  };
+  assert.strictEqual(record(hash('a')), record(hash('a')));
+  assert.notStrictEqual(record(hash('a')), record(hash('b')));
+  assert.ok(record(hash('a')).includes('LIV-2026-DEMO0001'), 'serial is part of the strip');
+});
+
+test('executive with the strip renders more content than with plain bars', async () => {
+  const withStrip = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED } });
+  const bars = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: false } });
+  assert.ok(withStrip.length > bars.length + 1000, `${withStrip.length} vs ${bars.length}`);
 });
