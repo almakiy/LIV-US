@@ -1,0 +1,34 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= inv.number || 'Draft invoice' %> · <%= inv.company_name %></h1>
+  <span class="badge <%= inv.status === 'paid' ? 'b-active' : inv.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= inv.status %></span><% if (isOverdue(inv)) { %> <span class="badge b-suspended">overdue</span><% } %></div>
+<%- include('_nav') %>
+<p class="small"><a href="/admin/billing/partners/<%= inv.platform_id %>">Partner billing</a> · <a href="/admin/billing/invoices/<%= inv.id %>/pdf" target="_blank">Open PDF</a></p>
+<div class="table-wrap"><table><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th><th>Discount</th></tr>
+<% lines.forEach(l => { %><tr><td class="small"><%= l.description %></td><td><%= l.quantity %></td><td><%= money(l.unit_amount_cents) %></td><td><%= money(l.amount_cents) %></td><td><%= Number(l.discount_cents) ? '-' + money(l.discount_cents) : '' %></td></tr><% }) %></table></div>
+<div class="card mt details"><dl>
+  <dt>Subtotal</dt><dd><%= money(inv.subtotal_cents) %></dd>
+  <% if (Number(inv.discount_cents)) { %><dt>Discounts and credits</dt><dd>-<%= money(inv.discount_cents) %></dd><% } %>
+  <% if (Number(inv.tax_rate_bps) > 0) { %><dt><%= inv.tax_label %> (<%= (inv.tax_rate_bps / 100).toFixed(2) %>%)</dt><dd><%= money(inv.tax_cents) %></dd><% } %>
+  <dt>Total</dt><dd><strong><%= money(inv.total_cents) %></strong></dd><dt>Paid</dt><dd><%= money(inv.amount_paid_cents) %></dd><dt>Balance</dt><dd><strong><%= money(Number(inv.total_cents) - Number(inv.amount_paid_cents)) %></strong></dd>
+  <% if (inv.notes) { %><dt>Note</dt><dd><%= inv.notes %></dd><% } %>
+</dl></div>
+<% if (inv.status === 'draft') { %>
+<form method="post" action="/admin/billing/invoices/<%= inv.id %>/issue" class="card mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field" style="max-width:200px"><label>Due in (days)</label><input type="number" name="due_days" min="0" max="90" value="14"></div>
+  <button class="btn">Issue invoice</button> <span class="small muted">Assigns the next invoice number and freezes the billing details.</span></form>
+<form method="post" action="/admin/billing/invoices/<%= inv.id %>/void" class="mt" data-confirm="Delete this draft?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Delete draft</button></form>
+<% } else if (inv.status === 'open') { %>
+<form method="post" action="/admin/billing/invoices/<%= inv.id %>/payments" class="card mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Record a payment</h3>
+  <div class="row"><div class="field"><label>Amount received (USD)</label><input type="text" name="amount" value="<%= ((Number(inv.total_cents) - Number(inv.amount_paid_cents)) / 100).toFixed(2) %>"></div>
+    <div class="field"><label>Method</label><select name="method"><option value="bank_transfer">Bank transfer</option><option value="card">Card</option><option value="cash">Cash</option><option value="other">Other</option></select></div>
+    <div class="field"><label>Received on</label><input type="date" name="received_on" value="<%= today %>"></div></div>
+  <div class="field"><label>Reference (transfer number, payer)</label><input type="text" name="reference" maxlength="200"></div>
+  <button class="btn">Record payment</button></form>
+<% if (!payments.length) { %><form method="post" action="/admin/billing/invoices/<%= inv.id %>/void" class="mt" data-confirm="Void this invoice? Its number stays on record."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Void invoice</button></form><% } %>
+<% } %>
+<h3 class="mt">Payments</h3>
+<div class="table-wrap"><table><tr><th>Received</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
+<% if (!payments.length) { %><tr><td colspan="4" class="muted center">No payments recorded.</td></tr><% } %>
+<% payments.forEach(p => { %><tr><td><%= usDate(p.received_on) %></td><td><%= money(p.amount_cents) %></td><td><%= p.method.replace('_', ' ') %><%= p.provider === 'stripe' ? ' (Stripe)' : '' %></td><td class="small"><%= p.reference %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

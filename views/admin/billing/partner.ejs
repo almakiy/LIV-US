@@ -1,0 +1,57 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1><%= p.company_name %></h1><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span></div>
+<%- include('_nav') %>
+<div class="grid g2">
+  <form class="card" method="post" action="/admin/billing/partners/<%= p.id %>/plan">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h3>Plan and tax</h3>
+    <div class="field"><label>Plan</label><select name="plan"><option value="">No plan</option><% Object.entries(PLANS).forEach(([k, l]) => { %><option value="<%= k %>" <%= p.plan === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="row"><div class="field"><label>Plan started</label><input type="date" name="plan_started_on" value="<%= p.plan_started_on ? String(p.plan_started_on).slice(0, 10) : '' %>"></div>
+      <div class="field"><label>Renews on (plan year ends)</label><input type="date" name="plan_renews_on" value="<%= p.plan_renews_on ? String(p.plan_renews_on).slice(0, 10) : '' %>"></div></div>
+    <div class="field"><label>Included certificates per plan year <span class="muted small">(blank = plan default)</span></label><input type="number" name="included_certificates" min="0" value="<%= p.included_certificates ?? '' %>"></div>
+    <div class="row"><div class="field"><label>Tax rate (%)</label><input type="text" name="tax_rate" value="<%= (p.tax_rate_bps / 100).toFixed(2) %>"></div><div class="field"><label>Tax label</label><input type="text" name="tax_label" maxlength="20" value="<%= p.tax_label %>"></div></div>
+    <p class="small muted">Set the tax rate only after your tax adviser confirms it for this partner's country. The default is 0%.</p>
+    <button class="btn secondary">Save</button>
+  </form>
+  <div class="card">
+    <h3>Certificate usage, plan year <%= usage.planYear.start %> to <%= usage.planYear.end %></h3>
+    <dl class="details"><dt>Issued</dt><dd><%= usage.issued %></dd><dt>Included</dt><dd><%= usage.included %></dd><dt>Beyond the allowance, already billed</dt><dd><%= usage.billedBeyond %></dd>
+      <dt>Unbilled now</dt><dd><strong><%= usage.quantity %></strong> certificates = <strong><%= money(usage.amount_cents) %></strong></dd></dl>
+    <h3 class="mt">Service hold</h3>
+    <p class="small muted">A hold stops new certificates being issued (portal and API) for unpaid invoices. It never changes the accreditation decision. Verification of existing certificates always continues.</p>
+    <form method="post" action="/admin/billing/partners/<%= p.id %>/hold" data-confirm="<%= p.service_hold ? 'Lift the service hold?' : 'Put this partner on service hold?' %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= p.service_hold ? '' : 'danger' %> sm"><%= p.service_hold ? 'Lift service hold' : 'Put on service hold' %></button></form>
+  </div>
+</div>
+
+<form class="card mt" method="post" action="/admin/billing/partners/<%= p.id %>/invoices">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>New invoice</h3>
+  <p class="small muted">Choose up to three items, and/or include unbilled certificate usage (<%= usage.quantity %> certificates, <%= money(usage.amount_cents) %>). Discounts below are applied automatically. The draft can be reviewed before it is issued.</p>
+  <% for (let i = 0; i < 3; i++) { %><div class="row"><div class="field"><label>Item <%= i + 1 %></label><select name="code"><option value="">—</option><% products.filter(x => x.code !== 'CERT_ISSUE').forEach(x => { %><option value="<%= x.code %>"><%= x.name %></option><% }) %></select></div>
+    <div class="field" style="flex:0 0 100px"><label>Qty</label><input type="number" name="qty" min="1" value="1"></div></div><% } %>
+  <label class="small"><input type="checkbox" name="include_usage"> Include unbilled certificate usage</label>
+  <div class="field mt"><label>Note on the invoice</label><input type="text" name="notes" maxlength="500"></div>
+  <button class="btn">Create draft</button>
+</form>
+
+<h3 class="mt">Discounts and credits</h3>
+<div class="table-wrap"><table><tr><th>Category</th><th>Applies to</th><th>Value</th><th>Reason</th><th>Until</th><th>Status</th><th></th></tr>
+<% if (!discounts.length) { %><tr><td colspan="7" class="muted center">None.</td></tr><% } %>
+<% discounts.forEach(d => { %><tr><td><%= DISCOUNT_CATEGORIES[d.category] %></td><td><%= d.product_code || 'All products' %></td><td><%= d.percent_bps != null ? (d.percent_bps / 100) + '%' : money(d.amount_cents) + ' credit' %></td><td class="small"><%= d.note %></td><td><%= d.valid_until ? usDate(d.valid_until) : '—' %></td><td><%= d.used_invoice_id ? 'used' : 'available' %></td>
+  <td class="right"><% if (!d.used_invoice_id) { %><form method="post" action="/admin/billing/discounts/<%= d.id %>/delete" style="display:inline" data-confirm="Remove this discount?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Remove</button></form><% } %></td></tr><% }) %></table></div>
+<form class="card mt" method="post" action="/admin/billing/partners/<%= p.id %>/discounts">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="row"><div class="field"><label>Category</label><select name="category"><% Object.entries(DISCOUNT_CATEGORIES).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+    <div class="field"><label>Type</label><select name="kind"><option value="percent">Percent</option><option value="credit">Dollar credit (once)</option></select></div>
+    <div class="field"><label>Value</label><input type="text" name="value" placeholder="50 or 200"></div></div>
+  <div class="row"><div class="field"><label>Product code (blank = all)</label><select name="product_code"><option value="">All products</option><% products.forEach(x => { %><option value="<%= x.code %>"><%= x.code %></option><% }) %></select></div>
+    <div class="field"><label>Valid until</label><input type="date" name="valid_until"></div></div>
+  <div class="field"><label>Reason (recorded) *</label><input type="text" name="note" maxlength="300" placeholder="e.g. Founding partner 2026, first annual fee"></div>
+  <button class="btn secondary">Add discount</button>
+</form>
+
+<h3 class="mt">Invoices</h3>
+<div class="table-wrap"><table><tr><th>No.</th><th>Status</th><th>Issued</th><th>Due</th><th>Total</th><th>Paid</th></tr>
+<% if (!invoices.length) { %><tr><td colspan="6" class="muted center">No invoices yet.</td></tr><% } %>
+<% invoices.forEach(i => { %><tr><td><a href="/admin/billing/invoices/<%= i.id %>"><%= i.number || 'Draft' %></a></td><td><span class="badge <%= i.status === 'paid' ? 'b-active' : i.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= i.status %></span></td><td><%= i.issue_date ? usDate(i.issue_date) : '—' %></td><td><%= i.due_date ? usDate(i.due_date) : '—' %></td><td><%= money(i.total_cents) %></td><td><%= money(i.amount_paid_cents) %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

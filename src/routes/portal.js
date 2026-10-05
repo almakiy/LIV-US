@@ -311,7 +311,34 @@ r.post('/templates/preview', wrap(async (req, res) => {
   res.type('application/pdf').set('Content-Disposition', 'inline; filename="preview.pdf"').send(pdf);
 }));
 
-// ---------- Agreement and billing ----------
+// ---------- Billing (partner view) ----------
+const billingLib = require('../lib/billing');
+r.get('/billing', wrap(async (req, res) => {
+  const platform = await loadPlatform(pid(req));
+  const usage = await require('../lib/billing-store').usageSummary(platform);
+  const { rows: invoices } = await q(`SELECT * FROM invoices WHERE platform_id = $1 AND status <> 'draft' ORDER BY issue_date DESC, created_at DESC LIMIT 100`, [pid(req)]);
+  const owed = invoices.filter((i) => i.status === 'open').reduce((s, i) => s + Number(i.total_cents) - Number(i.amount_paid_cents), 0);
+  res.render('portal/billing', { title: 'Billing', platform, usage, invoices, owed, money: billingLib.money, isOverdue: billingLib.isOverdue, cfg });
+}));
+async function ownInvoice(req) {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return null;
+  const { rows: [inv] } = await q(`SELECT i.*, p.company_name FROM invoices i JOIN platforms p ON p.id = i.platform_id WHERE i.id = $1 AND i.platform_id = $2 AND i.status <> 'draft'`, [req.params.id, pid(req)]);
+  if (!inv) return null;
+  const { rows: lines } = await q('SELECT * FROM invoice_lines WHERE invoice_id = $1 ORDER BY description', [inv.id]);
+  const { rows: payments } = await q('SELECT * FROM payments WHERE invoice_id = $1 ORDER BY received_on', [inv.id]);
+  return { inv, lines, payments };
+}
+r.get('/billing/invoices/:id', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d) return next();
+  res.render('portal/billing-invoice', { title: d.inv.number, ...d, money: billingLib.money, isOverdue: billingLib.isOverdue, cfg });
+}));
+r.get('/billing/invoices/:id/pdf', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d) return next();
+  const pdf = await require('../lib/invoice-pdf').renderInvoice(d.inv, d.lines, d.payments);
+  res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${d.inv.number}.pdf"` }).send(pdf);
+}));
+
+// ---------- Agreement and billing details ----------
 r.get('/agreement', wrap(async (req, res) => {
   const a = await pendingAgreement(pid(req));
   if (!a) return res.redirect('/portal');

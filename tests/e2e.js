@@ -325,6 +325,121 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   // The remaining checks use other partners that never accepted this test agreement; retire it so they are not held at the gate.
   psql("UPDATE agreements SET status = 'retired' WHERE status = 'active'");
 
+  console.log('Billing');
+  const stripeLib = require('../src/lib/stripe');
+  const pb = await (await browser.newContext()).newPage();
+  await pb.goto(BASE + '/login'); await pb.fill('input[name=email]', partnerEmail); await pb.fill('input[name=password]', 'Brand-New-Pass-2026'); await pb.click('button:has-text("Log in")');
+  const anonReq = (await browser.newContext()).request;
+  const money = (c) => `$${(c / 100).toFixed(2)}`;
+  await adm.goto(BASE + '/admin/billing/catalog');
+  ok(await see(adm, 'text=Annual accreditation fee') && await see(adm, 'text=Certificate issuance beyond the included allowance'), 'price catalog is seeded with the fee schedule');
+  const adminChangeId = psql("SELECT pr.id FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE p.code = 'ACC_ADMIN_CHANGE'");
+  await adm.fill(`form[action$="/catalog/prices/${adminChangeId}"] input[name=amount]`, '175.00');
+  await adm.click(`form[action$="/catalog/prices/${adminChangeId}"] button`);
+  ok(await see(adm, 'text=Price updated'), 'a price change is saved');
+  ok(psql("SELECT count(*) FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE p.code = 'ACC_ADMIN_CHANGE'") === '2' && psql("SELECT count(*) FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE p.code = 'ACC_ADMIN_CHANGE' AND pr.valid_to IS NOT NULL") === '1', 'price history is kept (old price closed, new price added)');
+
+  await adm.goto(`${BASE}/admin/billing/partners/${partnerId}`);
+  await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Nothing to invoice'), 'an empty invoice is refused');
+  await adm.selectOption('select[name=code] >> nth=0', 'ACC_APPLICATION');
+  await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Assign the partner a plan first'), 'plan-based fees need a plan');
+  await adm.selectOption('select[name=plan]', 'starter');
+  await adm.fill('input[name=plan_renews_on]', '2027-06-30'); await adm.fill('input[name=tax_rate]', '5'); await adm.fill('input[name=tax_label]', 'VAT');
+  await adm.click('button:has-text("Save"):below(:text("Plan and tax"))');
+  ok(await see(adm, 'text=Plan and tax settings saved'), 'plan, renewal date and tax rate saved');
+  await adm.selectOption('select[name=category]', 'founding_partner'); await adm.fill('input[name=value]', '50'); await adm.selectOption('select[name=product_code]', 'ACC_APPLICATION');
+  await adm.click('button:has-text("Add discount")');
+  ok(await see(adm, 'text=Record the reason'), 'a discount needs a recorded reason');
+  await adm.fill('input[name=note]', 'Founding partner 2026');
+  await adm.selectOption('select[name=category]', 'founding_partner'); await adm.fill('input[name=value]', '50'); await adm.selectOption('select[name=product_code]', 'ACC_APPLICATION');
+  await adm.click('button:has-text("Add discount")');
+  ok(await see(adm, 'text=Discount recorded'), 'founding-partner discount recorded');
+  await adm.selectOption('select[name=code] >> nth=0', 'ACC_APPLICATION');
+  await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Draft created'), 'draft invoice created');
+  ok(await see(adm, `td:has-text("${money(262.5 * 100)}")`) || await see(adm, `dd:has-text("${money(262.5 * 100)}")`), 'total = $500 application - 50% discount + 5% tax = $262.50');
+  const invUrl = adm.url(); const invId = invUrl.split('/').pop();
+  await adm.click('button:has-text("Issue invoice")');
+  ok(await see(adm, 'text=/Invoice INV-\\d{4}-\\d{4} issued/'), 'invoice issued with a sequential number');
+  const invNo = psql(`SELECT number FROM invoices WHERE id = '${invId}'`);
+  ok(/^INV-\d{4}-\d{4}$/.test(invNo), 'invoice number format');
+  const pdfA = await adm.request.get(`${invUrl}/pdf`);
+  ok(pdfA.status() === 200 && Buffer.from(await pdfA.body()).slice(0, 4).toString() === '%PDF', 'invoice PDF renders');
+
+  await pb.goto(BASE + '/portal/billing');
+  ok(await see(pb, `text=${invNo}`) && await see(pb, `text=${money(26250)}`), 'partner sees the invoice and the balance owed');
+  const pdfP = await pb.request.get(`${BASE}/portal/billing/invoices/${invId}/pdf`);
+  ok(pdfP.status() === 200 && Buffer.from(await pdfP.body()).slice(0, 4).toString() === '%PDF', 'partner downloads the invoice PDF');
+
+  await adm.goto(invUrl);
+  await adm.fill('input[name=amount]', '999.00'); await adm.click('button:has-text("Record payment")');
+  ok(await see(adm, 'text=exceeds the balance'), 'an overpayment is refused');
+  await adm.fill('input[name=amount]', '100.00'); await adm.fill('input[name=reference]', 'Wire 1');
+  await adm.click('button:has-text("Record payment")');
+  ok(await see(adm, 'text=Partial payment recorded'), 'partial payment recorded; invoice stays open');
+  await adm.fill('input[name=amount]', '162.50'); await adm.fill('input[name=reference]', 'Wire 2');
+  await adm.click('button:has-text("Record payment")');
+  ok(await see(adm, 'text=The invoice is paid') && psql(`SELECT status FROM invoices WHERE id = '${invId}'`) === 'paid', 'final payment marks the invoice paid');
+  ok(psql(`SELECT amount_paid_cents FROM invoices WHERE id = '${invId}'`) === '26250', 'paid amount equals the total');
+
+  // Certificate usage: incremental, never twice, void releases it.
+  const demoId = psql("SELECT id FROM platforms WHERE company_name LIKE 'Demo Safety%' LIMIT 1");
+  const issued = Number(psql(`SELECT count(*) FROM certificates WHERE platform_id = '${demoId}'`));
+  ok(issued > 0, 'the demo provider has certificates to bill');
+  await adm.goto(`${BASE}/admin/billing/partners/${demoId}`);
+  await adm.selectOption('select[name=plan]', 'starter'); await adm.fill('input[name=included_certificates]', '0'); await adm.fill('input[name=tax_rate]', '0');
+  await adm.click('button:has-text("Save"):below(:text("Plan and tax"))');
+  ok(await see(adm, 'text=Plan and tax settings saved'), 'demo provider placed on a plan with no allowance');
+  ok(await see(adm, `dd:has-text("${money(issued * 400)}")`), 'unbilled usage preview = certificates x $4.00');
+  await adm.check('input[name=include_usage]'); await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Draft created') && await see(adm, `td:has-text("${money(issued * 400)}")`), 'usage invoice covers every certificate beyond the allowance');
+  const uId = adm.url().split('/').pop();
+  await adm.click('button:has-text("Issue invoice")'); await see(adm, 'text=issued');
+  await adm.goto(`${BASE}/admin/billing/partners/${demoId}`);
+  await adm.check('input[name=include_usage]'); await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Nothing to invoice'), 'the same certificates are not billed twice');
+  await adm.goto(`${BASE}/admin/billing/invoices/${uId}`);
+  await adm.click('button:has-text("Void invoice")');
+  ok(await see(adm, 'text=Invoice voided'), 'an unpaid invoice can be voided (number stays on record)');
+  await adm.goto(`${BASE}/admin/billing/partners/${demoId}`);
+  await adm.check('input[name=include_usage]'); await adm.click('button:has-text("Create draft")');
+  ok(await see(adm, 'text=Draft created'), 'usage of a voided invoice becomes billable again');
+  const draftId = adm.url().split('/').pop();
+  ok((await pb.request.get(`${BASE}/portal/billing/invoices/${draftId}`)).status() === 404, 'a partner cannot open a draft or another partner\'s invoice');
+
+  // Service hold: issuance paused, accreditation unchanged.
+  await adm.goto(`${BASE}/admin/billing/partners/${demoId}`);
+  await adm.click('button:has-text("Put on service hold")');
+  ok(await see(adm, 'text=Service hold on'), 'service hold switched on');
+  const held = await api('POST', '/api/v1/certificates', { first_name: 'Hold', last_name: 'Test', email: `hold.${stamp}@example.com`, course_name: 'Hold test', completion_date: '2026-09-01' });
+  ok(held.status() === 403 && (await held.text()).includes('service hold'), 'the API refuses issuance during a service hold');
+  ok(psql(`SELECT accreditation_status FROM platforms WHERE id = '${demoId}'`) === 'active', 'accreditation status is unchanged by the hold');
+  await adm.click('button:has-text("Lift service hold")'); await see(adm, 'text=Service hold lifted');
+
+  // Stripe readiness: webhook receiver (answers 501 until a secret is set), exports, public fee page.
+  const hook = process.env.STRIPE_WEBHOOK_SECRET;
+  const post = (body, hdr) => anonReq.post(BASE + '/api/webhooks/stripe', { data: body, headers: { 'content-type': 'application/json', ...(hdr ? { 'stripe-signature': hdr } : {}) } });
+  if (!hook) ok((await post('{}')).status() === 501, 'Stripe webhook answers 501 until it is configured');
+  else {
+    await adm.goto(`${BASE}/admin/billing/partners/${partnerId}`);
+    await adm.selectOption('select[name=code] >> nth=0', 'ACC_ADMIN_CHANGE'); await adm.click('button:has-text("Create draft")');
+    const sId = adm.url().split('/').pop(); await adm.click('button:has-text("Issue invoice")'); await see(adm, 'text=issued');
+    const total = Number(psql(`SELECT total_cents FROM invoices WHERE id = '${sId}'`));
+    const ev = JSON.stringify({ id: 'evt_e2e', type: 'payment_intent.succeeded', data: { object: { id: `pi_e2e_${stamp}`, amount_received: total, metadata: { liv_invoice_id: sId } } } });
+    ok((await post(ev, 'bad')).status() === 400, 'webhook with a bad signature is refused');
+    ok((await post(ev, stripeLib.signHeader(ev, hook, Math.floor(Date.now() / 1000) - 3600))).status() === 400, 'webhook with a stale timestamp is refused');
+    ok((await post(ev, stripeLib.signHeader(ev, hook))).status() === 200 && psql(`SELECT status FROM invoices WHERE id = '${sId}'`) === 'paid', 'a signed Stripe event marks the invoice paid');
+    ok((await post(ev, stripeLib.signHeader(ev, hook))).status() === 200 && psql(`SELECT count(*) FROM payments WHERE invoice_id = '${sId}'`) === '1', 'a repeated delivery is idempotent (one payment)');
+    ok(psql(`SELECT provider FROM payments WHERE invoice_id = '${sId}'`) === 'stripe', 'the payment is recorded as a Stripe payment');
+  }
+  const invCsv = await adm.request.get(BASE + '/admin/billing/export/invoices.csv');
+  ok(invCsv.status() === 200 && /csv/.test(invCsv.headers()['content-type']) && (await invCsv.text()).includes(invNo), 'invoices export as CSV for the accountant');
+  const feesPage = await anonReq.get(BASE + '/fees');
+  if (process.env.PUBLIC_FEES === 'true') ok(feesPage.status() === 200 && (await feesPage.text()).includes('Annual accreditation fee'), 'public fee schedule shows the catalog');
+  else ok(feesPage.status() === 404, 'public fee schedule stays hidden until approved');
+
   console.log('Knowledge hub');
   const title = `E2E Article ${stamp}`; const slug = `e2e-article-${stamp}`;
   await adm.goto(BASE + '/admin/content/new');

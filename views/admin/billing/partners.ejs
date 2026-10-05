@@ -1,0 +1,10 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Partner billing</h1></div>
+<%- include('_nav') %>
+<div class="table-wrap"><table>
+  <tr><th>Partner</th><th>Plan</th><th>Renews</th><th>Owed</th><th>Status</th></tr>
+  <% rows.forEach(p => { %><tr><td><a href="/admin/billing/partners/<%= p.id %>"><%= p.company_name %></a></td><td><%= p.plan ? PLANS[p.plan] : '—' %></td><td><%= p.plan_renews_on ? usDate(p.plan_renews_on) : '—' %></td>
+    <td><%= money(p.owed) %><% if (p.overdue) { %> <span class="badge b-suspended"><%= p.overdue %> overdue</span><% } %></td>
+    <td><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span><% if (p.service_hold) { %> <span class="badge b-suspended">service hold</span><% } %></td></tr><% }) %>
+</table></div>
+<%- include('../../partials/app-end') %>

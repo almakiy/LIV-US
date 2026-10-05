@@ -19,6 +19,8 @@ jobs:
       BASE_URL: http://localhost:3000
       NODE_ENV: development
       PUBLIC_APPLY: 'true'   # e2e covers the apply -> approve flow
+      PUBLIC_FEES: 'true'    # e2e covers the public fee schedule
+      STRIPE_WEBHOOK_SECRET: whsec_ci_test   # e2e covers signed webhook delivery (no Stripe account involved)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -43,6 +43,7 @@ const certJson = (c) => ({
 
 r.post('/certificates', wrap(async (req, res) => {
   const p = req.platform;
+  if (p.service_hold) return res.status(403).json({ error: 'Issuance is paused: the account is on service hold for unpaid invoices (accreditation status is unchanged). Contact LIV billing.' });
   if (p.accreditation_status !== 'active') return res.status(403).json({ error: `Platform accreditation is ${p.accreditation_status}; issuance disabled.` });
   const body = req.body || {};
   const list = Array.isArray(body) ? body : Array.isArray(body.certificates) ? body.certificates : [body];

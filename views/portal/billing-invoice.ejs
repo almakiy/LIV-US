@@ -1,0 +1,11 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Invoice <%= inv.number %></h1><span class="badge <%= inv.status === 'paid' ? 'b-active' : inv.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= inv.status %></span></div>
+<p class="small"><a href="/portal/billing">Billing</a> · <a href="/portal/billing/invoices/<%= inv.id %>/pdf" target="_blank">Download PDF</a> · Issued <%= usDate(inv.issue_date) %> · Due <%= usDate(inv.due_date) %></p>
+<div class="table-wrap"><table><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th></tr>
+<% lines.forEach(l => { %><tr><td class="small"><%= l.description %><% if (Number(l.discount_cents)) { %><div class="muted">Discount -<%= money(l.discount_cents) %></div><% } %></td><td><%= l.quantity %></td><td><%= money(l.unit_amount_cents) %></td><td><%= money(l.amount_cents) %></td></tr><% }) %></table></div>
+<div class="card mt details"><dl><dt>Subtotal</dt><dd><%= money(inv.subtotal_cents) %></dd>
+  <% if (Number(inv.discount_cents)) { %><dt>Discounts and credits</dt><dd>-<%= money(inv.discount_cents) %></dd><% } %>
+  <% if (Number(inv.tax_rate_bps) > 0) { %><dt><%= inv.tax_label %> (<%= (inv.tax_rate_bps / 100).toFixed(2) %>%)</dt><dd><%= money(inv.tax_cents) %></dd><% } %>
+  <dt>Total</dt><dd><strong><%= money(inv.total_cents) %></strong></dd><dt>Paid</dt><dd><%= money(inv.amount_paid_cents) %></dd><dt>Balance</dt><dd><strong><%= money(Number(inv.total_cents) - Number(inv.amount_paid_cents)) %></strong></dd></dl></div>
+<% if (inv.status === 'open') { %><div class="card mt"><h3>How to pay</h3><% if (cfg.bankDetails) { %><pre class="small" style="white-space:pre-wrap"><%= cfg.bankDetails %></pre><% } else { %><p class="small">Contact <%= cfg.billingEmail || 'LIV billing' %> for payment details.</p><% } %><p class="small">Quote <strong><%= inv.number %></strong>.</p></div><% } %>
+<%- include('../partials/app-end') %>

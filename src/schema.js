@@ -213,6 +213,112 @@ CREATE TABLE IF NOT EXISTS article_versions (
   UNIQUE (article_id, version)
 );
 
+-- ===== Billing (docs/FEES.md, docs/BILLING.md): price catalog, partner plans, discounts, invoices, payments. Money is stored in integer cents (USD). =====
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS plan VARCHAR(12) CHECK (plan IN ('starter','professional','enterprise'));
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS plan_started_on DATE;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS plan_renews_on DATE;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS included_certificates INT;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS tax_rate_bps INT NOT NULL DEFAULT 0 CHECK (tax_rate_bps BETWEEN 0 AND 10000);
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS tax_label VARCHAR(20) NOT NULL DEFAULT 'VAT';
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS service_hold BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(80);
+
+CREATE TABLE IF NOT EXISTS billing_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(200) NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  category VARCHAR(20) NOT NULL CHECK (category IN ('accreditation','certificate','verification','candidate','course','resource')),
+  unit VARCHAR(20) NOT NULL CHECK (unit IN ('one_time','annual','per_certificate','per_document','per_course','per_review_day','per_attempt','monthly','per_record')),
+  phase VARCHAR(60) NOT NULL DEFAULT 'now',
+  active BOOLEAN NOT NULL DEFAULT true,
+  sort INT NOT NULL DEFAULT 100,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- A price: for one product, optionally for one plan, optionally as a graduated band starting at min_qty. History is kept: a change adds a row and closes the old one.
+CREATE TABLE IF NOT EXISTS billing_prices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id UUID NOT NULL REFERENCES billing_products(id),
+  plan VARCHAR(12) CHECK (plan IN ('starter','professional','enterprise')),
+  min_qty INT NOT NULL DEFAULT 1,
+  unit_amount_cents INT NOT NULL CHECK (unit_amount_cents >= 0),
+  valid_from DATE NOT NULL DEFAULT CURRENT_DATE,
+  valid_to DATE,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_billing_prices_product ON billing_prices(product_id, valid_from DESC);
+
+CREATE TABLE IF NOT EXISTS billing_discounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id),
+  category VARCHAR(30) NOT NULL CHECK (category IN ('founding_partner','non_profit','multi_year','referral','other')),
+  product_code VARCHAR(40),                    -- NULL = every product
+  percent_bps INT CHECK (percent_bps BETWEEN 0 AND 10000),
+  amount_cents INT CHECK (amount_cents >= 0),  -- one-off credit, applied once
+  note VARCHAR(300) NOT NULL DEFAULT '',
+  valid_until DATE,
+  used_invoice_id UUID,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK ((percent_bps IS NOT NULL) <> (amount_cents IS NOT NULL))
+);
+
+CREATE SEQUENCE IF NOT EXISTS invoice_number_seq;
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  number VARCHAR(20) UNIQUE,                   -- assigned when issued; never reused
+  platform_id UUID NOT NULL REFERENCES platforms(id),
+  status VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','open','paid','void')),
+  currency CHAR(3) NOT NULL DEFAULT 'USD',
+  issue_date DATE,
+  due_date DATE,
+  period_start DATE,
+  period_end DATE,
+  subtotal_cents BIGINT NOT NULL DEFAULT 0,
+  discount_cents BIGINT NOT NULL DEFAULT 0,
+  tax_label VARCHAR(20) NOT NULL DEFAULT 'VAT',
+  tax_rate_bps INT NOT NULL DEFAULT 0,
+  tax_cents BIGINT NOT NULL DEFAULT 0,
+  total_cents BIGINT NOT NULL DEFAULT 0,
+  amount_paid_cents BIGINT NOT NULL DEFAULT 0,
+  billing JSONB NOT NULL DEFAULT '{}',         -- name, email, address, tax id as they were when issued
+  notes TEXT NOT NULL DEFAULT '',
+  provider VARCHAR(10) NOT NULL DEFAULT 'manual' CHECK (provider IN ('manual','stripe')),
+  provider_invoice_id VARCHAR(80),
+  provider_url TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  issued_at TIMESTAMPTZ,
+  paid_at TIMESTAMPTZ,
+  voided_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_invoices_platform ON invoices(platform_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS invoice_lines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  product_code VARCHAR(40) NOT NULL,
+  description VARCHAR(400) NOT NULL,
+  quantity INT NOT NULL CHECK (quantity > 0),
+  unit_amount_cents INT NOT NULL,
+  amount_cents BIGINT NOT NULL,
+  discount_cents BIGINT NOT NULL DEFAULT 0,
+  usage_offset INT,                            -- for certificate usage: certificates beyond the allowance already billed before this line
+  plan_year_start DATE
+);
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  invoice_id UUID NOT NULL REFERENCES invoices(id),
+  amount_cents BIGINT NOT NULL CHECK (amount_cents > 0),
+  method VARCHAR(20) NOT NULL CHECK (method IN ('bank_transfer','card','cash','other')),
+  provider VARCHAR(10) NOT NULL DEFAULT 'manual' CHECK (provider IN ('manual','stripe')),
+  provider_payment_id VARCHAR(80) UNIQUE,      -- makes webhook deliveries idempotent
+  reference VARCHAR(200) NOT NULL DEFAULT '',
+  received_on DATE NOT NULL,
+  recorded_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Partner gateway slice (docs/GLOBAL-STRATEGY.md): two-factor sign-in, forced password change, partner agreement acceptance and billing details.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret_enc TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;

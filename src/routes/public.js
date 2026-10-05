@@ -18,6 +18,15 @@ r.get('/', (req, res) => res.render('public/home', { title: 'Official Certificat
 r.get('/about', (req, res) => res.render('public/about', { title: 'About Us' }));
 r.get('/accreditation', (req, res) => res.render('public/accreditation', { title: 'Accreditation' }));
 
+// Public fee schedule, shown only after the owner approves the fees (PUBLIC_FEES=true).
+r.get('/fees', wrap(async (req, res, next) => {
+  if (!cfg.publicFees) return next();
+  const { rows: products } = await q(`SELECT * FROM billing_products WHERE active ORDER BY sort`);
+  const { rows: prices } = await q(`SELECT pr.*, p.code FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE (pr.valid_to IS NULL OR pr.valid_to >= CURRENT_DATE) AND pr.valid_from <= CURRENT_DATE ORDER BY pr.min_qty`);
+  const { PLANS, PLAN_DEFAULTS } = require('../lib/billing-catalog');
+  res.render('public/fees', { title: 'Fees', description: 'Published fees for accredited education partners, certificates and verification.', products, prices, money: require('../lib/billing').money, PLANS, PLAN_DEFAULTS });
+}));
+
 r.get('/verify', verifyLimiter, (req, res) => {
   const id = String(req.query.id || '').trim().toUpperCase();
   if (!id) return res.render('public/verify-search', { title: 'Verify a Certificate', error: null, id: '', last_name: '' });

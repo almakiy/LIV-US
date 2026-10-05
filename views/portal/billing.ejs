@@ -1,0 +1,22 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Billing</h1><% if (platform.service_hold) { %><span class="badge b-suspended">service hold</span><% } %></div>
+<% if (platform.service_hold) { %><div class="alert error">Issuing new certificates is paused for unpaid invoices. Your accreditation status is unchanged and certificates already issued stay verifiable. Please settle the invoices below or contact <%= cfg.billingEmail || 'LIV billing' %>.</div><% } %>
+<div class="grid g2">
+  <div class="card details"><h3>Your plan</h3><dl>
+    <dt>Plan</dt><dd><%= platform.plan ? platform.plan.charAt(0).toUpperCase() + platform.plan.slice(1) : 'Not assigned yet' %></dd>
+    <dt>Plan year</dt><dd><%= usage.planYear.start %> to <%= usage.planYear.end %></dd>
+    <dt>Certificates issued</dt><dd><%= usage.issued %> of <%= usage.included %> included</dd>
+    <dt>Beyond the allowance</dt><dd><%= usage.beyondTotal %> (<%= usage.billedBeyond %> already invoiced)</dd>
+    <dt>Balance owed</dt><dd><strong><%= money(owed) %></strong></dd></dl>
+    <p class="small muted">Fees are described in your partner agreement and the published fee schedule. Certificates beyond the allowance are invoiced monthly.</p></div>
+  <div class="card"><h3>How to pay</h3>
+    <% if (cfg.bankDetails) { %><p class="small">Bank transfer (the payer bears bank charges). Quote the invoice number.</p><pre class="small" style="white-space:pre-wrap"><%= cfg.bankDetails %></pre><% } else { %><p class="small">Contact <%= cfg.billingEmail || 'LIV billing' %> for payment details. Quote the invoice number.</p><% } %>
+    <p class="small muted">Card payment will be available soon.</p></div>
+</div>
+<h3 class="mt">Invoices</h3>
+<div class="table-wrap"><table><tr><th>No.</th><th>Issued</th><th>Due</th><th>Total</th><th>Balance</th><th>Status</th><th></th></tr>
+<% if (!invoices.length) { %><tr><td colspan="7" class="muted center">No invoices yet.</td></tr><% } %>
+<% invoices.forEach(i => { %><tr><td><a href="/portal/billing/invoices/<%= i.id %>"><%= i.number %></a></td><td><%= usDate(i.issue_date) %></td><td><%= usDate(i.due_date) %></td><td><%= money(i.total_cents) %></td><td><%= money(Number(i.total_cents) - Number(i.amount_paid_cents)) %></td>
+  <td><span class="badge <%= i.status === 'paid' ? 'b-active' : i.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= i.status %></span><% if (isOverdue(i)) { %> <span class="badge b-suspended">overdue</span><% } %></td>
+  <td class="right"><a href="/portal/billing/invoices/<%= i.id %>/pdf" target="_blank">PDF</a></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

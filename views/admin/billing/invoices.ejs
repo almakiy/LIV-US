@@ -1,0 +1,10 @@
+<%- include('../../partials/app-start') %>
+<div class="page-head"><h1>Invoices</h1></div>
+<%- include('_nav') %>
+<p class="small">Show: <% ['', 'draft', 'open', 'overdue', 'paid', 'void'].forEach(s => { %><a class="<%= status === s ? 'on' : '' %>" href="/admin/billing/invoices<%= s ? '?status=' + s : '' %>"><%= s || 'all' %></a> · <% }) %></p>
+<div class="table-wrap"><table><tr><th>No.</th><th>Partner</th><th>Status</th><th>Issued</th><th>Due</th><th>Total</th><th>Balance</th></tr>
+<% if (!rows.length) { %><tr><td colspan="7" class="muted center">Nothing here.</td></tr><% } %>
+<% rows.forEach(i => { %><tr><td><a href="/admin/billing/invoices/<%= i.id %>"><%= i.number || 'Draft' %></a></td><td><%= i.company_name %></td>
+  <td><span class="badge <%= i.status === 'paid' ? 'b-active' : i.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= i.status %></span><% if (isOverdue(i)) { %> <span class="badge b-suspended">overdue</span><% } %></td>
+  <td><%= i.issue_date ? usDate(i.issue_date) : '—' %></td><td><%= i.due_date ? usDate(i.due_date) : '—' %></td><td><%= money(i.total_cents) %></td><td><%= money(Number(i.total_cents) - Number(i.amount_paid_cents)) %></td></tr><% }) %></table></div>
+<%- include('../../partials/app-end') %>

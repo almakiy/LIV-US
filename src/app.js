@@ -23,6 +23,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 app.use('/static', express.static(path.join(__dirname, '..', 'public'), { maxAge: '7d' }));
+// Stripe needs the exact raw body to verify its signature, so this route is registered before the JSON parser.
+app.post('/api/webhooks/stripe', express.raw({ type: '*/*', limit: '1mb' }), require('./routes/stripe-webhook'));
 app.use('/api', express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
@@ -51,7 +53,7 @@ app.use(async (req, res, next) => {
     delete req.session.flash;
     if (req.session.userId) {
       const { rows: [u] } = await q(
-        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, u.totp_enabled, u.must_change_password, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
+        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, u.totp_enabled, u.must_change_password, p.service_hold, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
            FROM users u LEFT JOIN platforms p ON p.id = u.platform_id WHERE u.id = $1`, [req.session.userId]);
       if (u) {
         req.user = { ...u, realRole: u.role };
@@ -94,6 +96,7 @@ app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
 app.use('/portal', require('./routes/portal'));
 app.use('/admin/qms', require('./routes/qms'));
+app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));

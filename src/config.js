@@ -20,6 +20,12 @@ module.exports = {
   qmsAllowSelfApproval: process.env.QMS_ALLOW_SELF_APPROVAL !== 'false',
   // Two-factor sign-in policy: '' (optional), 'admin' (required for LIV administrators) or 'all' (everyone).
   require2fa: ['admin', 'all'].includes(process.env.REQUIRE_2FA) ? process.env.REQUIRE_2FA : '',
+  // Billing. Fee schedule page stays hidden until the owner approves the fees. Stripe is not connected yet: these only enable the webhook receiver.
+  publicFees: process.env.PUBLIC_FEES === 'true',
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  legalAddress: process.env.LEGAL_ADDRESS || '',
+  billingEmail: process.env.BILLING_EMAIL || '',
+  bankDetails: (process.env.BILLING_BANK_DETAILS || '').replace(/\\n/g, '\n'),
   brand: process.env.BRAND_NAME || 'LIV',
   brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',
