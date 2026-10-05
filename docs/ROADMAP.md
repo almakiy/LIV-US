@@ -103,6 +103,12 @@ Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/
 - Decision needed: build inside this app (EJS + Postgres) or run a separate CMS. Default
   recommendation: build inside this app to keep one brand, one domain and one deploy.
 
+### Phase 3b — Knowledge engines (design only)
+Scout (horizon scanning), Producer (drafting) and Reviewer (scientific and editorial audit) as an external service that talks to the site through a scoped Content API, with humans approving every publication. Full design, content types, build order and open decisions: `docs/KNOWLEDGE-ENGINES.md`.
+
+### Phases 6–8 — Course catalogue, course design studio, learner enrollment (design only)
+Public course finder with full course details, a course design studio, and trainee accounts with direct enrollment and exam registration (leads into Phase 9). See `docs/KNOWLEDGE-ENGINES.md` §7, including the impartiality warning that must be resolved before building.
+
 ### Phase 4 — Commerce
 - Digital booklets and consulting booking, checkout via Stripe through LIV LLC.
 - Provider billing: accreditation fee and per-certificate issuance fee, invoices, usage metering.
