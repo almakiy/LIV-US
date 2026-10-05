@@ -64,7 +64,9 @@ Implementation notes:
 ### Certificate content rules (decided)
 - A certificate states that the trainee **successfully completed** the course (pass and completion): **no grade/score** is collected or printed.
 - Certificates **do not expire**: only a completion date and an **issue date** are shown. Templates no longer have a validity period, and the verification result is only VALID or REVOKED (plus TAMPERED / NOT FOUND).
-- LIV is an **accreditation body**, not a training provider: it reviews accredited education partners (trainers' competence, curricula, training methods), accredits them, and audits them periodically. Certificates are issued on the basis of the completion report submitted by the education partner, and the certificate text says so.
+- LIV is an **accreditation body**, not a training provider. The certificate carries one short official line only: "Issued by LIV on the basis of the completion report of an accredited education partner." No long explanations on the face of the certificate; any extra wording goes in small print.
+- The education partner's name is **not printed anywhere** on the certificate (decided October 5, 2026). Partner block and logos remain deferred.
+- **US identity** is shown by wording, never by a flag: the header reads "Accreditation organization · Virginia, United States of America", and the small print states that LIV LLC is a private accreditation organization based in the United States and not a government agency. Do not write "US-accredited", "US-approved" or similar, which implies government recognition.
 
 ### Phase 1.3 — Certificate look (done)
 Shipped: **Executive** landscape theme (US Letter, accent bars, double frame, signature, LIV seal), **framed QR badge** ("LIV VERIFIED / SCAN TO VERIFY"), **iris** multi-color guilloche (passport-style blend), and a **legal authenticity note**. All themes stay US Letter landscape.

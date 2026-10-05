@@ -19,7 +19,7 @@ test('pattern is deterministic for a seed and differs across seeds', () => {
 });
 
 test('normalizeConfig defaults to everything off and rejects junk', () => {
-  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, partnerName: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
   assert.strictEqual(normalizeConfig({ colors: 'neon' }).colors, 'brand');
   assert.strictEqual(normalizeConfig({ colors: 'iris', qrBadge: true }).qrBadge, true);
   assert.strictEqual(normalizeConfig({ guilloche: 'evil' }).guilloche, 'off');
@@ -46,10 +46,8 @@ test('all themes are US Letter landscape; QR badge, iris colors and legal note a
   assert.deepStrictEqual(Object.keys(THEMES), ['classic', 'modern', 'executive']);
 });
 
-test('accreditation statement names the education partner only when enabled', () => {
-  const generic = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: false });
-  const named = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: true });
-  assert.ok(!generic.includes('Gulf Safety') && generic.includes('an education partner accredited by'));
-  assert.match(named, /submitted by Gulf Safety Training Center LLC, an education partner accredited by /);
-  assert.match(named, /audits them periodically\.$/);
+test('accreditation statement is one short official line and never names the partner', () => {
+  const note = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: true });
+  assert.ok(!note.includes('Gulf Safety'));
+  assert.match(note, /^Issued by LIV on the basis of the completion report of an accredited education partner\.$/);
 });

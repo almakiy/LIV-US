@@ -13,7 +13,7 @@ const COLORS = ['brand', 'iris'];
 const IRIS = ['#1E5AA8', '#17A2A2', '#4CAF50', '#E6B422', '#E8742E', '#C2437A'];
 
 /** Layers an admin can toggle per template. Defaults for old templates (empty config) are all off. */
-const RECOMMENDED = { guilloche: 'light', colors: 'iris', microtext: true, ghost: true, tiled: false, fingerprint: true, verifyStrip: true, qrBadge: true, legalNote: true, partnerName: true };
+const RECOMMENDED = { guilloche: 'light', colors: 'iris', microtext: true, ghost: true, tiled: false, fingerprint: true, verifyStrip: true, qrBadge: true, legalNote: true };
 
 function normalizeConfig(input = {}) {
   const i = input && typeof input === 'object' ? input : {};
@@ -21,7 +21,6 @@ function normalizeConfig(input = {}) {
     guilloche: GUILLOCHE.includes(i.guilloche) ? i.guilloche : 'off',
     colors: COLORS.includes(i.colors) ? i.colors : 'brand',
     qrBadge: i.qrBadge === true,
-    partnerName: i.partnerName === true,
     legalNote: i.legalNote === true,
     microtext: i.microtext === true,
     ghost: i.ghost === true,
@@ -154,8 +153,8 @@ function drawFrontLayers(doc, { W, H, area, color, seed, data, config, design, l
   const legal = layout && layout.legal;
   if (c.legalNote && legal) {
     doc.save();
-    doc.font('Sans').fontSize(6.3).fillColor('#6B7280');
-    doc.text(`The authenticity of this document can be verified at ${String(data.verify_url).split('?')[0]}. Unauthorized alteration, copying or falsification of its content or appearance is unlawful and may result in legal action.`,
+    doc.font('Sans').fontSize(5.8).fillColor('#6B7280');
+    doc.text(`${cfg.legalEntity} is a private accreditation organization based in the United States and is not a government agency. Authenticity of this document can be verified at ${String(data.verify_url).split('?')[0]}. Unauthorized alteration, copying or falsification is unlawful.`,
       legal.x, legal.y, { width: legal.w, align: 'center', lineGap: 1.2 });
     doc.restore();
   } else if (c.verifyStrip && design === 'classic') {
