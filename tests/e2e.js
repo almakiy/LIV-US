@@ -322,6 +322,8 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await pg.fill('input[name=current_password]', temp); await pg.fill('input[name=new_password]', 'Brand-New-Pass-2026'); await pg.fill('input[name=confirm_password]', 'Brand-New-Pass-2026');
   await pg.click('button:has-text("Change password")');
   ok(await see(pg, 'text=Password changed') && pg.url().endsWith('/portal'), 'partner sets a new password and continues');
+  // The remaining checks use other partners that never accepted this test agreement; retire it so they are not held at the gate.
+  psql("UPDATE agreements SET status = 'retired' WHERE status = 'active'");
 
   console.log('Knowledge hub');
   const title = `E2E Article ${stamp}`; const slug = `e2e-article-${stamp}`;
