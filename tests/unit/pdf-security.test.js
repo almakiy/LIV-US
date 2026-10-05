@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
 const { normalizeConfig, patternParams, RECOMMENDED } = require('../../src/lib/pdf-security');
-const { renderCertificate, THEMES } = require('../../src/lib/pdf');
+const { renderCertificate, THEMES, accreditationNote } = require('../../src/lib/pdf');
 
 const hash = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const data = (n) => ({
@@ -19,7 +19,7 @@ test('pattern is deterministic for a seed and differs across seeds', () => {
 });
 
 test('normalizeConfig defaults to everything off and rejects junk', () => {
-  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, partnerName: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
   assert.strictEqual(normalizeConfig({ colors: 'neon' }).colors, 'brand');
   assert.strictEqual(normalizeConfig({ colors: 'iris', qrBadge: true }).qrBadge, true);
   assert.strictEqual(normalizeConfig({ guilloche: 'evil' }).guilloche, 'off');
@@ -44,4 +44,12 @@ test('all themes are US Letter landscape; QR badge, iris colors and legal note a
     assert.ok(rich.length > plain.length * 1.4, `${design}: rich ${rich.length} vs plain ${plain.length}`);
   }
   assert.deepStrictEqual(Object.keys(THEMES), ['classic', 'modern', 'executive']);
+});
+
+test('accreditation statement names the education partner only when enabled', () => {
+  const generic = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: false });
+  const named = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: true });
+  assert.ok(!generic.includes('Gulf Safety') && generic.includes('an education partner accredited by'));
+  assert.match(named, /submitted by Gulf Safety Training Center LLC, an education partner accredited by /);
+  assert.match(named, /audits them periodically\.$/);
 });

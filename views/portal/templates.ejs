@@ -15,7 +15,7 @@
     <h3><%= edit ? 'Edit template' : 'New template' %></h3>
     <div class="field"><label>Template name</label><input name="name" value="<%= edit ? edit.name : '' %>" required></div>
     <div class="field"><label>Design</label><select name="design">
-      <% Object.entries(THEMES).forEach(([key, th]) => { %><option value="<%= key %>" <%= edit && edit.design === key ? 'selected' : '' %>><%= th.label %></option><% }) %></select></div>
+      <% Object.entries(THEMES).forEach(([key, th]) => { %><option value="<%= key %>" <%= (edit ? edit.design === key : key === 'executive') ? 'selected' : '' %>><%= th.label %></option><% }) %></select></div>
     <div class="row"><div class="field"><label>Signatory name</label><input name="signatory_name" value="<%= edit ? (edit.signatory_name || '') : '' %>"></div>
     <div class="field"><label>Signatory title</label><input name="signatory_title" value="<%= edit ? (edit.signatory_title || '') : '' %>"></div></div>
     <fieldset class="field" style="border:1px solid var(--line);border-radius:8px;padding:12px 14px">
@@ -25,6 +25,7 @@
       <div class="field"><label>Print colors</label>
         <select name="colors"><option value="brand" <%= sec.colors !== 'iris' ? 'selected' : '' %>>Brand color</option><option value="iris" <%= sec.colors === 'iris' ? 'selected' : '' %>>Iris (multi-color blend, like passports)</option></select></div>
       <label class="small"><input type="checkbox" name="qrBadge" <%= sec.qrBadge ? 'checked' : '' %>> Framed QR verification badge (“SCAN TO VERIFY”)</label><br>
+      <label class="small"><input type="checkbox" name="partnerName" <%= sec.partnerName ? 'checked' : '' %>> Name the education partner in the accreditation statement</label><br>
       <label class="small"><input type="checkbox" name="legalNote" <%= sec.legalNote ? 'checked' : '' %>> Legal authenticity note at the foot of the certificate</label><br>
       <label class="small"><input type="checkbox" name="microtext" <%= sec.microtext ? 'checked' : '' %>> Microtext lines (certificate ID, blurs when photocopied)</label><br>
       <label class="small"><input type="checkbox" name="ghost" <%= sec.ghost ? 'checked' : '' %>> Ghost LIV seal watermark</label><br>

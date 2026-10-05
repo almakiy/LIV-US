@@ -22,9 +22,9 @@ const { RECOMMENDED } = require('../src/lib/pdf-security');
       VALUES ('Demo Safety Training Co.','https://example.com','United States',$1,'active','#0B1F3A') RETURNING *`, [demoEmail]);
     await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin','Demo Admin',$2,$3)`, [p.id, demoEmail, await bcrypt.hash(demoPass, 12)]);
     const { rows: [tpl] } = await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config)
-      VALUES ($1,'Classic','classic','Dr. Sarah Mitchell','Director of Training',$2) RETURNING *`, [p.id, RECOMMENDED]);
-    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title) VALUES ($1,'Modern','modern','Dr. Sarah Mitchell','Director of Training')`, [p.id]);
-    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Executive','executive','Dr. Sarah Mitchell','Director of Training',$2)`, [p.id, RECOMMENDED]);
+      VALUES ($1,'Executive','executive','Dr. Sarah Mitchell','Director of Training',$2) RETURNING *`, [p.id, RECOMMENDED]);
+    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Classic','classic','Dr. Sarah Mitchell','Director of Training',$2)`, [p.id, RECOMMENDED]);
+    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Modern','modern','Dr. Sarah Mitchell','Director of Training',$2)`, [p.id, RECOMMENDED]);
     const sample = [
       ['Aisha', 'Rahman', 'aisha.rahman@example.com', 'Construction Site Safety Fundamentals', '2026-08-12'],
       ['Michael', 'Johnson', 'michael.j@example.com', 'ISO 45001 Internal Auditor', '2026-09-03'],

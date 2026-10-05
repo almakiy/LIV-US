@@ -61,7 +61,10 @@ function logoOrName(doc, platform, x, y, maxW, maxH, color) {
 }
 
 /** The accreditation role of LIV, as printed on certificates (keep in sync with the website copy). */
-const accreditationNote = () => `This certificate is issued on the basis of the completion report submitted by an education partner accredited by ${cfg.brand}. ${cfg.brand} reviews each accredited partner's trainers, curricula and training methods, and audits them periodically.`;
+const accreditationNote = (platform, config) => {
+  const partner = config && config.partnerName && platform && platform.company_name ? platform.company_name : 'an education partner';
+  return `This certificate is issued on the basis of the completion report submitted by ${partner}${partner === 'an education partner' ? '' : ', an education partner'} accredited by ${cfg.brand}. ${cfg.brand} reviews each accredited partner's trainers, curricula and training methods, and audits them periodically.`;
+};
 
 // ---- Themes: each draws the certificate content; security layers are added around it by renderCertificate.
 // ctx = { doc, data, platform, template, color, qr, name }
@@ -93,7 +96,7 @@ function drawModern({ doc, data, platform, template, color, qr, name, config }) 
     doc.fillColor('#8A93A3').font('Sans').fontSize(8).text(k.toUpperCase(), mx, metaY);
     doc.fillColor('#111827').font('Sans-Bold').fontSize(11).text(v, mx, metaY + 12, { width: w / meta.length - 8 });
   });
-  doc.fillColor('#6B7280').font('Sans').fontSize(7.6).text(accreditationNote(), x, metaY + 46, { width: w, align: 'left', lineGap: 2 });
+  doc.fillColor('#6B7280').font('Sans').fontSize(7.6).text(accreditationNote(platform, config), x, metaY + 46, { width: w, align: 'left', lineGap: 2 });
   doc.moveTo(x, 500).lineTo(x + 200, 500).lineWidth(0.8).strokeColor('#9CA3AF').stroke();
   doc.fillColor('#111827').font('Sans-Bold').fontSize(10).text(template?.signatory_name || platform.company_name, x, 506, { width: 220 });
   doc.fillColor('#5A6474').font('Sans').fontSize(9).text(template?.signatory_title || 'Authorized Signatory', x, 520, { width: 220 });
@@ -116,7 +119,7 @@ function drawClassic({ doc, data, platform, template, color, qr, name, config })
   doc.fillColor('#4B5563').font('Serif-Italic').fontSize(14).text('has successfully completed the course', 0, ly + 12, { width: W, align: 'center' });
   doc.fillColor(color).font('Serif-Bold').fontSize(20).text(data.course_name, 90, doc.y + 6, { width: W - 180, align: 'center' });
   doc.fillColor('#374151').font('Serif').fontSize(12).text(`Completed ${longDate(data.completion_date)}`, 0, doc.y + 10, { width: W, align: 'center' });
-  doc.fillColor('#6B7280').font('Serif').fontSize(8.2).text(accreditationNote(), (W - 520) / 2, doc.y + 18, { width: 520, align: 'center', lineGap: 2 });
+  doc.fillColor('#6B7280').font('Serif').fontSize(8.2).text(accreditationNote(platform, config), (W - 520) / 2, doc.y + 18, { width: 520, align: 'center', lineGap: 2 });
 
   if (config.qrBadge) {
     drawQrBadge(doc, qr, { x: 52, y: H - 176, size: 112, color });
@@ -135,7 +138,7 @@ function drawClassic({ doc, data, platform, template, color, qr, name, config })
 
 // ---- Executive (landscape, US Letter): formal layout with accent bars, double frame, details row,
 // signature, LIV seal and a framed QR badge. Original design.
-function drawExecutive({ doc, data, platform, template, color, qr, name }) {
+function drawExecutive({ doc, data, platform, template, color, qr, name, config }) {
   const gold = '#B08D4C';
   // Accent bars and double frame
   doc.rect(14, 36, 9, 150).fill(color); doc.rect(14, 186, 9, 80).fill(gold); doc.rect(14, 266, 9, 310).fill('#5B6B7F');
@@ -177,18 +180,18 @@ function drawExecutive({ doc, data, platform, template, color, qr, name }) {
     doc.fillColor('#111827').font('Sans-Bold').fontSize(11).text(v, mx, dy + 12, { width: cw, align: 'center', lineBreak: false });
   });
   doc.moveTo(130, dy + 34).lineTo(W - 130, dy + 34).lineWidth(0.4).strokeColor('#E2E5EA').stroke();
-  doc.fillColor('#374151').font('Serif').fontSize(8.8).text(
-    `${accreditationNote()} The holder's details and the status of this certificate can be confirmed online at any time.`,
-    120, dy + 44, { width: W - 240, align: 'center', lineGap: 2 });
+  doc.fillColor('#374151').font('Serif').fontSize(8.4).text(
+    `${accreditationNote(platform, config)} The holder's details and the status of this certificate can be confirmed online at any time.`,
+    110, dy + 42, { width: W - 220, align: 'center', lineGap: 1.8 });
 
   // Bottom row (same places as the Classic design): QR badge left | signature center | LIV seal right
-  const sy = 498;
-  drawQrBadge(doc, qr, { x: 62, y: 410, size: 104, color });
+  const sy = 512;
+  drawQrBadge(doc, qr, { x: 62, y: 434, size: 104, color });
   doc.moveTo(W / 2 - 100, sy).lineTo(W / 2 + 100, sy).lineWidth(0.8).strokeColor('#9CA3AF').stroke();
   doc.fillColor('#8A93A3').font('Sans').fontSize(6.2).text('AUTHORISED BY', W / 2 - 100, sy - 12, { width: 200, align: 'center', characterSpacing: 1.1, lineBreak: false });
   doc.fillColor('#111827').font('Sans-Bold').fontSize(9.5).text(template?.signatory_name || platform.company_name, W / 2 - 130, sy + 6, { width: 260, align: 'center', lineBreak: false });
   doc.fillColor('#6B7280').font('Sans').fontSize(8).text(template?.signatory_title || 'Authorized Signatory', W / 2 - 130, sy + 19, { width: 260, align: 'center', lineBreak: false });
-  drawSeal(doc, W - 62 - 52, 462);
+  drawSeal(doc, W - 62 - 52, 486);
 }
 
 /** Theme registry. `size` is the page size; `area` the region security patterns may fill; layout hints place the legal note and fingerprint. */
@@ -229,4 +232,4 @@ async function renderCertificate(data, platform, template) {
   return done;
 }
 
-module.exports = { renderCertificate, longDate, usDate, THEMES };
+module.exports = { renderCertificate, longDate, usDate, THEMES, accreditationNote };

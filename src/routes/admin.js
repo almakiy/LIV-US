@@ -58,7 +58,7 @@ r.post('/platforms/new', wrap(async (req, res) => {
     const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email, accreditation_status) VALUES ($1,$2,$3,$4,'active') RETURNING id`,
       [f.company_name, f.website || null, f.country || null, f.email]);
     await c.query(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin',$2,$3,$4)`, [p.id, f.full_name, f.email, hash]);
-    await c.query(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Default Classic','classic',$2,'Training Director',$3)`, [p.id, f.full_name, RECOMMENDED]);
+    await c.query(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Default Executive','executive',$2,'Training Director',$3)`, [p.id, f.full_name, RECOMMENDED]);
     await audit({ user: req.user, platformId: p.id, action: 'platform.create', target: f.company_name }, c);
     return p.id;
   });
