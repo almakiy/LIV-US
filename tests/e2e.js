@@ -322,6 +322,48 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const anonAdmin = await anon.request.get(BASE + '/admin/content', { maxRedirects: 0 });
   ok(anonAdmin.status() === 302, 'content admin requires login');
 
+  console.log('Reviewer engine');
+  await adm.goto(BASE + '/admin/service-keys');
+  await adm.fill('input[name=label]', 'E2E reviewer');
+  await adm.uncheck('input[value="content:draft"]'); await adm.uncheck('input[value="content:read"]'); await adm.check('input[value="content:review"]');
+  await adm.click('button:has-text("Create service key")');
+  const revKey = (await adm.textContent('.keybox')).trim();
+  await adm.fill('input[name=label]', 'E2E producer');
+  await adm.click('button:has-text("Create service key")');
+  const prodKey = (await adm.textContent('.keybox')).trim();
+  const withKey = (key) => (path, opt = {}) => anon.request.fetch(BASE + '/api/v1/content' + path, { ...opt, headers: { 'x-api-key': key, ...(opt.headers || {}) } });
+  const rev = withKey(revKey); const prod = withKey(prodKey);
+  ok((await rev('/drafts', { method: 'POST', data: { external_id: 'x1', title: 'T', summary: 'S', body_md: 'B', category: 'quality' } })).status() === 403, 'review-only key cannot create drafts');
+  ok((await prod('/review/queue')).status() === 403, 'draft key cannot read the review queue');
+
+  const rtitle = `Reviewer Test ${stamp}`;
+  await adm.goto(BASE + '/admin/content/new');
+  await adm.fill('input[name=title]', rtitle);
+  await adm.fill('textarea[name=summary]', 'A draft with a claim that must be blocked by the identity rules.');
+  await adm.fill('textarea[name=body_md]', '## Scope\n\nOur credential is ISO accredited and recognized worldwide.\n\n## Method\n\nAuditors sample records.');
+  await adm.click('button:has-text("Save draft")');
+  await adm.click('button:has-text("Request automated review")');
+  ok(await see(adm, 'text=Automated review requested'), 'editor can request an automated review');
+  const rq = await (await rev('/review/queue')).json();
+  ok(rq.items.some((i) => i.title === rtitle && i.requested), 'review queue lists the requested draft');
+  const cli = execSync('node engines/cli.js review-queue', { env: { ...process.env, ENGINE_SITE_URL: BASE, ENGINE_SERVICE_KEY: revKey, ENGINE_PROVIDER: 'mock' } }).toString();
+  ok(cli.includes('[block] identity'), 'engine CLI reviewed the draft through the Content API');
+  await adm.reload();
+  ok(await see(adm, 'text=Do not state that LIV or its credentials are ISO accredited'), 'editor shows the automated review findings');
+  const rid = adm.url().split('/').pop();
+  ok(((await (await rev(`/review/articles/${rid}`)).json()).version) === 1, 'reviewer can read the draft in full');
+  ok((await rev(`/review/articles/${rid}/report`, { method: 'POST', data: { version: 99, result: 'pass', score: 100, flags: [] } })).status() === 409, 'a report for a stale version is refused');
+  ok((await rev(`/review/articles/${rid}/report`, { method: 'POST', data: { version: 1, result: 'pass', score: 100, flags: [{ severity: 'block', message: 'x' }] } })).status() === 422, 'a pass report cannot carry blocking flags');
+  await adm.fill('input[name=reviewed_by]', 'Dr. Jane Reviewer');
+  await adm.click('button:has-text("Publish")');
+  ok(await see(adm, 'text=automated review blocked this version'), 'a blocking automated review stops publication');
+  await adm.fill('input[name=override_reason]', 'Wording reviewed with counsel; claim removed in next edit.');
+  await adm.click('button:has-text("Publish")');
+  ok(await see(adm, 'text=Saved and published'), 'a recorded override reason allows publication');
+  ok(psql("SELECT count(*) FROM audit_logs WHERE action = 'content.publish.override'") === '1', 'the override is recorded in the audit log');
+  await adm.click('button:has-text("Delete article")');
+  await see(adm, 'text=Article deleted');
+
   console.log('Quality records');
   await adm.goto(BASE + '/admin/qms');
   ok(await see(adm, 'text=Compliance and quality records') && await see(adm, 'text=Audit log integrity'), 'compliance dashboard renders');

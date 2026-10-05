@@ -6,7 +6,7 @@ const { RECOMMENDED } = require('../lib/pdf-security');
 const { qrToken } = require('../lib/crypto');
 const bcrypt = require('bcryptjs');
 const { tx } = require('../db');
-const { CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards } = require('../lib/content');
+const { mergeExcerpts, CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards } = require('../lib/content');
 const { uniqueSlug, snapshot, contentChanged } = require('../lib/article-store');
 const { newApiKey } = require('../lib/crypto');
 const { requireSuper, wrap, flash } = require('../lib/guards');
@@ -148,13 +148,15 @@ function readArticleForm(b) {
     next_review_at: /^\d{4}-\d{2}-\d{2}$/.test(b.next_review_at || '') ? b.next_review_at : null,
     standards: parseStandards(b.standards),
     sources: parseSourcesText(b.sources_text),
+    override_reason: String(b.override_reason || '').trim().slice(0, 300),
     ai_assisted: b.ai_assisted === 'on',
     change_note: String(b.change_note || '').trim().slice(0, 300),
   };
 }
 const editForm = async (res, a, error) => {
   const { rows: versions } = a.id ? await q('SELECT version, changed_by, change_note, created_at FROM article_versions WHERE article_id = $1 ORDER BY version DESC LIMIT 30', [a.id]) : { rows: [] };
-  res.status(error ? 400 : 200).render('admin/content-edit', { title: a.id ? 'Edit article' : 'New article', a, error: error || null, CATEGORIES, KINDS, versions, sourcesText: sourcesToText(a.sources) });
+  const { rows: [report] } = a.id ? await q('SELECT * FROM review_reports WHERE article_id = $1 AND version = $2 ORDER BY created_at DESC LIMIT 1', [a.id, a.version]) : { rows: [] };
+  res.status(error ? 400 : 200).render('admin/content-edit', { title: a.id ? 'Edit article' : 'New article', a, error: error || null, CATEGORIES, KINDS, versions, report: report || null, sourcesText: sourcesToText(a.sources) });
 };
 
 r.get('/content', wrap(async (req, res) => {
@@ -186,7 +188,16 @@ r.post('/content', wrap(async (req, res) => {
   if (id) {
     const { rows: [old] } = await q('SELECT * FROM articles WHERE id = $1', [id]);
     if (!old) return res.redirect('/admin/content');
+    f.sources = mergeExcerpts(f.sources, old.sources);
     const changed = contentChanged(old, f);
+    // A blocking automated review of this exact version stops publication unless a reason for overriding is recorded.
+    if (publish && !changed) {
+      const { rows: [rep] } = await q('SELECT result, score FROM review_reports WHERE article_id = $1 AND version = $2 ORDER BY created_at DESC LIMIT 1', [id, old.version]);
+      if (rep && rep.result === 'block') {
+        if (!f.override_reason) return editForm(res, { ...f, id, status: old.status, version: old.version, origin: old.origin, reviewed_at: old.reviewed_at }, 'The automated review blocked this version. Fix the flagged issues, or enter a reason in "Override reason" to publish anyway (it is recorded).');
+        await audit({ user: req.user, action: 'content.publish.override', target: slug, metadata: { reason: f.override_reason, score: rep.score } });
+      }
+    }
     // A reviewer's sign-off covers the content they saw: if the text changed and the name was not re-entered, it no longer stands.
     const reviewerKept = f.reviewed_by && (f.reviewed_by !== old.reviewed_by || !changed);
     const { rows: [x] } = await q(`UPDATE articles SET slug=$1, title=$2, summary=$3, body_md=$4, category=$5, kind=$6, author_name=$7, tags=$8, updated_at=now(),
@@ -210,6 +221,13 @@ r.post('/content', wrap(async (req, res) => {
   flash(req, 'success', saved.status === 'published' ? 'Saved and published.' : 'Draft saved.');
   res.redirect(`/admin/content/${saved.id}`);
 }));
+r.post('/content/:id/request-review', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [a] } = await q(`UPDATE articles SET review_requested_at = now() WHERE id = $1 AND status = 'draft' RETURNING slug`, [req.params.id]);
+  if (a) await audit({ user: req.user, action: 'content.review.request', target: a.slug });
+  flash(req, a ? 'success' : 'error', a ? 'Automated review requested. The Reviewer engine will pick it up.' : 'Only drafts can be sent for automated review.');
+  res.redirect(`/admin/content/${req.params.id}`);
+}));
 r.post('/content/:id/delete', wrap(async (req, res, next) => {
   if (!UUID_RE.test(req.params.id)) return next();
   const { rows: [a] } = await q('DELETE FROM articles WHERE id = $1 RETURNING slug', [req.params.id]);
@@ -229,7 +247,10 @@ r.get('/service-keys', wrap(async (req, res) => {
 r.post('/service-keys', wrap(async (req, res) => {
   const { key, prefix, hash } = newApiKey();
   const label = String(req.body.label || '').trim().slice(0, 100) || 'Engine';
-  await q('INSERT INTO service_keys (label, prefix, key_hash, created_by) VALUES ($1,$2,$3,$4)', [label, prefix, hash, req.user.id]);
+  const ALLOWED = ['content:draft', 'content:read', 'content:review'];
+  const picked = [].concat(req.body.scopes || []).filter((x) => ALLOWED.includes(x));
+  const scopes = picked.length ? picked : ['content:draft', 'content:read'];
+  await q('INSERT INTO service_keys (label, prefix, key_hash, scopes, created_by) VALUES ($1,$2,$3,$4,$5)', [label, prefix, hash, scopes, req.user.id]);
   await audit({ user: req.user, action: 'service_key.create', target: `${label} (${prefix})` });
   req.session.newServiceKey = key;
   res.redirect('/admin/service-keys');

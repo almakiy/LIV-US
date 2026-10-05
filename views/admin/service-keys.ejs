@@ -5,6 +5,10 @@
 <form method="post" action="/admin/service-keys" class="card">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <div class="field"><label>Label <span class="muted small">(which engine uses it)</span></label><input type="text" name="label" maxlength="100" placeholder="e.g. Producer engine"></div>
+  <div class="field"><label>Scopes</label>
+    <label class="small"><input type="checkbox" name="scopes" value="content:draft" checked> content:draft: create and update its own drafts (Producer, Scout)</label><br>
+    <label class="small"><input type="checkbox" name="scopes" value="content:read" checked> content:read: read the status of its own items</label><br>
+    <label class="small"><input type="checkbox" name="scopes" value="content:review"> content:review: read any draft and attach review reports (Reviewer)</label></div>
   <button class="btn">Create service key</button>
 </form>
 <div class="table-wrap mt"><table>

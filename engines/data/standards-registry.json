@@ -1,0 +1,28 @@
+{
+  "_note": "Starter registry for the Reviewer's standards check. Editions change (for example ISO 9001 is under revision). The editors must verify every entry against the publisher before relying on it; verified_on stays null until a person has done so. The Reviewer only flags mismatches for a human to check; it never asserts which edition is current.",
+  "standards": {
+    "ISO 9000": { "title": "Quality management systems: fundamentals and vocabulary", "current": "2015", "verified_on": null },
+    "ISO 9001": { "title": "Quality management systems: requirements", "current": "2015", "verified_on": null },
+    "ISO 10002": { "title": "Customer satisfaction: guidelines for complaints handling", "current": "2018", "verified_on": null },
+    "ISO 10015": { "title": "Guidelines for competence management and people development", "current": "2019", "verified_on": null },
+    "ISO 13485": { "title": "Medical devices: quality management systems", "current": "2016", "verified_on": null },
+    "ISO 14001": { "title": "Environmental management systems: requirements", "current": "2015", "verified_on": null },
+    "ISO 19011": { "title": "Guidelines for auditing management systems", "current": "2018", "verified_on": null },
+    "ISO 21001": { "title": "Educational organizations: management systems", "current": "2018", "verified_on": null },
+    "ISO 21500": { "title": "Project, programme and portfolio management: context and concepts", "current": "2021", "verified_on": null },
+    "ISO 21502": { "title": "Project management: guidance", "current": "2020", "verified_on": null },
+    "ISO 22000": { "title": "Food safety management systems", "current": "2018", "verified_on": null },
+    "ISO 26000": { "title": "Guidance on social responsibility", "current": "2010", "verified_on": null },
+    "ISO 27001": { "title": "Information security management systems", "current": "2022", "verified_on": null },
+    "ISO 29993": { "title": "Learning services outside formal education: service requirements", "current": "2017", "verified_on": null },
+    "ISO 31000": { "title": "Risk management: guidelines", "current": "2018", "verified_on": null },
+    "ISO 37301": { "title": "Compliance management systems", "current": "2021", "verified_on": null },
+    "ISO 45001": { "title": "Occupational health and safety management systems", "current": "2018", "verified_on": null },
+    "ISO 45003": { "title": "Psychological health and safety at work", "current": "2021", "verified_on": null },
+    "ISO 50001": { "title": "Energy management systems", "current": "2018", "verified_on": null },
+    "ISO/IEC 17011": { "title": "Requirements for accreditation bodies", "current": "2017", "verified_on": null },
+    "ISO/IEC 17021-1": { "title": "Requirements for bodies providing audit and certification of management systems", "current": "2015", "verified_on": null },
+    "ISO/IEC 17024": { "title": "Requirements for bodies certifying persons", "current": "2012", "verified_on": null },
+    "ISO/IEC 17025": { "title": "Competence of testing and calibration laboratories", "current": "2017", "verified_on": null }
+  }
+}

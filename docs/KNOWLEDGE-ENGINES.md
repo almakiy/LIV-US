@@ -1,6 +1,24 @@
 # LIV — Knowledge engines, content model and course platform (design)
 
-Status: design only (October 5, 2026). Nothing here is built yet. It extends Phase 3 (knowledge hub, built) and feeds Phases 6–8 below.
+Status (October 5, 2026): the site side and the **Reviewer engine scaffold are built**; the Producer and Scout are not. It extends Phase 3 (knowledge hub, built).
+
+| Part | State |
+|---|---|
+| Content model, human reviewer sign-off, versions, service keys, draft-only Content API | Built and tested |
+| Review scope on the API (queue, full draft, report per version), review panel in the editor, publish gate on a blocking report (with a recorded override reason) | Built and tested |
+| **Reviewer engine** (`engines/`): identity and legal rules, citations, standards registry, similarity, structure, dates and links, claim check (offline lexical method, or a model when configured) | Built and tested; runs offline and free by default |
+| Model access with spend guard (monthly cap, usage ledger, kill switch; refuses to run without key, prices and budget) | Built and tested; **not connected to any paid model until you add a key and a budget** |
+| Producer engine (drafting from an evidence pack) | Not built |
+| Scout engine (horizon scanning of primary sources) | Not built |
+
+### Running the Reviewer
+- Offline, free: `npm run engine:review-file -- path/to/draft.json` (draft JSON uses the Content API fields, sources may carry an `excerpt`). Exit code 0 pass, 2 needs changes, 3 block.
+- Against the site: create a service key with scope `content:review` under Admin → Service keys, set `ENGINE_SITE_URL` and `ENGINE_SERVICE_KEY`, then `npm run engine:review-queue`. It reviews every draft that has no report for its current version or that an editor asked to review, and posts one report per draft. In the editor, "Request automated review" queues a draft.
+- Spend: `npm run engine:usage`. Default provider is `mock` (no network, no cost). To use a model set `ENGINE_PROVIDER=anthropic`, `ANTHROPIC_API_KEY` (Secrets, never in code), `ENGINE_BUDGET_USD`, `ENGINE_PRICE_IN_PER_MTOK`, `ENGINE_PRICE_OUT_PER_MTOK` (from the provider's current price list) and optionally `ENGINE_MODEL`. Without all of them the paid provider refuses to run. Switch everything off with `ENGINES_ENABLED=false` or a file named `KILL` in `engines/data/`.
+- The standards registry (`engines/data/standards-registry.json`) is a starter list with `verified_on: null`. Editors must verify each entry against the publisher; the Reviewer only flags mismatches for a person to check.
+- A report never publishes or edits anything. A blocking report stops publication until the findings are fixed or a person records an override reason (kept in the audit log).
+
+
 
 ## 1. Decision: external engines, internal source of truth, one API between them
 
@@ -71,7 +89,7 @@ Publishing requires **no blocking flags AND a named human subject-matter reviewe
 
 New tables (site): `sources`, `signals`, `evidence_items`, `briefs`, `content_versions`, `review_reports`, `review_flags`, `service_keys`; extend `articles` with type, standards, reviewers, `next_review_at`, version, disclosure.
 
-## 6. Build order
+## 6. Build order (1 and 2 built; the model-backed claim check is ready but needs your key and budget)
 1. **Content model and Content API on the site** (types, versions, review states, reviewer sign-off, public "Reviewed by / Last reviewed / Sources").
 2. **Reviewer first:** useful immediately on human-written content and it becomes the quality gate for everything else.
 3. **Producer** using the Reviewer as its gate.

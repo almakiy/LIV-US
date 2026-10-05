@@ -71,4 +71,43 @@ r.get('/articles/:ref', need('content:read'), wrap(async (req, res) => {
   res.json(view(a));
 }));
 
+// ---- Reviewer engine (scope content:review): may read ANY draft, attach a report to the version it reviewed, never change status or content. ----
+const RESULTS = ['pass', 'needs_changes', 'block'];
+r.get('/review/queue', need('content:review'), wrap(async (req, res) => {
+  const { rows } = await q(`SELECT a.id, a.external_id, a.title, a.kind, a.version, a.origin, (a.review_requested_at IS NOT NULL) AS requested FROM articles a
+    WHERE a.status = 'draft' AND (a.review_requested_at IS NOT NULL OR NOT EXISTS (SELECT 1 FROM review_reports r WHERE r.article_id = a.id AND r.version = a.version))
+    ORDER BY (a.review_requested_at IS NOT NULL) DESC, a.updated_at LIMIT 50`);
+  res.json({ items: rows });
+}));
+r.get('/review/articles/:id', need('content:review'), wrap(async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: 'Not found.' });
+  const { rows: [a] } = await q(`SELECT id, external_id, title, summary, body_md, kind, category, version, origin, ai_assisted, sources, standards, tags FROM articles WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+  if (!a) return res.status(404).json({ error: 'Not found or not a draft.' });
+  res.json(a);
+}));
+r.post('/review/articles/:id/report', need('content:review'), wrap(async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(404).json({ error: 'Not found.' });
+  const b = req.body || {};
+  const flags = Array.isArray(b.flags) ? b.flags.slice(0, 200).map((f) => ({
+    id: String(f.id || '').slice(0, 60), severity: ['block', 'warn', 'info'].includes(f.severity) ? f.severity : 'info', check: String(f.check || '').slice(0, 60),
+    message: String(f.message || '').slice(0, 500), location: f.location ? String(f.location).slice(0, 200) : undefined })) : [];
+  const score = Math.round(Number(b.score));
+  const errors = [];
+  if (!RESULTS.includes(b.result)) errors.push(`result must be one of: ${RESULTS.join(', ')}`);
+  if (!Number.isFinite(score) || score < 0 || score > 100) errors.push('score must be 0-100');
+  if (!Number.isInteger(b.version)) errors.push('version (the article version that was reviewed) is required');
+  if (b.result === 'pass' && flags.some((f) => f.severity === 'block')) errors.push('a pass report cannot contain blocking flags');
+  if (errors.length) return res.status(422).json({ errors });
+  const { rows: [a] } = await q(`SELECT id, version, slug FROM articles WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+  if (!a) return res.status(404).json({ error: 'Not found or not a draft.' });
+  if (a.version !== b.version) return res.status(409).json({ error: `The draft changed (now version ${a.version}); review it again.` });
+  const checks = Array.isArray(b.checks_run) ? b.checks_run.slice(0, 40).map((c) => String(c).slice(0, 60)) : [];
+  const model = { provider: String(b.model?.provider || '').slice(0, 40), name: String(b.model?.name || '').slice(0, 80) };
+  const { rows: [rep] } = await q(`INSERT INTO review_reports (article_id, version, engine, result, score, flags, checks_run, model) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, created_at`,
+    [a.id, a.version, req.svc.label, b.result, score, JSON.stringify(flags), checks, JSON.stringify(model)]);
+  await q('UPDATE articles SET review_requested_at = NULL WHERE id = $1', [a.id]);
+  await audit({ actorLabel: `service:${req.svc.label}`, action: 'content.api.review', target: a.slug, metadata: { result: b.result, score } });
+  res.status(201).json({ id: rep.id, created_at: rep.created_at, article_version: a.version });
+}));
+
 module.exports = r;

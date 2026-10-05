@@ -30,6 +30,7 @@
       <div class="field"><label>Reviewed by <span class="muted small">(named human subject-matter reviewer; required to publish)</span></label><input type="text" name="reviewed_by" maxlength="150" value="<%= a.reviewed_by || '' %>"></div>
       <div class="field"><label>Change note <span class="muted small">(saved in the version history)</span></label><input type="text" name="change_note" maxlength="300"></div>
     </div>
+    <% if (report && report.result === 'block') { %><div class="field"><label>Override reason <span class="muted small">(the automated review blocked this version; a reason is recorded if you publish anyway)</span></label><input type="text" name="override_reason" maxlength="300"></div><% } %>
     <label class="small"><input type="checkbox" name="ai_assisted" <%= a.ai_assisted ? 'checked' : '' %>> Prepared with AI assistance (shows a disclosure on the public page)</label>
     <% if (a.id) { %><p class="small muted mt">Version <%= a.version %><%= a.origin === 'engine' ? ' · created by an engine' : '' %><%= a.reviewed_at ? ' · reviewed ' + usDate(a.reviewed_at) : '' %>. If the text changes after review, re-enter the reviewer's name to confirm the sign-off still stands.</p><% } %>
   </fieldset>
@@ -41,6 +42,13 @@
     <button class="btn secondary" formaction="/admin/content/preview" formtarget="_blank">Preview</button>
   </div>
 </form>
+<% if (a.id) { %><div class="card mt"><h3>Automated review</h3>
+  <% if (report) { %><p><span class="badge <%= report.result === 'pass' ? 'b-active' : report.result === 'block' ? 'b-suspended' : 'b-pending' %>"><%= report.result.replace('_', ' ') %></span> score <%= report.score %>/100 · <%= report.engine %> · <%= usDateTime(report.created_at) %><% if (report.model && report.model.provider) { %> · model: <%= report.model.provider %> <%= report.model.name %><% } %></p>
+    <% if (report.flags.length) { %><table><tr><th>Level</th><th>Check</th><th>Finding</th></tr><% report.flags.forEach(f => { %><tr><td><span class="badge <%= f.severity === 'block' ? 'b-suspended' : 'b-pending' %>"><%= f.severity %></span></td><td class="small"><%= f.check %></td><td class="small"><%= f.message %><%= f.location ? ' (' + f.location + ')' : '' %></td></tr><% }) %></table><% } else { %><p class="small muted">No findings.</p><% } %>
+  <% } else { %><p class="small muted">No automated review for version <%= a.version %> yet.</p><% } %>
+  <p class="small muted">An automated review narrows what a human must check; it does not replace the named reviewer's sign-off.</p>
+  <% if (a.status === 'draft') { %><form method="post" action="/admin/content/<%= a.id %>/request-review" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm"><%= a.review_requested_at ? 'Review requested (waiting for the engine)' : 'Request automated review' %></button></form><% } %>
+</div><% } %>
 <% if (versions && versions.length) { %><h3 class="mt">Version history</h3><div class="table-wrap"><table><tr><th>Version</th><th>By</th><th>Note</th><th>Date</th></tr>
   <% versions.forEach(v => { %><tr><td><%= v.version %></td><td><%= v.changed_by %></td><td><%= v.change_note %></td><td><%= usDate(v.created_at) %></td></tr><% }) %></table></div><% } %>
 <% if (a.id) { %><form method="post" action="/admin/content/<%= a.id %>/delete" data-confirm="Delete this article permanently?" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Delete article</button></form><% } %>

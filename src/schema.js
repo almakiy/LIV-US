@@ -213,6 +213,22 @@ CREATE TABLE IF NOT EXISTS article_versions (
   UNIQUE (article_id, version)
 );
 
+-- Reviewer engine reports (docs/KNOWLEDGE-ENGINES.md). A report belongs to one version of an article; it never changes publish state by itself.
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS review_requested_at TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS review_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  version INT NOT NULL,
+  engine VARCHAR(60) NOT NULL,
+  result VARCHAR(14) NOT NULL CHECK (result IN ('pass','needs_changes','block')),
+  score INT NOT NULL CHECK (score BETWEEN 0 AND 100),
+  flags JSONB NOT NULL DEFAULT '[]',
+  checks_run TEXT[] NOT NULL DEFAULT '{}',
+  model JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_review_reports_article ON review_reports(article_id, version, created_at DESC);
+
 -- ===== Quality records (docs/QMS-RECORDS.md): readiness for ISO/IEC 17024-style assessments, CPD/IACET and ISO 9001/21001 =====
 -- Tamper-evident audit log: every row carries a hash chained to the previous row; rows cannot be updated or deleted.
 ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS prev_hash CHAR(64);

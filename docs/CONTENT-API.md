@@ -33,5 +33,12 @@ Response body: `{ id, external_id, slug, title, kind, category, status, version,
 ## GET /articles — list your items (`?status=draft|published`, max 100)
 ## GET /articles/{id or external_id} — one of your items (to learn the editor's decision)
 
+## Reviewer endpoints (scope `content:review`)
+For the Reviewer engine. A review-scoped key can read any **draft** and attach a report; it cannot create drafts or change content or status.
+- `GET /review/queue`: drafts without a report for their current version, or that an editor asked to review.
+- `GET /review/articles/{id}`: the full draft (`title, summary, body_md, kind, category, version, sources (with excerpt), standards, tags`). 404 for published items.
+- `POST /review/articles/{id}/report`: `{ version, result: pass|needs_changes|block, score: 0-100, flags: [{id, severity: block|warn|info, check, message, location}], checks_run: [], model: {provider, name} }`. `409` if the draft changed since `version`; `422` if a `pass` carries blocking flags.
+Sources may carry a short evidence `excerpt` (max 2000 characters) used by the similarity and claim checks.
+
 ## Planned next
-Webhooks to the engines on `approved`, `rejected`, `changes_requested`; evidence items and review reports (Reviewer engine); `content:review` scope for the Reviewer to attach reports.
+Webhooks to the engines on `approved`, `rejected`, `changes_requested`; evidence items for the Producer.

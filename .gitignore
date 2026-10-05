@@ -2,3 +2,5 @@ node_modules/
 .env
 storage/*
 !storage/.gitkeep
+engines/data/usage.jsonl
+engines/data/KILL

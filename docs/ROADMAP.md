@@ -104,7 +104,7 @@ Shipped: `articles` table, admin editor (`/admin/content`) with Markdown, draft/
   recommendation: build inside this app to keep one brand, one domain and one deploy.
 
 ### Phase 3b — Knowledge engines (step 1 built; rest design only)
-Built (step 1): content types, named human reviewer required to publish, sources and standards on each article, freshness date, version history, "AI-assisted" disclosure, scoped service keys and the draft-only Content API (`docs/CONTENT-API.md`). Next: Reviewer engine, then Producer, then Scout.
+Built (step 1): content types, named human reviewer required to publish, sources and standards on each article, freshness date, version history, "AI-assisted" disclosure, scoped service keys and the draft-only Content API (`docs/CONTENT-API.md`). Reviewer engine scaffold built (offline by default; paid model only with key and budget). Next: Producer, then Scout.
 Scout (horizon scanning), Producer (drafting) and Reviewer (scientific and editorial audit) as an external service that talks to the site through a scoped Content API, with humans approving every publication. Full design, content types, build order and open decisions: `docs/KNOWLEDGE-ENGINES.md`.
 
 ### Phases 6–8 — Course catalogue, curriculum studio, candidate accounts (design only; later phases by owner decision)

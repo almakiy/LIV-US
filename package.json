@@ -1,7 +1,7 @@
 {
   "name": "liv-certification-platform",
   "version": "1.0.0",
-  "description": "LIV LLC — training accreditation, certificate issuance (PDF+QR) and public verification",
+  "description": "LIV LLC \u2014 training accreditation, certificate issuance (PDF+QR) and public verification",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -9,7 +9,10 @@
     "seed": "node scripts/seed.js",
     "reset-admin": "node scripts/reset-admin.js",
     "test": "node tests/e2e.js",
-    "test:unit": "node --test tests/unit/*.test.js"
+    "test:unit": "node --test tests/unit/*.test.js",
+    "engine:review-file": "node engines/cli.js review-file",
+    "engine:review-queue": "node engines/cli.js review-queue",
+    "engine:usage": "node engines/cli.js usage"
   },
   "dependencies": {
     "archiver": "^7.0.1",

@@ -75,11 +75,17 @@ function validateDraft(b) {
     if (o.sources.length > MAX_SOURCES) errors.push(`at most ${MAX_SOURCES} sources`);
     o.sources.slice(0, MAX_SOURCES).forEach((s, i) => {
       if (!s || !String(s.title || '').trim() || !isHttpUrl(s.url)) errors.push(`sources[${i}] needs a title and an http(s) url`);
-      else value.sources.push({ title: str(s.title, 200), url: String(s.url).slice(0, 500), publisher: str(s.publisher, 120), accessed: /^\d{4}-\d{2}-\d{2}$/.test(s.accessed || '') ? s.accessed : undefined });
+      else value.sources.push({ title: str(s.title, 200), url: String(s.url).slice(0, 500), publisher: str(s.publisher, 120), accessed: /^\d{4}-\d{2}-\d{2}$/.test(s.accessed || '') ? s.accessed : undefined, excerpt: s.excerpt ? str(s.excerpt, 2000) : undefined });
     });
   }
   for (const f of ['title', 'summary', 'body_md', 'author_name']) if (hasNonLatin(value[f])) errors.push(`${f} must use English (Latin) letters only`);
   return { errors, value };
 }
 
-module.exports = { CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards, validateDraft, isHttpUrl };
+/** Keeps stored evidence excerpts when an editor re-saves the sources list (the admin form only shows title | url | publisher). */
+function mergeExcerpts(newSources, oldSources) {
+  const byUrl = new Map((Array.isArray(oldSources) ? oldSources : []).map((s) => [s.url, s]));
+  return newSources.map((s) => { const o = byUrl.get(s.url); return o && o.excerpt ? { ...s, excerpt: o.excerpt, accessed: o.accessed } : s; });
+}
+
+module.exports = { mergeExcerpts, CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards, validateDraft, isHttpUrl };
