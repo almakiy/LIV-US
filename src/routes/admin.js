@@ -59,7 +59,7 @@ r.post('/platforms/new', wrap(async (req, res) => {
   const id = await tx(async (c) => {
     const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email, accreditation_status) VALUES ($1,$2,$3,$4,'active') RETURNING id`,
       [f.company_name, f.website || null, f.country || null, f.email]);
-    await c.query(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin',$2,$3,$4)`, [p.id, f.full_name, f.email, hash]);
+    await c.query(`INSERT INTO users (platform_id, role, full_name, email, password_hash, must_change_password) VALUES ($1,'platform_admin',$2,$3,$4,true)`, [p.id, f.full_name, f.email, hash]);
     await c.query(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Default Executive','executive',$2,'Training Director',$3)`, [p.id, f.full_name, RECOMMENDED]);
     await audit({ user: req.user, platformId: p.id, action: 'platform.create', target: f.company_name }, c);
     return p.id;
@@ -81,10 +81,12 @@ r.get('/platforms/:id', wrap(async (req, res, next) => {
   if (!UUID_RE.test(req.params.id)) return next();
   const { rows: [p] } = await q('SELECT * FROM platforms WHERE id = $1', [req.params.id]);
   if (!p) return next();
-  const { rows: users } = await q('SELECT full_name, email, last_login_at, created_at FROM users WHERE platform_id = $1', [p.id]);
+  const { rows: users } = await q('SELECT id, full_name, email, last_login_at, created_at, totp_enabled, must_change_password FROM users WHERE platform_id = $1 ORDER BY created_at', [p.id]);
+  const { rows: [agr] } = await q(`SELECT a.version, c.accepted_at, c.accepted_name FROM agreements a LEFT JOIN agreement_acceptances c ON c.agreement_id = a.id AND c.platform_id = $1 WHERE a.status = 'active'`, [p.id]);
+  const newPassword = req.session.newTempPassword || null; delete req.session.newTempPassword;
   const { rows: [st] } = await q(`SELECT count(*)::int AS total, count(*) FILTER (WHERE status='revoked')::int AS revoked FROM certificates WHERE platform_id=$1`, [p.id]);
   const { rows: log } = await q('SELECT * FROM audit_logs WHERE platform_id = $1 ORDER BY created_at DESC LIMIT 20', [p.id]);
-  res.render('admin/platform', { title: p.company_name, p, users, st, log });
+  res.render('admin/platform', { title: p.company_name, p, users, st, log, agr: agr || null, newPassword });
 }));
 
 r.post('/platforms/:id/status', wrap(async (req, res, next) => {
@@ -237,6 +239,69 @@ r.post('/content/:id/delete', wrap(async (req, res, next) => {
   res.redirect('/admin/content');
 }));
 
+
+// ---------- Partner users: password and two-factor resets ----------
+r.post('/users/:id/reset-password', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [u] } = await q(`SELECT id, email, platform_id FROM users WHERE id = $1 AND role = 'platform_admin'`, [req.params.id]);
+  if (!u) return next();
+  const temp = require('crypto').randomBytes(12).toString('base64url');
+  await q('UPDATE users SET password_hash = $1, must_change_password = true WHERE id = $2', [await bcrypt.hash(temp, 12), u.id]);
+  await q(`DELETE FROM sessions WHERE sess->>'userId' = $1`, [u.id]).catch(() => {});
+  await audit({ user: req.user, platformId: u.platform_id, action: 'admin.reset_password', target: u.email });
+  req.session.newTempPassword = `${u.email}: ${temp}`;
+  res.redirect(`/admin/platforms/${u.platform_id}`);
+}));
+r.post('/users/:id/reset-2fa', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [u] } = await q(`UPDATE users SET totp_secret_enc = NULL, totp_enabled = false, totp_last_step = 0, recovery_hashes = '{}' WHERE id = $1 AND role = 'platform_admin' RETURNING email, platform_id`, [req.params.id]);
+  if (!u) return next();
+  await audit({ user: req.user, platformId: u.platform_id, action: 'admin.reset_2fa', target: u.email });
+  flash(req, 'success', `Two-factor sign-in reset for ${u.email}. They can set it up again.`);
+  res.redirect(`/admin/platforms/${u.platform_id}`);
+}));
+
+// ---------- Partner agreement versions ----------
+const { hasPlaceholder, STARTER_TITLE, STARTER_BODY } = require('../lib/agreements');
+r.get('/agreements', wrap(async (req, res) => {
+  const { rows } = await q(`SELECT a.*, (SELECT count(*)::int FROM agreement_acceptances c WHERE c.agreement_id = a.id) AS accepted FROM agreements a ORDER BY a.version DESC`);
+  const active = rows.find((x) => x.status === 'active');
+  const { rows: waiting } = active ? await q(`SELECT p.id, p.company_name FROM platforms p WHERE NOT EXISTS (SELECT 1 FROM agreement_acceptances c WHERE c.platform_id = p.id AND c.agreement_id = $1) ORDER BY p.company_name`, [active.id]) : { rows: [] };
+  res.render('admin/agreements', { title: 'Partner agreements', rows, active, waiting });
+}));
+r.post('/agreements', wrap(async (req, res) => {
+  const { rows: [m] } = await q('SELECT COALESCE(max(version), 0) + 1 AS v FROM agreements');
+  const { rows: [last] } = await q('SELECT title, body_md FROM agreements ORDER BY version DESC LIMIT 1');
+  const { rows: [a] } = await q(`INSERT INTO agreements (version, title, body_md, created_by) VALUES ($1,$2,$3,$4) RETURNING id`, [m.v, last ? last.title : STARTER_TITLE, last ? last.body_md : STARTER_BODY, req.user.id]);
+  await audit({ user: req.user, action: 'agreement.create', target: `v${m.v}` });
+  res.redirect(`/admin/agreements/${a.id}`);
+}));
+r.get('/agreements/:id', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [a] } = await q('SELECT * FROM agreements WHERE id = $1', [req.params.id]);
+  if (!a) return next();
+  const { rows: acc } = await q(`SELECT p.company_name, c.accepted_name, c.accepted_at FROM agreement_acceptances c JOIN platforms p ON p.id = c.platform_id WHERE c.agreement_id = $1 ORDER BY c.accepted_at`, [a.id]);
+  res.render('admin/agreement', { title: `Agreement v${a.version}`, a, acc, html: renderMarkdown(a.body_md), placeholder: hasPlaceholder(a.body_md) });
+}));
+r.post('/agreements/:id/save', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rowCount } = await q(`UPDATE agreements SET title = $1, body_md = $2 WHERE id = $3 AND status = 'draft'`, [String(req.body.title || '').trim().slice(0, 200) || STARTER_TITLE, String(req.body.body_md || '').slice(0, 200000), req.params.id]);
+  flash(req, rowCount ? 'success' : 'error', rowCount ? 'Draft saved.' : 'Only a draft can be edited.');
+  res.redirect(`/admin/agreements/${req.params.id}`);
+}));
+r.post('/agreements/:id/activate', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [a] } = await q(`SELECT * FROM agreements WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+  if (!a) { flash(req, 'error', 'Only a draft can be activated.'); return res.redirect(`/admin/agreements/${req.params.id}`); }
+  if (hasPlaceholder(a.body_md)) { flash(req, 'error', 'Replace every [PLACEHOLDER] with the final text before activating.'); return res.redirect(`/admin/agreements/${a.id}`); }
+  await tx(async (c) => {
+    await c.query(`UPDATE agreements SET status = 'retired' WHERE status = 'active'`);
+    await c.query(`UPDATE agreements SET status = 'active', activated_at = now() WHERE id = $1`, [a.id]);
+  });
+  await audit({ user: req.user, action: 'agreement.activate', target: `v${a.version}` });
+  flash(req, 'success', `Version ${a.version} is active. Every partner must accept it before using the portal.`);
+  res.redirect(`/admin/agreements/${a.id}`);
+}));
 
 // ---------- Service keys for the knowledge engines (Content API) ----------
 r.get('/service-keys', wrap(async (req, res) => {

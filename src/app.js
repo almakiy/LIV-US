@@ -51,7 +51,7 @@ app.use(async (req, res, next) => {
     delete req.session.flash;
     if (req.session.userId) {
       const { rows: [u] } = await q(
-        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
+        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, u.totp_enabled, u.must_change_password, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
            FROM users u LEFT JOIN platforms p ON p.id = u.platform_id WHERE u.id = $1`, [req.session.userId]);
       if (u) {
         req.user = { ...u, realRole: u.role };
@@ -62,6 +62,12 @@ app.use(async (req, res, next) => {
           else delete req.session.actAs;
         }
       } else delete req.session.userId;
+    }
+    // Account-security gates: a forced password change, and two-factor sign-in when the policy requires it.
+    if (req.user && !/^\/(account|logout|login|api|logo|static|favicon|admin-exit)/.test(req.path)) {
+      const need2fa = cfg.require2fa === 'all' || (cfg.require2fa === 'admin' && req.user.realRole === 'super_admin');
+      if (req.user.must_change_password) { req.session.flash = { type: 'error', text: 'Set a new password to continue.' }; return res.redirect('/account/security#password'); }
+      if (need2fa && !req.user.totp_enabled) { req.session.flash = { type: 'error', text: 'Two-factor sign-in is required. Set it up to continue.' }; return res.redirect('/account/security#two-factor'); }
     }
     res.locals.user = req.user || null;
     if (!req.session.csrf && req.method === 'GET' && !req.path.startsWith('/api')) req.session.csrf = randomToken();
@@ -85,6 +91,7 @@ app.locals.csrfCheck = csrfCheck;
 app.use(require('./routes/public'));
 app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
+app.use('/account', require('./routes/account'));
 app.use('/portal', require('./routes/portal'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin', require('./routes/admin'));

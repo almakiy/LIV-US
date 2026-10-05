@@ -1,0 +1,42 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Account security</h1></div>
+<% if (forced) { %><div class="alert warn">You must set a new password before you can continue.</div><% } %>
+
+<form class="card" method="post" action="/account/password" id="password">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Change password</h3>
+  <div class="field"><label>Current password</label><input type="password" name="current_password" required autocomplete="current-password"></div>
+  <div class="row"><div class="field"><label>New password (10+ characters)</label><input type="password" name="new_password" required minlength="10" autocomplete="new-password"></div>
+    <div class="field"><label>Confirm new password</label><input type="password" name="confirm_password" required minlength="10" autocomplete="new-password"></div></div>
+  <button class="btn">Change password</button>
+</form>
+
+<div class="card mt" id="two-factor">
+  <h3>Two-factor sign-in (authenticator app)</h3>
+  <% if (recovery) { %><div class="alert success"><strong>Save these recovery codes now. They are shown only once and each works one time.</strong>
+    <div class="keybox mt"><%= recovery.join('   ') %></div></div><% } %>
+  <% if (u.totp_enabled) { %>
+    <p><span class="badge b-active">on</span> A code from your authenticator app is required at sign-in. Recovery codes left: <strong><%= remaining %></strong>.</p>
+    <form method="post" action="/account/2fa/recovery-codes" class="mt">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="field"><label>Password</label><input type="password" name="password" required></div>
+      <button class="btn secondary sm">Make new recovery codes</button>
+    </form>
+    <form method="post" action="/account/2fa/disable" class="mt" data-confirm="Turn off two-factor sign-in?">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="row"><div class="field"><label>Password</label><input type="password" name="password" required></div>
+        <div class="field"><label>Current code</label><input type="text" name="code" inputmode="numeric" maxlength="6" required></div></div>
+      <button class="btn danger sm">Turn off two-factor sign-in</button>
+    </form>
+  <% } else if (setup) { %>
+    <p><span class="badge b-pending">off</span> Add an extra step at sign-in. Scan the QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Authy), then enter the 6-digit code.</p>
+    <p><img src="<%= setup.qr %>" alt="QR code for your authenticator app" width="220" height="220"></p>
+    <p class="small">Cannot scan? Enter this key in your app: <code><%= setup.secret %></code></p>
+    <form method="post" action="/account/2fa/enable">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="field"><label>6-digit code</label><input type="text" name="code" inputmode="numeric" maxlength="6" required autocomplete="one-time-code"></div>
+      <button class="btn">Turn on two-factor sign-in</button>
+    </form>
+  <% } %>
+</div>
+<%- include('../partials/app-end') %>

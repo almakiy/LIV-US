@@ -1,0 +1,19 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Agreement v<%= a.version %></h1><span class="badge <%= a.status === 'active' ? 'b-active' : 'b-pending' %>"><%= a.status %></span></div>
+<p class="small"><a href="/admin/agreements">All versions</a></p>
+<% if (a.status === 'draft') { %>
+<form method="post" action="/admin/agreements/<%= a.id %>/save" class="card">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (placeholder) { %><div class="alert warn">This draft still contains [PLACEHOLDER] markers. Replace them with the final text before activating.</div><% } %>
+  <div class="field"><label>Title</label><input type="text" name="title" maxlength="200" value="<%= a.title %>"></div>
+  <div class="field"><label>Text (Markdown)</label><textarea name="body_md" rows="24" style="font-family:ui-monospace,Menlo,monospace"><%= a.body_md %></textarea></div>
+  <button class="btn secondary">Save draft</button>
+</form>
+<form method="post" action="/admin/agreements/<%= a.id %>/activate" class="mt" data-confirm="Make this version active? Every partner must accept it again.">
+  <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Make this version active</button></form>
+<% } else { %><div class="card"><h3><%= a.title %></h3><div class="prose"><%- html %></div></div><% } %>
+<h3 class="mt">Acceptances</h3>
+<div class="table-wrap"><table><tr><th>Partner</th><th>Accepted by (typed name)</th><th>When</th></tr>
+<% if (!acc.length) { %><tr><td colspan="3" class="muted center">No acceptances yet.</td></tr><% } %>
+<% acc.forEach(c => { %><tr><td><%= c.company_name %></td><td><%= c.accepted_name %></td><td><%= usDateTime(c.accepted_at) %></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

@@ -213,6 +213,41 @@ CREATE TABLE IF NOT EXISTS article_versions (
   UNIQUE (article_id, version)
 );
 
+-- Partner gateway slice (docs/GLOBAL-STRATEGY.md): two-factor sign-in, forced password change, partner agreement acceptance and billing details.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret_enc TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_step BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_hashes TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS billing_name VARCHAR(255);
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS billing_email VARCHAR(255);
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS billing_address TEXT;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS tax_id VARCHAR(60);
+
+CREATE TABLE IF NOT EXISTS agreements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  version INT NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  body_md TEXT NOT NULL DEFAULT '',
+  status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','retired')),
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  activated_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agreements_one_active ON agreements((status)) WHERE status = 'active';
+CREATE TABLE IF NOT EXISTS agreement_acceptances (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id),
+  agreement_id UUID NOT NULL REFERENCES agreements(id),
+  user_id UUID NOT NULL REFERENCES users(id),
+  accepted_name VARCHAR(200) NOT NULL,
+  accepted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ip_hash CHAR(64),
+  user_agent VARCHAR(200),
+  UNIQUE (platform_id, agreement_id)
+);
+
 -- Reviewer engine reports (docs/KNOWLEDGE-ENGINES.md). A report belongs to one version of an article; it never changes publish state by itself.
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS review_requested_at TIMESTAMPTZ;
 CREATE TABLE IF NOT EXISTS review_reports (

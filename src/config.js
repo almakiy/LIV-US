@@ -18,6 +18,8 @@ module.exports = {
   allowXlsx: process.env.ALLOW_XLSX !== 'false',
   // Quality records: allow one person to author and approve a document / verify their own action while the team is small (recorded on the record). Set false when staff grows.
   qmsAllowSelfApproval: process.env.QMS_ALLOW_SELF_APPROVAL !== 'false',
+  // Two-factor sign-in policy: '' (optional), 'admin' (required for LIV administrators) or 'all' (everyone).
+  require2fa: ['admin', 'all'].includes(process.env.REQUIRE_2FA) ? process.env.REQUIRE_2FA : '',
   brand: process.env.BRAND_NAME || 'LIV',
   brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',

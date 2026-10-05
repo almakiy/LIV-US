@@ -20,6 +20,17 @@
   </form>
 </div>
 
+<form class="card mt" method="post" action="/portal/settings/billing" id="billing">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h3>Billing details</h3>
+  <p class="small muted">Used for invoices and receipts. Fees are described in your partner agreement.</p>
+  <div class="row"><div class="field"><label>Billing name</label><input type="text" name="billing_name" value="<%= platform.billing_name || '' %>"></div>
+    <div class="field"><label>Billing email</label><input type="email" name="billing_email" value="<%= platform.billing_email || '' %>"></div></div>
+  <div class="field"><label>Billing address</label><textarea name="billing_address" rows="3"><%= platform.billing_address || '' %></textarea></div>
+  <div class="field"><label>Tax / VAT number (if any)</label><input type="text" name="tax_id" value="<%= platform.tax_id || '' %>"></div>
+  <button class="btn">Save billing details</button>
+</form>
+
 <h2 class="mt" id="api">API keys</h2>
 <% if (newKey) { %><div class="alert success"><strong>Copy your new API key now. It won't be shown again.</strong><div class="keybox mt"><%= newKey %></div><button class="btn sm secondary mt" data-copy="<%= newKey %>">Copy key</button></div><% } %>
 <div class="grid g2">

@@ -1,0 +1,12 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= a.title %> · version <%= a.version %></h1></div>
+<div class="alert warn">Please read and accept this agreement to continue using the portal.</div>
+<div class="card"><div class="prose"><%- html %></div></div>
+<form method="post" action="/portal/agreement" class="card mt">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label class="small"><input type="checkbox" name="agree"> I have read this agreement and I am authorized to accept it on behalf of <strong><%= user.company_name %></strong>.</label>
+  <div class="field mt"><label>Type your full name</label><input type="text" name="accepted_name" required minlength="3" maxlength="200" autocomplete="name"></div>
+  <p class="small muted">Your name, the date and time, and this agreement version are recorded.</p>
+  <button class="btn">Accept agreement</button>
+</form>
+<%- include('../partials/app-end') %>

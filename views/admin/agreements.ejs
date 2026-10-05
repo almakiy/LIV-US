@@ -1,0 +1,12 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Partner agreements</h1>
+  <form method="post" action="/admin/agreements" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">+ New version</button></form></div>
+<p class="muted">Partners must accept the <strong>active</strong> version before using the portal. Enter the text supplied by your lawyers in a draft, then activate it. A new active version asks every partner to accept again. The starter outline contains [PLACEHOLDER] markers and cannot be activated until they are replaced.</p>
+<% if (active && waiting.length) { %><div class="alert warn">Not yet accepted version <%= active.version %>: <%= waiting.map(w => w.company_name).join(', ') %></div><% } %>
+<div class="table-wrap"><table>
+  <tr><th>Version</th><th>Title</th><th>Status</th><th>Accepted by</th><th>Activated</th></tr>
+  <% if (!rows.length) { %><tr><td colspan="5" class="muted center">No agreement yet. Create the first version.</td></tr><% } %>
+  <% rows.forEach(a => { %><tr><td><a href="/admin/agreements/<%= a.id %>">v<%= a.version %></a></td><td><%= a.title %></td>
+    <td><span class="badge <%= a.status === 'active' ? 'b-active' : 'b-pending' %>"><%= a.status %></span></td><td><%= a.accepted %> partner(s)</td><td><%= a.activated_at ? usDate(a.activated_at) : '—' %></td></tr><% }) %>
+</table></div>
+<%- include('../partials/app-end') %>

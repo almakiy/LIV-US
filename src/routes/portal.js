@@ -15,9 +15,18 @@ const crypto = require('crypto');
 const { renderCertificate, THEMES } = require('../lib/pdf');
 const { normalizeConfig, RECOMMENDED } = require('../lib/pdf-security');
 const { requirePlatformAdmin, requireActivePlatform, wrap, flash } = require('../lib/guards');
+const { pendingAgreement } = require('../lib/agreements');
+const { renderMarkdown } = require('../lib/content');
 
 const r = express.Router();
 r.use(requirePlatformAdmin);
+// Partners must accept the active agreement version before using the portal (LIV staff acting on their behalf are exempt).
+r.use(wrap(async (req, res, next) => {
+  if (req.user.actingAs || req.path.startsWith('/agreement')) return next();
+  const a = await pendingAgreement(req.user.platform_id);
+  if (a) return res.redirect('/portal/agreement');
+  next();
+}));
 const csrfCheck = (req, res, next) => req.app.locals.csrfCheck(req, res, next);
 
 const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
@@ -302,6 +311,33 @@ r.post('/templates/preview', wrap(async (req, res) => {
   res.type('application/pdf').set('Content-Disposition', 'inline; filename="preview.pdf"').send(pdf);
 }));
 
+// ---------- Agreement and billing ----------
+r.get('/agreement', wrap(async (req, res) => {
+  const a = await pendingAgreement(pid(req));
+  if (!a) return res.redirect('/portal');
+  res.render('portal/agreement', { title: 'Partner agreement', a, html: renderMarkdown(a.body_md) });
+}));
+r.post('/agreement', wrap(async (req, res) => {
+  const a = await pendingAgreement(pid(req));
+  if (!a) return res.redirect('/portal');
+  const name = String(req.body.accepted_name || '').trim().slice(0, 200);
+  if (req.body.agree !== 'on' || name.length < 3) { flash(req, 'error', 'Tick the box and type your full name to accept.'); return res.redirect('/portal/agreement'); }
+  await q(`INSERT INTO agreement_acceptances (platform_id, agreement_id, user_id, accepted_name, ip_hash, user_agent) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (platform_id, agreement_id) DO NOTHING`,
+    [pid(req), a.id, req.user.id, name, require('../lib/crypto').ipHash(req.ip), String(req.get('user-agent') || '').slice(0, 200)]);
+  await audit({ user: req.user, platformId: pid(req), action: 'agreement.accept', target: `v${a.version}`, metadata: { name } });
+  flash(req, 'success', `Agreement version ${a.version} accepted. Thank you.`);
+  res.redirect('/portal');
+}));
+r.post('/settings/billing', wrap(async (req, res) => {
+  const t = (k, n) => String(req.body[k] || '').trim().slice(0, n) || null;
+  const email = t('billing_email', 255);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { flash(req, 'error', 'Enter a valid billing email.'); return res.redirect('/portal/settings#billing'); }
+  await q('UPDATE platforms SET billing_name=$1, billing_email=$2, billing_address=$3, tax_id=$4 WHERE id=$5', [t('billing_name', 255), email, t('billing_address', 1000), t('tax_id', 60), pid(req)]);
+  await audit({ user: req.user, platformId: pid(req), action: 'platform.update_billing' });
+  flash(req, 'success', 'Billing details saved.');
+  res.redirect('/portal/settings#billing');
+}));
+
 // ---------- Settings ----------
 r.get('/settings', wrap(async (req, res) => {
   const platform = await loadPlatform(pid(req));
@@ -347,7 +383,7 @@ r.post('/settings/users', wrap(async (req, res) => {
     flash(req, 'error', 'Name, valid email and a temporary password of 10+ characters are required.'); return res.redirect('/portal/settings');
   }
   try {
-    await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin',$2,$3,$4)`, [pid(req), full_name, email, await bcrypt.hash(password, 12)]);
+    await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash, must_change_password) VALUES ($1,'platform_admin',$2,$3,$4,true)`, [pid(req), full_name, email, await bcrypt.hash(password, 12)]);
   } catch (e) {
     if (e.code === '23505') { flash(req, 'error', 'A user with that email already exists.'); return res.redirect('/portal/settings'); }
     throw e;

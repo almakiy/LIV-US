@@ -7,9 +7,19 @@
     <dt>Contact</dt><dd><%= p.contact_email || '—' %></dd><dt>Applied</dt><dd><%= usDateTime(p.created_at) %></dd>
     <dt>Certificates</dt><dd><%= st.total %> (<%= st.revoked %> revoked)</dd>
   </dl></div>
-  <div class="table-wrap"><table><tr><th>User</th><th>Email</th><th>Last login</th></tr>
-    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td></tr><% }) %></table></div>
+  <div class="table-wrap"><table><tr><th>User</th><th>Email</th><th>Last login</th><th>2FA</th><th></th></tr>
+    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td>
+      <td><span class="badge <%= u.totp_enabled ? 'b-active' : 'b-pending' %>"><%= u.totp_enabled ? 'on' : 'off' %></span></td>
+      <td class="right small">
+        <form method="post" action="/admin/users/<%= u.id %>/reset-password" style="display:inline" data-confirm="Reset the password for <%= u.email %>? A temporary password is shown once."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Reset password</button></form>
+        <% if (u.totp_enabled) { %><form method="post" action="/admin/users/<%= u.id %>/reset-2fa" style="display:inline" data-confirm="Reset two-factor sign-in for <%= u.email %>?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Reset 2FA</button></form><% } %>
+      </td></tr><% }) %></table></div>
 </div>
+<% if (newPassword) { %><div class="alert success"><strong>Temporary password (shown once, share it securely; the user must change it at first sign-in):</strong><div class="keybox mt"><%= newPassword %></div></div><% } %>
+<div class="card mt details"><dl>
+  <dt>Agreement</dt><dd><%= agr ? (agr.accepted_at ? 'v' + agr.version + ' accepted by ' + agr.accepted_name + ' on ' + usDate(agr.accepted_at) : 'v' + agr.version + ' not yet accepted') : 'No active agreement' %></dd>
+  <dt>Billing</dt><dd><%= [p.billing_name, p.billing_email, p.tax_id && ('Tax ID ' + p.tax_id)].filter(Boolean).join(' · ') || 'Not provided' %></dd>
+</dl></div>
 <h2 class="mt">Activity</h2>
 <%- include('_audit_table', { rows: log.map(a => ({ ...a, company_name: p.company_name })) }) %>
 <%- include('../partials/app-end') %>

@@ -62,6 +62,8 @@ r.get('/export.zip', wrap(async (req, res) => {
     ['partner_reviews', 'SELECT p.company_name, v.review_type, v.reviewed_on, v.reviewer_name, v.scope, v.findings, v.outcome, v.next_review_due FROM qms_partner_reviews v JOIN platforms p ON p.id = v.platform_id ORDER BY v.reviewed_on'],
     ['declarations', 'SELECT u.full_name, u.email, d.year, d.has_conflict, d.details, d.declared_at FROM qms_declarations d JOIN users u ON u.id = d.user_id ORDER BY d.year, u.full_name'],
     ['meetings', 'SELECT kind, held_on, participants, inputs, decisions, next_due FROM qms_meetings ORDER BY held_on'],
+    ['partner_agreements', 'SELECT version, title, status, created_at, activated_at FROM agreements ORDER BY version'],
+    ['agreement_acceptances', 'SELECT p.company_name, a.version, c.accepted_name, c.accepted_at FROM agreement_acceptances c JOIN platforms p ON p.id = c.platform_id JOIN agreements a ON a.id = c.agreement_id ORDER BY c.accepted_at'],
     ['audit_log', 'SELECT id, created_at, actor_label, action, target, metadata, prev_hash, entry_hash FROM audit_logs ORDER BY id'],
   ];
   const chain = (await q('SELECT * FROM audit_verify_chain()')).rows[0];
