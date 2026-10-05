@@ -4,9 +4,9 @@
   <form class="card" method="post" action="/portal/settings/profile">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Company profile</h3>
-    <div class="field"><label>Company name</label><input name="company_name" value="<%= platform.company_name %>" required></div>
+    <div class="field"><label>Company name</label><input type="text" name="company_name" value="<%= platform.company_name %>" required></div>
     <div class="row"><div class="field"><label>Website</label><input type="url" name="website" value="<%= platform.website || '' %>"></div>
-    <div class="field"><label>Country</label><input name="country" value="<%= platform.country || '' %>"></div></div>
+    <div class="field"><label>Country</label><input type="text" name="country" value="<%= platform.country || '' %>"></div></div>
     <div class="row"><div class="field"><label>Contact email</label><input type="email" name="contact_email" value="<%= platform.contact_email || '' %>"></div>
     <div class="field" style="flex:0"><label>Brand color</label><input type="color" name="primary_color" value="<%= platform.primary_color || '#0B2545' %>"></div></div>
     <button class="btn">Save profile</button>

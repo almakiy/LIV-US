@@ -23,6 +23,10 @@
       <legend class="small" style="padding:0 6px"><strong>Security layers</strong> (anti-counterfeiting)</legend>
       <div class="field"><label>Guilloche pattern <span class="muted small">— unique per certificate</span></label>
         <select name="guilloche"><% [['off','Off'],['light','Light'],['dense','Dense']].forEach(([v, l]) => { %><option value="<%= v %>" <%= sec.guilloche === v ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+      <div class="field"><label>Print colors</label>
+        <select name="colors"><option value="brand" <%= sec.colors !== 'iris' ? 'selected' : '' %>>Brand color</option><option value="iris" <%= sec.colors === 'iris' ? 'selected' : '' %>>Iris (multi-color blend, like passports)</option></select></div>
+      <label class="small"><input type="checkbox" name="qrBadge" <%= sec.qrBadge ? 'checked' : '' %>> Framed QR verification badge (“SCAN TO VERIFY”)</label><br>
+      <label class="small"><input type="checkbox" name="legalNote" <%= sec.legalNote ? 'checked' : '' %>> Legal authenticity note at the foot of the certificate</label><br>
       <label class="small"><input type="checkbox" name="microtext" <%= sec.microtext ? 'checked' : '' %>> Microtext lines (certificate ID, blurs when photocopied)</label><br>
       <label class="small"><input type="checkbox" name="ghost" <%= sec.ghost ? 'checked' : '' %>> Ghost LIV seal watermark</label><br>
       <label class="small"><input type="checkbox" name="tiled" <%= sec.tiled ? 'checked' : '' %>> Tiled diagonal text watermark</label><br>

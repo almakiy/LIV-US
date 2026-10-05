@@ -19,7 +19,9 @@ test('pattern is deterministic for a seed and differs across seeds', () => {
 });
 
 test('normalizeConfig defaults to everything off and rejects junk', () => {
-  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.strictEqual(normalizeConfig({ colors: 'neon' }).colors, 'brand');
+  assert.strictEqual(normalizeConfig({ colors: 'iris', qrBadge: true }).qrBadge, true);
   assert.strictEqual(normalizeConfig({ guilloche: 'evil' }).guilloche, 'off');
   assert.strictEqual(normalizeConfig(null).microtext, false);
 });
@@ -33,3 +35,13 @@ for (const design of Object.keys(THEMES)) {
     assert.ok(secured.length > plain.length * 1.5, `secured ${secured.length} vs plain ${plain.length}`);
   });
 }
+
+test('all themes are US Letter landscape; QR badge, iris colors and legal note add content', async () => {
+  for (const design of Object.keys(THEMES)) {
+    const plain = await renderCertificate(data(4), platform, { design, security_config: {} });
+    const rich = await renderCertificate(data(4), platform, { design, security_config: { ...RECOMMENDED, guilloche: 'dense', legalNote: true } });
+    assert.ok(/MediaBox \[0 0 792 612\]/.test(rich.toString('latin1')), `${design} is landscape Letter`);
+    assert.ok(rich.length > plain.length * 1.4, `${design}: rich ${rich.length} vs plain ${plain.length}`);
+  }
+  assert.deepStrictEqual(Object.keys(THEMES), ['classic', 'modern', 'executive']);
+});

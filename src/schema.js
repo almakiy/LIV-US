@@ -163,4 +163,8 @@ CREATE TABLE IF NOT EXISTS articles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_articles_pub ON articles(status, published_at DESC);
+
+-- Certificate designs available to templates.
+ALTER TABLE certificate_templates DROP CONSTRAINT IF EXISTS certificate_templates_design_check;
+ALTER TABLE certificate_templates ADD CONSTRAINT certificate_templates_design_check CHECK (design IN ('classic','modern','executive'));
 `;

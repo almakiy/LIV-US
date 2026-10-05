@@ -24,6 +24,7 @@ const { RECOMMENDED } = require('../src/lib/pdf-security');
     const { rows: [tpl] } = await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months, security_config)
       VALUES ($1,'Classic – 3 year validity','classic','Dr. Sarah Mitchell','Director of Training',36,$2) RETURNING *`, [p.id, RECOMMENDED]);
     await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title) VALUES ($1,'Modern – no expiry','modern','Dr. Sarah Mitchell','Director of Training')`, [p.id]);
+    await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, validity_months, security_config) VALUES ($1,'Executive – 5 year validity','executive','Dr. Sarah Mitchell','Director of Training',60,$2)`, [p.id, RECOMMENDED]);
     const sample = [
       ['Aisha', 'Rahman', 'aisha.rahman@example.com', 'Construction Site Safety Fundamentals', '2026-08-12', 'Pass'],
       ['Michael', 'Johnson', 'michael.j@example.com', 'ISO 45001 Internal Auditor', '2026-09-03', '91%'],

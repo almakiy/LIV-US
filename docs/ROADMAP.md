@@ -61,6 +61,10 @@ Implementation notes:
 - Run the e2e suite in CI against a Postgres service; add `npm ci` and test jobs.
 - Fix remaining items from the pre-launch checklist (secrets, `BASE_URL`, HTTPS, backups).
 
+### Phase 1.3 — Certificate look (done)
+Shipped: **Executive** landscape theme (US Letter, accent bars, double frame, signature, LIV seal), **framed QR badge** ("LIV VERIFIED / SCAN TO VERIFY"), **iris** multi-color guilloche (passport-style blend), and a **legal authenticity note**. All themes stay US Letter landscape.
+Deferred by decision: education-partner block (name, address, approval number, left/right placement), accreditation-body logos (after ISO accreditation is obtained), and a security emblem illustration (needs professional artwork; a first in-house eagle drawing was rejected as not good enough and removed).
+
 ### Phase 1.2 — Certificate engine (done)
 - Theme registry and `security_config` per template.
 - Security-pattern designer form with live preview.
