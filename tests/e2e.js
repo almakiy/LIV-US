@@ -40,20 +40,19 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
 
   const csv = path.join(os.tmpdir(), `batch-${stamp}.csv`);
   fs.writeFileSync(csv, [
-    'First Name,Surname,E-mail,Course,Date Completed,Score',
-    `Omar,Haddad,omar.${stamp}@example.com,Confined Space Entry,2026-09-10,88%`,
-    `Lina,Saleh,lina.${stamp}@example.com,Confined Space Entry,09/12/2026,Pass`,
-    `Bad,Email,not-an-email,Confined Space Entry,2026-09-10,`,
-    `Future,Date,future.${stamp}@example.com,Confined Space Entry,2099-01-01,`,
-    `Omar,Haddad,omar.${stamp}@example.com,Confined Space Entry,2026-09-10,88%`,
-    `=cmd,Inject,inject.${stamp}@example.com,Working at Heights,2026-09-01,`,
+    'First Name,Surname,E-mail,Course,Date Completed',
+    `Omar,Haddad,omar.${stamp}@example.com,Confined Space Entry,2026-09-10`,
+    `Lina,Saleh,lina.${stamp}@example.com,Confined Space Entry,09/12/2026`,
+    `Bad,Email,not-an-email,Confined Space Entry,2026-09-10`,
+    `Future,Date,future.${stamp}@example.com,Confined Space Entry,2099-01-01`,
+    `Omar,Haddad,omar.${stamp}@example.com,Confined Space Entry,2026-09-10`,
+    `=cmd,Inject,inject.${stamp}@example.com,Working at Heights,2026-09-01`,
   ].join('\n'));
   await page.goto(BASE + '/portal/issue');
   await page.setInputFiles('input[name=csv]', csv);
   await page.click('button:has-text("Upload")');
   ok(page.url().endsWith('/issue/map'), 'CSV uploaded, mapping step');
   ok(await page.$eval('select[name=last_name]', (s) => s.value) === 'Surname', 'auto-mapped Surname → last_name');
-  ok(await page.$eval('select[name=grade]', (s) => s.value) === 'Score', 'auto-mapped Score → grade');
   await shot(page, '03-map');
   await page.click('button:has-text("Validate rows")');
   ok(await see(page, 'text=invalid email'), 'invalid email flagged');
@@ -137,7 +136,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   console.log('REST API');
   const api = (method, url, data, headers = {}) => ctx.request.fetch(BASE + url, { method, data, headers: { 'X-API-Key': apiKey, ...headers } });
   ok((await ctx.request.get(BASE + '/api/v1/certificates')).status() === 401, 'API rejects missing key');
-  const body = { certificates: [{ first_name: 'Api', last_name: 'User', email: `api.${stamp}@example.com`, course_name: 'Hazard Communication', completion_date: '2026-10-01', grade: 'Pass' }] };
+  const body = { certificates: [{ first_name: 'Api', last_name: 'User', email: `api.${stamp}@example.com`, course_name: 'Hazard Communication', completion_date: '2026-10-01' }] };
   const r1 = await api('POST', '/api/v1/certificates', body, { 'Idempotency-Key': `e2e-${stamp}` });
   ok(r1.status() === 201, 'API issues certificate (201)');
   const j1 = await r1.json();
@@ -194,10 +193,10 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const nonLatin = String.fromCharCode(0x633, 0x627, 0x631, 0x629, 0x20, 0x627, 0x644, 0x623, 0x62d, 0x645, 0x62f); // a name in another script (code points, no literal text)
   const csv2 = path.join(os.tmpdir(), `import-${stamp}.csv`);
   fs.writeFileSync(csv2, [
-    'Serial No,Trainee Name,ID Number,E-mail,Course,Date Completed,Result',
-    `7,Sarah Khaled Alahmad,1098765432,sara.${stamp}@example.com,Occupational Safety,2026-09-20,Excellent`,
-    `8,Mark Lee,AB-12345,mark.${stamp}@example.com,First Aid,09/21/2026,`,
-    `9,${nonLatin},5555555555,x.${stamp}@example.com,Safety,2026-09-20,`,
+    'Serial No,Trainee Name,ID Number,E-mail,Course,Date Completed',
+    `7,Sarah Khaled Alahmad,1098765432,sara.${stamp}@example.com,Occupational Safety,2026-09-20`,
+    `8,Mark Lee,AB-12345,mark.${stamp}@example.com,First Aid,09/21/2026`,
+    `9,${nonLatin},5555555555,x.${stamp}@example.com,Safety,2026-09-20`,
   ].join('\n'));
   await page.goto(BASE + '/portal/issue');
   await page.setInputFiles('input[name=csv]', csv2);
@@ -219,8 +218,8 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   // Excel upload (temporarily enabled)
   const ExcelJS = require('exceljs');
   const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Trainees');
-  ws.addRow(['Serial No', 'First Name', 'Last Name', 'ID Number', 'E-mail', 'Course', 'Date Completed', 'Score']);
-  ws.addRow([11, 'Noah', 'Bennett', 2233445566, `noah.${stamp}@example.com`, 'Forklift Safety', new Date(Date.UTC(2026, 8, 22)), 95]);
+  ws.addRow(['Serial No', 'First Name', 'Last Name', 'ID Number', 'E-mail', 'Course', 'Date Completed']);
+  ws.addRow([11, 'Noah', 'Bennett', 2233445566, `noah.${stamp}@example.com`, 'Forklift Safety', new Date(Date.UTC(2026, 8, 22))]);
   const xlsxPath = path.join(os.tmpdir(), `import-${stamp}.xlsx`);
   await wb.xlsx.writeFile(xlsxPath);
   await page.goto(BASE + '/portal/issue');

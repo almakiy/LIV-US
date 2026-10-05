@@ -85,8 +85,6 @@ function drawModern({ doc, data, platform, template, color, qr, name, config }) 
   doc.fillColor(color).font('Sans-Bold').fontSize(20).text(data.course_name, x, doc.y + 6, { width: w });
   const metaY = Math.max(doc.y + 24, 360);
   const meta = [['Completed', longDate(data.completion_date, 'short')], ['Issued', longDate(data.issue_date, 'short')]];
-  if (data.expiry_date) meta.push(['Valid until', longDate(data.expiry_date, 'short')]);
-  if (data.grade) meta.push(['Grade', data.grade]);
   meta.forEach(([k, v], i) => {
     const mx = x + i * (w / meta.length);
     doc.fillColor('#8A93A3').font('Sans').fontSize(8).text(k.toUpperCase(), mx, metaY);
@@ -113,10 +111,7 @@ function drawClassic({ doc, data, platform, template, color, qr, name, config })
   doc.moveTo(W / 2 - 180, ly).lineTo(W / 2 + 180, ly).lineWidth(0.6).strokeColor('#C7CBD1').stroke();
   doc.fillColor('#4B5563').font('Serif-Italic').fontSize(14).text('has successfully completed the course', 0, ly + 12, { width: W, align: 'center' });
   doc.fillColor(color).font('Serif-Bold').fontSize(20).text(data.course_name, 90, doc.y + 6, { width: W - 180, align: 'center' });
-  const parts = [`Completed ${longDate(data.completion_date)}`];
-  if (data.grade) parts.push(`Grade: ${data.grade}`);
-  if (data.expiry_date) parts.push(`Valid until ${longDate(data.expiry_date)}`);
-  doc.fillColor('#374151').font('Serif').fontSize(12).text(parts.join('   •   '), 0, doc.y + 10, { width: W, align: 'center' });
+  doc.fillColor('#374151').font('Serif').fontSize(12).text(`Completed ${longDate(data.completion_date)}`, 0, doc.y + 10, { width: W, align: 'center' });
 
   if (config.qrBadge) {
     drawQrBadge(doc, qr, { x: 52, y: H - 176, size: 112, color });
@@ -169,9 +164,7 @@ function drawExecutive({ doc, data, platform, template, color, qr, name }) {
 
   // Details row
   const dy = Math.max(doc.y + 14, 318);
-  const meta = [['COMPLETED', longDate(data.completion_date, 'short')]];
-  if (data.grade) meta.push(['RESULT', data.grade]);
-  meta.push(['VALID UNTIL', data.expiry_date ? longDate(data.expiry_date, 'short') : 'No expiry']);
+  const meta = [['COMPLETED', longDate(data.completion_date, 'short')], ['ISSUED', longDate(data.issue_date, 'short')]];
   const cw = (W - 260) / meta.length;
   meta.forEach(([k, v], i) => {
     const mx = 130 + i * cw;
@@ -180,8 +173,8 @@ function drawExecutive({ doc, data, platform, template, color, qr, name }) {
   });
   doc.moveTo(130, dy + 34).lineTo(W - 130, dy + 34).lineWidth(0.4).strokeColor('#E2E5EA').stroke();
   doc.fillColor('#374151').font('Serif').fontSize(8.8).text(
-    `Issued by ${platform.company_name} through the ${cfg.brand} verification platform. The holder's details and the current status of this certificate can be confirmed online at any time.`,
-    150, dy + 44, { width: W - 300, align: 'center', lineGap: 2 });
+    `This certificate is issued on the basis of the completion report submitted by an education partner accredited by ${cfg.brand}. ${cfg.brand} reviews each accredited partner's trainers, curricula and training methods, and audits them periodically. The holder's details and the status of this certificate can be confirmed online at any time.`,
+    120, dy + 44, { width: W - 240, align: 'center', lineGap: 2 });
 
   // Bottom row (same places as the Classic design): QR badge left | signature center | LIV seal right
   const sy = 498;
@@ -201,7 +194,7 @@ const THEMES = {
 };
 
 /**
- * data: { cert_number, first_name, last_name, course_name, grade, completion_date, issue_date, expiry_date, verify_url, verification_hash }
+ * data: { cert_number, first_name, last_name, course_name, completion_date, issue_date, verify_url, verification_hash }
  * platform: { company_name, logo_path, primary_color }
  * template: { design, signatory_name, signatory_title, security_config }
  */

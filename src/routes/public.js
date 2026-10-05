@@ -35,7 +35,6 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
       startTask: 'CERTIFICATION_NAME', name: c.course_name, organizationName: c.company_name,
       issueYear: iy, issueMonth: String(Number(im)), certUrl: `${cfg.baseUrl}/verify/${c.cert_number}`, certId: c.cert_number,
     });
-    if (c.expiry_date) { const [ey, em] = String(c.expiry_date).split('-'); p.set('expirationYear', ey); p.set('expirationMonth', String(Number(em))); }
     linkedin = `https://www.linkedin.com/profile/add?${p.toString()}`;
   }
   const status = out.result === 'not_found' || out.result === 'invalid_format' ? 404 : 200;

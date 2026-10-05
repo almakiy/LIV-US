@@ -3,7 +3,6 @@
 const R = out.result;
 const banner = {
   valid: ['✓', 'VALID', 'This certificate is authentic and currently valid.'],
-  expired: ['!', 'EXPIRED', 'This certificate is authentic but has passed its expiry date.'],
   revoked: ['✕', 'REVOKED', 'This certificate has been revoked by the issuer and is no longer valid.'],
   tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this certificate.'],
   not_found: ['?', 'NOT FOUND', 'No certificate matches these details. Check the ID and try again.'],
@@ -21,10 +20,8 @@ const banner = {
     <dl>
       <dt>Certificate holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
       <dt>Course</dt><dd><%= c.course_name %></dd>
-      <% if (c.grade) { %><dt>Grade</dt><dd><%= c.grade %></dd><% } %>
       <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
       <dt>Issue date</dt><dd><%= longDate(c.issue_date) %></dd>
-      <dt>Expiry date</dt><dd><%= c.expiry_date ? longDate(c.expiry_date) : 'Does not expire' %></dd>
       <dt>Certificate ID</dt><dd class="mono"><%= c.cert_number %></dd>
       <dt>Issued by</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
         <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Provider <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">Accredited</span><% } %></div></dd>

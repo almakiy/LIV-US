@@ -31,9 +31,9 @@ test('fetchCsvFromLink follows redirects only to Google, rejects HTML and oversi
 });
 
 test('autoMap recognizes common English headings', () => {
-  const m = autoMap(['Serial No', 'Trainee Name', 'ID Number', 'E-mail', 'Course', 'Date Completed', 'Result']);
-  assert.deepStrictEqual(m, { serial_no: 'Serial No', full_name: 'Trainee Name', first_name: '', last_name: '', national_id: 'ID Number', email: 'E-mail', course_name: 'Course', completion_date: 'Date Completed', grade: 'Result' });
-  const e = autoMap(['First Name', 'Surname', 'Email', 'Course', 'Date', 'Score']);
+  const m = autoMap(['Serial No', 'Trainee Name', 'ID Number', 'E-mail', 'Course', 'Date Completed']);
+  assert.deepStrictEqual(m, { serial_no: 'Serial No', full_name: 'Trainee Name', first_name: '', last_name: '', national_id: 'ID Number', email: 'E-mail', course_name: 'Course', completion_date: 'Date Completed' });
+  const e = autoMap(['First Name', 'Surname', 'Email', 'Course', 'Date']);
   assert.strictEqual(e.first_name, 'First Name'); assert.strictEqual(e.last_name, 'Surname'); assert.strictEqual(e.full_name, '');
   assert.strictEqual(norm('E-mail Address'), 'e_mail_address');
 });
@@ -74,7 +74,7 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
 test('template CSV has a BOM, the expected header and English-only examples', () => {
   const t = sampleCsv();
   assert.ok(t.startsWith('﻿'));
-  assert.ok(t.includes('serial_no,full_name,national_id,email,course_name,completion_date,grade'));
+  assert.ok(t.includes('serial_no,full_name,national_id,email,course_name,completion_date'));
   assert.ok(!/[^\x00-\x7F]/.test(t.slice(1)), 'template contains only ASCII');
 });
 

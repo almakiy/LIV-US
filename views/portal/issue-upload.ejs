@@ -6,7 +6,7 @@
 <form class="card" method="post" action="/portal/issue/upload" enctype="multipart/form-data">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <div class="field"><label>Certificate template</label>
-    <select name="template_id" required><% templates.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.design %><%= t.validity_months ? ', valid ' + t.validity_months + ' months' : ', no expiry' %>)</option><% }) %></select>
+    <select name="template_id" required><% templates.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.design %>)</option><% }) %></select>
     <div class="hint"><a href="/portal/templates">Manage templates</a></div></div>
 
   <h3>Trainee list</h3>
@@ -28,7 +28,6 @@
       <tr><td class="mono">email</td><td>Yes</td><td>Used to identify the trainee (and for email delivery in a later release).</td></tr>
       <tr><td class="mono">course_name</td><td>Yes</td><td>Course or program title.</td></tr>
       <tr><td class="mono">completion_date</td><td>Yes</td><td>YYYY-MM-DD or MM/DD/YYYY, not in the future.</td></tr>
-      <tr><td class="mono">grade</td><td>No</td><td>Score or result, up to 50 characters.</td></tr>
     </table></div>
     <p class="small muted">Common headings such as “Name”, “ID Number”, “E-mail”, “Course” and “Date Completed” are matched automatically. You can adjust the matching in the next step.</p>
   </details>

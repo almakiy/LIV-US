@@ -160,7 +160,7 @@ function drawFrontLayers(doc, { W, H, area, color, seed, data, config, design, l
   } else if (c.verifyStrip && design === 'classic') {
     doc.save();
     doc.font('Sans').fontSize(6.5).fillColor('#6B7280');
-    doc.text(`Validity is confirmed only at ${String(data.verify_url).split('?')[0]}`, area.x, H - 42, { width: area.w, align: 'center', lineBreak: false });
+    doc.text(`Authenticity is confirmed only at ${String(data.verify_url).split('?')[0]}`, area.x, H - 42, { width: area.w, align: 'center', lineBreak: false });
     doc.restore();
   }
 }

@@ -4,7 +4,7 @@ const { certHmac, qrToken, safeEqual, ipHash } = require('./crypto');
 const CERT_RE = /^LIV-\d{4}-[A-Z2-9]{8}$/;
 
 /**
- * Returns { result: 'valid'|'expired'|'revoked'|'not_found'|'tampered'|'invalid_format', cert?, platform? }
+ * Returns { result: 'valid'|'revoked'|'not_found'|'tampered'|'invalid_format', cert?, platform? }
  */
 async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'web' } = {}) {
   const certNumber = String(rawNumber || '').trim().toUpperCase();
@@ -31,7 +31,6 @@ async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'we
       let result;
       if (!intact || !tokenOk) result = 'tampered';
       else if (row.status === 'revoked') result = 'revoked';
-      else if (row.expiry_date && row.expiry_date < new Date().toISOString().slice(0, 10)) result = 'expired';
       else result = 'valid';
       out = { result, cert: row };
     }
@@ -52,10 +51,8 @@ function publicView(out, baseUrl) {
       cert_number: c.cert_number,
       recipient_name: `${c.recipient_first_name} ${c.recipient_last_name}`,
       course_name: c.course_name,
-      grade: c.grade,
       completion_date: d(c.completion_date),
       issue_date: d(c.issue_date),
-      expiry_date: d(c.expiry_date),
       status: c.status,
       revoked_at: c.revoked_at,
       issuer: { name: c.company_name, accreditation_status: c.accreditation_status, website: c.website },

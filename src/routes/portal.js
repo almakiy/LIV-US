@@ -32,9 +32,8 @@ const templates = async (platformId) => (await q('SELECT * FROM certificate_temp
 r.get('/', wrap(async (req, res) => {
   const { rows: [stats] } = await q(`
     SELECT count(*)::int AS total,
-           count(*) FILTER (WHERE status='active' AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE))::int AS active,
+           count(*) FILTER (WHERE status='active')::int AS active,
            count(*) FILTER (WHERE status='revoked')::int AS revoked,
-           count(*) FILTER (WHERE status='active' AND expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + 30)::int AS expiring,
            (SELECT count(*)::int FROM trainees WHERE platform_id = $1) AS trainees
       FROM certificates WHERE platform_id = $1`, [pid(req)]);
   const { rows: batches } = await q(`SELECT b.*, u.full_name FROM issuance_batches b LEFT JOIN users u ON u.id = b.created_by
@@ -183,8 +182,8 @@ r.get('/batches/:id', wrap(async (req, res, next) => {
 r.get('/batches/:id/results.csv', wrap(async (req, res, next) => {
   const d = await batchWithCerts(req);
   if (!d) return next();
-  const head = ['cert_number', 'serial_no', 'first_name', 'last_name', 'id_last4', 'email', 'course_name', 'completion_date', 'issue_date', 'expiry_date', 'grade', 'status', 'verify_url'];
-  const lines = d.certs.map((c) => [c.cert_number, c.holder_ref, c.recipient_first_name, c.recipient_last_name, c.id_last4, c.recipient_email, c.course_name, c.completion_date, c.issue_date, c.expiry_date, c.grade, c.status, verifyLink(c)].map(csvCell).join(','));
+  const head = ['cert_number', 'serial_no', 'first_name', 'last_name', 'id_last4', 'email', 'course_name', 'completion_date', 'issue_date', 'status', 'verify_url'];
+  const lines = d.certs.map((c) => [c.cert_number, c.holder_ref, c.recipient_first_name, c.recipient_last_name, c.id_last4, c.recipient_email, c.course_name, c.completion_date, c.issue_date, c.status, verifyLink(c)].map(csvCell).join(','));
   res.type('text/csv').attachment(`batch-${d.batch.id.slice(0, 8)}-results.csv`).send(['\uFEFF' + head.join(','), ...lines].join('\r\n') + '\r\n');
 }));
 
@@ -205,17 +204,15 @@ r.get('/batches/:id/pdfs.zip', wrap(async (req, res, next) => {
 // ---------- Records ----------
 r.get('/certificates', wrap(async (req, res) => {
   const search = String(req.query.q || '').trim().slice(0, 100);
-  const status = ['active', 'revoked', 'expired', 'expiring'].includes(req.query.status) ? req.query.status : '';
+  const status = ['active', 'revoked'].includes(req.query.status) ? req.query.status : '';
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const where = ['platform_id = $1']; const params = [pid(req)];
   if (search) {
     params.push(`%${search.toLowerCase()}%`);
     where.push(`(lower(recipient_first_name || ' ' || recipient_last_name) LIKE $${params.length} OR lower(recipient_email) LIKE $${params.length} OR lower(cert_number) LIKE $${params.length} OR lower(course_name) LIKE $${params.length} OR lower(coalesce(holder_ref,'')) LIKE $${params.length})`);
   }
-  if (status === 'active') where.push(`status='active' AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE)`);
+  if (status === 'active') where.push(`status='active'`);
   if (status === 'revoked') where.push(`status='revoked'`);
-  if (status === 'expired') where.push(`status='active' AND expiry_date < CURRENT_DATE`);
-  if (status === 'expiring') where.push(`status='active' AND expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + 30`);
   const w = where.join(' AND ');
   const { rows: [{ n }] } = await q(`SELECT count(*)::int AS n FROM certificates WHERE ${w}`, params);
   const per = 25;
@@ -257,13 +254,12 @@ r.post('/certificates/:num/revoke', wrap(async (req, res, next) => {
 
 // ---------- Templates ----------
 function readTemplateForm(body) {
-  const vm = String(body.validity_months || '').trim();
   return {
     name: String(body.name || '').trim().slice(0, 100) || 'Untitled template',
     design: THEMES[body.design] ? body.design : 'classic',
     signatory_name: String(body.signatory_name || '').trim().slice(0, 150) || null,
     signatory_title: String(body.signatory_title || '').trim().slice(0, 150) || null,
-    validity_months: vm && /^\d+$/.test(vm) && +vm >= 1 && +vm <= 240 ? +vm : null,
+    validity_months: null, // certificates do not expire
     security_config: normalizeConfig({
       guilloche: body.guilloche, colors: body.colors, microtext: body.microtext === 'on', ghost: body.ghost === 'on',
       tiled: body.tiled === 'on', fingerprint: body.fingerprint === 'on', verifyStrip: body.verifyStrip === 'on',
@@ -299,7 +295,7 @@ r.post('/templates/preview', wrap(async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const pdf = await renderCertificate({
     cert_number: 'LIV-2026-SAMPLE00', first_name: 'Jane', last_name: 'Doe', course_name: 'Sample Course Title',
-    grade: 'Pass', completion_date: today, issue_date: today, expiry_date: t.validity_months ? require('../lib/issuance').addMonths(today, t.validity_months) : null,
+    completion_date: today, issue_date: today, expiry_date: null,
     verify_url: `${cfg.baseUrl}/verify/LIV-2026-SAMPLE00`,
     verification_hash: crypto.createHash('sha256').update('preview').digest('hex'),
   }, platform, t);

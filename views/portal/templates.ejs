@@ -3,9 +3,9 @@
 <div class="grid g2">
   <div>
     <div class="table-wrap"><table>
-      <tr><th>Name</th><th>Design</th><th>Validity</th><th></th></tr>
+      <tr><th>Name</th><th>Design</th><th></th></tr>
       <% templates.forEach(t => { %><tr><td><%= t.name %><div class="small muted"><%= t.signatory_name || '' %></div></td><td><%= t.design %></td>
-      <td><%= t.validity_months ? t.validity_months + ' months' : 'No expiry' %></td><td class="right"><a href="/portal/templates/<%= t.id %>">Edit</a></td></tr><% }) %>
+<td class="right"><a href="/portal/templates/<%= t.id %>">Edit</a></td></tr><% }) %>
     </table></div>
     <p class="small muted mt">Logo and brand color come from <a href="/portal/settings">Settings</a>. Template changes apply to newly issued certificates only — issued certificates never change.</p>
   </div>
@@ -18,7 +18,6 @@
       <% Object.entries(THEMES).forEach(([key, th]) => { %><option value="<%= key %>" <%= edit && edit.design === key ? 'selected' : '' %>><%= th.label %></option><% }) %></select></div>
     <div class="row"><div class="field"><label>Signatory name</label><input name="signatory_name" value="<%= edit ? (edit.signatory_name || '') : '' %>"></div>
     <div class="field"><label>Signatory title</label><input name="signatory_title" value="<%= edit ? (edit.signatory_title || '') : '' %>"></div></div>
-    <div class="field"><label>Validity (months)</label><input type="number" name="validity_months" min="1" max="240" value="<%= edit && edit.validity_months ? edit.validity_months : '' %>"><div class="hint">Expiry = completion date + months. Leave blank for no expiry.</div></div>
     <fieldset class="field" style="border:1px solid var(--line);border-radius:8px;padding:12px 14px">
       <legend class="small" style="padding:0 6px"><strong>Security layers</strong> (anti-counterfeiting)</legend>
       <div class="field"><label>Guilloche pattern <span class="muted small">— unique per certificate</span></label>
@@ -31,7 +30,7 @@
       <label class="small"><input type="checkbox" name="ghost" <%= sec.ghost ? 'checked' : '' %>> Ghost LIV seal watermark</label><br>
       <label class="small"><input type="checkbox" name="tiled" <%= sec.tiled ? 'checked' : '' %>> Tiled diagonal text watermark</label><br>
       <label class="small"><input type="checkbox" name="fingerprint" <%= sec.fingerprint ? 'checked' : '' %>> Printed fingerprint code (tied to the QR token)</label><br>
-      <label class="small"><input type="checkbox" name="verifyStrip" <%= sec.verifyStrip ? 'checked' : '' %>> “Validity confirmed only at…” strip</label>
+      <label class="small"><input type="checkbox" name="verifyStrip" <%= sec.verifyStrip ? 'checked' : '' %>> “Authenticity confirmed only at…” strip</label>
       <div class="hint">These layers deter casual copying. The authoritative check is always the online verification record.</div>
     </fieldset>
     <div class="actions"><button class="btn">Save template</button>

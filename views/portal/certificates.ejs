@@ -3,16 +3,16 @@
 <form class="row" method="get" action="/portal/certificates" style="margin-bottom:16px">
   <div><input type="search" name="q" value="<%= search %>" placeholder="Search name, email, course or certificate ID"></div>
   <div style="max-width:200px"><select name="status" data-autosubmit>
-    <% [['','All statuses'],['active','Valid'],['expiring','Expiring in 30 days'],['expired','Expired'],['revoked','Revoked']].forEach(([v,l]) => { %><option value="<%= v %>" <%= status === v ? 'selected' : '' %>><%= l %></option><% }) %>
+    <% [['','All statuses'],['active','Valid'],['revoked','Revoked']].forEach(([v,l]) => { %><option value="<%= v %>" <%= status === v ? 'selected' : '' %>><%= l %></option><% }) %>
   </select></div>
   <div style="flex:0"><button class="btn secondary">Search</button></div>
 </form>
 <div class="table-wrap"><table>
-  <tr><th>Certificate ID</th><th>Trainee</th><th>Course</th><th>Issued</th><th>Expiry</th><th>Status</th><th></th></tr>
+  <tr><th>Certificate ID</th><th>Trainee</th><th>Course</th><th>Issued</th><th>Status</th><th></th></tr>
   <% if (!rows.length) { %><tr><td colspan="7" class="center muted">No certificates found.</td></tr><% } %>
   <% rows.forEach(c => { %><tr><td class="mono"><a href="/portal/certificates/<%= c.cert_number %>"><%= c.cert_number %></a></td>
     <td><%= c.recipient_first_name %> <%= c.recipient_last_name %><div class="small muted"><%= c.recipient_email %></div></td>
-    <td><%= c.course_name %></td><td><%= usDate(c.issue_date) %></td><td><%= c.expiry_date ? usDate(c.expiry_date) : '—' %></td><td><%- include('../partials/status', { c }) %></td>
+    <td><%= c.course_name %></td><td><%= usDate(c.issue_date) %></td><td><%- include('../partials/status', { c }) %></td>
     <td class="right" style="white-space:nowrap"><a href="/portal/certificates/<%= c.cert_number %>/pdf">PDF</a> · <button class="btn secondary sm" data-copy="<%= verifyLink(c) %>">Copy link</button></td></tr><% }) %>
 </table></div>
 <div class="pager"><% const qs = (p) => `?q=${encodeURIComponent(search)}&status=${status}&page=${p}`; %>

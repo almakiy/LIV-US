@@ -6,12 +6,12 @@ const { newCertNumber, certHmac, qrToken, fmtDate, normalizeId, idHash, idLast4 
 const { renderCertificate } = require('./pdf');
 const { audit } = require('./audit');
 
-const FIELDS = ['serial_no', 'full_name', 'first_name', 'last_name', 'national_id', 'email', 'course_name', 'completion_date', 'grade'];
+const FIELDS = ['serial_no', 'full_name', 'first_name', 'last_name', 'national_id', 'email', 'course_name', 'completion_date'];
 // email, course and date are always required; the name comes either as full_name or as first_name + last_name.
 const REQUIRED = ['email', 'course_name', 'completion_date'];
 const FIELD_LABELS = {
   serial_no: 'Serial / reference no.', full_name: 'Full name', first_name: 'First name', last_name: 'Last name', national_id: 'National / ID number',
-  email: 'Email', course_name: 'Course name', completion_date: 'Completion date', grade: 'Grade',
+  email: 'Email', course_name: 'Course name', completion_date: 'Completion date',
 };
 const hasName = (mapping) => !!(mapping.full_name || (mapping.first_name && mapping.last_name));
 
@@ -26,7 +26,6 @@ const SYNONYMS = Object.fromEntries(Object.entries({
   email: ['email', 'e_mail', 'email_address', 'mail'],
   course_name: ['course_name', 'course', 'coursename', 'program', 'training', 'course_title'],
   completion_date: ['completion_date', 'completed', 'completed_on', 'date', 'completion', 'date_completed'],
-  grade: ['grade', 'score', 'result', 'mark'],
 }).map(([k, v]) => [k, v.map(norm)]));
 
 function autoMap(headers) {
@@ -42,10 +41,10 @@ function autoMap(headers) {
 }
 
 /** Template the provider downloads: UTF-8 with BOM so Excel opens it correctly. */
-const TEMPLATE_HEADER = ['serial_no', 'full_name', 'national_id', 'email', 'course_name', 'completion_date', 'grade'];
+const TEMPLATE_HEADER = ['serial_no', 'full_name', 'national_id', 'email', 'course_name', 'completion_date'];
 const TEMPLATE_ROWS = [
-  ['1', 'Jane Doe', '1234567890', 'jane.doe@example.com', 'Construction Site Safety Fundamentals', '2026-09-15', 'Pass'],
-  ['2', 'John Smith', '2987654321', 'john.smith@example.com', 'ISO 45001 Lead Auditor', '09/20/2026', '92%'],
+  ['1', 'Jane Doe', '1234567890', 'jane.doe@example.com', 'Construction Site Safety Fundamentals', '2026-09-15'],
+  ['2', 'John Smith', '2987654321', 'john.smith@example.com', 'ISO 45001 Lead Auditor', '09/20/2026'],
 ];
 const sampleCsv = () => '\uFEFF' + [TEMPLATE_HEADER, ...TEMPLATE_ROWS].map((r) => r.join(',')).join('\r\n') + '\r\n';
 
@@ -99,7 +98,7 @@ async function validateRows(rows, platformId) {
     data.full_name = `${data.first_name} ${data.last_name}`.trim();
     if (data.first_name.length > 100 || data.last_name.length > 100) errors.push('name too long (max 100)');
     if (data.serial_no.length > 50) errors.push('serial_no too long (max 50)');
-    for (const f of ['first_name', 'last_name', 'course_name', 'grade', 'serial_no', 'email']) {
+    for (const f of ['first_name', 'last_name', 'course_name', 'serial_no', 'email']) {
       if (hasNonLatin(data[f])) errors.push(`${f} must use English (Latin) letters only`);
     }
     if (data.national_id) {
@@ -108,7 +107,6 @@ async function validateRows(rows, platformId) {
     }
     if (data.email && !EMAIL_RE.test(data.email)) errors.push('invalid email');
     if (data.course_name.length > 255) errors.push('course_name too long (max 255)');
-    if (data.grade.length > 50) errors.push('grade too long (max 50)');
     if (data.completion_date) {
       const p = parseDate(data.completion_date);
       if (!p) errors.push('completion_date must be YYYY-MM-DD or MM/DD/YYYY');
@@ -168,7 +166,7 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
            RETURNING id`,
           [platform.id, data.email, data.first_name, data.last_name]
         );
-        const expiry = template?.validity_months ? addMonths(data.completion_date, template.validity_months) : null;
+        const expiry = null; // certificates do not expire: only an issue date is shown
         let cert;
         for (let attempt = 0; attempt < 5 && !cert; attempt++) {
           const certNumber = newCertNumber(Number(issueDate.slice(0, 4)));
@@ -207,7 +205,7 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
         results.push({
           cert_number: cert.cert_number, first_name: data.first_name, last_name: data.last_name, email: data.email,
           course_name: data.course_name, completion_date: data.completion_date, issue_date: issueDate, expiry_date: expiry,
-          grade: data.grade || null, serial_no: data.serial_no || null, id_last4: data.national_id ? idLast4(data.national_id) : null, verify_url: cert.verify_url,
+          serial_no: data.serial_no || null, id_last4: data.national_id ? idLast4(data.national_id) : null, verify_url: cert.verify_url,
         });
       }
       await audit({ user, actorLabel, platformId: platform.id, action: 'certificates.issue', target: batch.id,

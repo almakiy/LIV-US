@@ -15,7 +15,7 @@
     "certificates": [{
       "first_name": "Jane", "last_name": "Doe", "email": "jane@example.com",
       "course_name": "Fire Safety &amp; Emergency Response",
-      "completion_date": "2026-09-30", "grade": "Pass"
+      "completion_date": "2026-09-30"
     }]
   }'</pre>
 <p>Response <code>201</code>: <code>{ batch_id, certificates: [{ cert_number, verify_url, pdf_url, ... }] }</code>.</p>
@@ -31,7 +31,7 @@ GET /api/v1/certificates/{cert_number}</pre>
 
 <h3 class="mt">Public verification (no key)</h3>
 <pre>GET /api/v1/verify/{cert_number}
-→ { "result": "valid" | "expired" | "revoked" | "tampered" | "not_found", "certificate": { ... } }</pre>
+→ { "result": "valid" | "revoked" | "tampered" | "not_found", "certificate": { ... } }</pre>
 
 <h3 class="mt">Errors</h3>
 <p><code>400</code> bad request · <code>401</code> missing/invalid key · <code>403</code> platform not active · <code>404</code> not found · <code>409</code> duplicate · <code>422</code> validation failed · <code>429</code> rate limited</p>
