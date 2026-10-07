@@ -20,6 +20,15 @@ Status (October 7, 2026): **design proposal**, nothing is built yet. It extends 
 4. Resit rules, waiting period and attempt limits are set in the exam policy.
 5. When volume grows, add on-demand slots inside the same rules (not a new system).
 
+### Year-one calendar (proposal)
+Expected demand: about 10 partners × up to 5 candidates = **roughly 50 candidates a year, about 4 to 5 a month**.
+- **One exam day a month**, published a year ahead (for example the second Saturday; confirm the best day for GCC and MENA weekends).
+- **Two sittings that day:** 10:00 and 17:00 Riyadh time (UTC+3), so candidates from the Gulf to North Africa can attend in working hours. Each sitting: up to **6 candidates**, one supervisor plus one backup, 30 minutes check-in plus the exam time.
+- Capacity: 12 candidates a month (144 a year), about three times the expected demand.
+- If both sittings fill, open an extra sitting the next day. A sitting runs even with a single candidate.
+- Registration closes 7 days before the exam day; system and ID check 3 days before; results released after incident review (target 5 working days); resits at the next monthly exam day.
+- Scale triggers: more than 12 a month, add a second exam day; more than 30 a month, run a 5-day exam week each month; more than about 60 a month or demand for any-time testing, move to a remote proctoring vendor with on-demand slots.
+
 ## 3. How sessions are supervised: options
 | Option | How it works | Strengths | Weaknesses | Fit now |
 |---|---|---|---|---|
