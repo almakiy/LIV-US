@@ -4,8 +4,8 @@
   <% if (user.role === 'super_admin' && !user.actingAs) { %>
     <div class="sec">LIV Administration</div>
     <a href="/admin" class="<%= path === '/admin' || path === '/admin/' ? 'on' : '' %>">Overview</a>
-    <a href="/admin/platforms" class="<%= path.startsWith('/admin/platforms') ? 'on' : '' %>">Training platforms</a>
-    <a href="/admin/certificates" class="<%= path.startsWith('/admin/certificates') ? 'on' : '' %>">All certificates</a>
+    <a href="/admin/platforms" class="<%= path.startsWith('/admin/platforms') ? 'on' : '' %>">Education partners</a>
+    <a href="/admin/certificates" class="<%= path.startsWith('/admin/certificates') ? 'on' : '' %>">All credentials</a>
     <a href="/admin/audit" class="<%= path.startsWith('/admin/audit') ? 'on' : '' %>">Audit log</a>
     <a href="/admin/content" class="<%= path.startsWith('/admin/content') ? 'on' : '' %>">Content</a>
     <a href="/admin/billing" class="<%= path.startsWith('/admin/billing') ? 'on' : '' %>">Billing</a>
