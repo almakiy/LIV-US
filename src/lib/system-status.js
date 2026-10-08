@@ -60,7 +60,7 @@ async function collect() {
       row('Two-factor policy (REQUIRE_2FA)', cfg.require2fa || 'optional', cfg.require2fa ? 'ok' : deployed ? 'warn' : 'info', 'Recommended: admin now, all before the first paying partner.'),
       row('LIV administrators without two-factor sign-in', String(counts.admins_no_2fa), counts.admins_no_2fa ? 'warn' : 'ok'),
       row('Published development passwords', deployed ? 'refused at sign-in' : 'accepted (development server)', deployed ? 'ok' : 'info'),
-      row('Demo partner with sample credentials', counts.demo ? 'present' : 'none', counts.demo && deployed ? 'bad' : counts.demo ? 'info' : 'ok', counts.demo ? 'Remove it from a public server: npm run purge-demo (dry run first).' : ''),
+      row('Demo partner with sample credentials', counts.demo ? 'present' : 'none', counts.demo && deployed ? 'bad' : counts.demo ? 'info' : 'ok', counts.demo ? 'Remove it from a public server with the Demo data panel below (or npm run purge-demo).' : ''),
     ] },
     { title: 'Payments and public pages', rows: [
       row('Stripe card payments', stripeMode(cfg.stripeSecretKey), 'info'),
