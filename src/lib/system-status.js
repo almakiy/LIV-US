@@ -44,8 +44,9 @@ async function collect() {
     { title: 'Site', rows: [
       row('Running version', v.commit ? `${v.commit} (${v.branch})` : 'unknown', 'info', 'Compare with the latest commit on GitHub to confirm the deployment is up to date.'),
       row('Server started', STARTED.toISOString().replace('T', ' ').slice(0, 16) + ' UTC'),
-      row('Public base URL', cfg.baseUrl, deployed && !cfg.baseUrl.startsWith('https://') ? 'warn' : cfg.baseUrl === TARGET_URL ? 'ok' : 'info',
-        `QR codes and verification links print this address. ${cfg.baseUrl === TARGET_URL ? '' : `Set PUBLIC_BASE_URL=${TARGET_URL} once the domain is live, before issuing real credentials.`}`),
+      // A replit.dev address is the workspace preview: it answers only while the workspace runs, so QR codes must not print it.
+      row('Public base URL', cfg.baseUrl, deployed && (!cfg.baseUrl.startsWith('https://') || /\.replit\.dev$/i.test(new URL(cfg.baseUrl).hostname)) ? 'bad' : cfg.baseUrl === TARGET_URL ? 'ok' : 'info',
+        `QR codes and verification links print this address. ${deployed && /\.replit\.dev$/i.test(new URL(cfg.baseUrl).hostname) ? 'This is the workspace preview address, not the published site: set PUBLIC_BASE_URL to the published address. ' : ''}${cfg.baseUrl === TARGET_URL ? '' : `Set PUBLIC_BASE_URL=${TARGET_URL} once the domain is live, before issuing real credentials.`}`),
       row('Mode', `${cfg.isProd ? 'production' : `NODE_ENV=${process.env.NODE_ENV || '(not set)'}`}${process.env.REPLIT_DEPLOYMENT === '1' ? ', Replit deployment' : ''}`,
         deployed && !cfg.isProd ? 'warn' : 'info', deployed && !cfg.isProd ? 'Set NODE_ENV=production on the deployment (secure cookies, required secrets).' : ''),
     ] },
