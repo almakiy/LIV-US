@@ -7,7 +7,7 @@
       <% templates.forEach(t => { %><tr><td><%= t.name %><div class="small muted"><%= t.signatory_name || '' %></div></td><td><%= t.design %></td>
 <td class="right"><a href="/portal/templates/<%= t.id %>">Edit</a></td></tr><% }) %>
     </table></div>
-    <p class="small muted mt">Logo and brand color come from <a href="/portal/settings">Settings</a>. Template changes apply to newly issued certificates only — issued certificates never change.</p>
+    <p class="small muted mt">Credentials carry LIV's identity: your logo, name and brand color are not printed on them (they appear on the verification record). Template changes apply to newly issued credentials only — issued credentials never change.</p>
   </div>
   <form class="card" method="post" action="/portal/templates" data-live-preview="tplPreview">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
@@ -23,7 +23,7 @@
       <div class="field"><label>Guilloche pattern <span class="muted small">— unique per certificate</span></label>
         <select name="guilloche"><% [['off','Off'],['light','Light'],['dense','Dense']].forEach(([v, l]) => { %><option value="<%= v %>" <%= sec.guilloche === v ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
       <div class="field"><label>Print colors</label>
-        <select name="colors"><option value="brand" <%= sec.colors !== 'iris' ? 'selected' : '' %>>Brand color</option><option value="iris" <%= sec.colors === 'iris' ? 'selected' : '' %>>Iris (multi-color blend, like passports)</option></select></div>
+        <select name="colors"><option value="brand" <%= sec.colors !== 'iris' ? 'selected' : '' %>>LIV navy</option><option value="iris" <%= sec.colors === 'iris' ? 'selected' : '' %>>Iris (multi-color blend, like passports)</option></select></div>
       <label class="small"><input type="checkbox" name="qrBadge" <%= sec.qrBadge ? 'checked' : '' %>> Framed QR verification badge (“SCAN TO VERIFY”)</label><br>
       <label class="small"><input type="checkbox" name="strip" <%= sec.strip ? 'checked' : '' %>> Holographic security strip on the left edge (Executive design; unique weave per certificate)</label><br>
       <label class="small"><input type="checkbox" name="legalNote" <%= sec.legalNote ? 'checked' : '' %>> Legal authenticity note at the foot of the certificate</label><br>

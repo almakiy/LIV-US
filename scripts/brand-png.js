@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const JOBS = [
   ['public/brand/liv-seal-color.svg', 'assets/brand/liv-seal-color.png', 1024, 1024],
-  ['public/brand/liv-logo-horizontal.svg', 'assets/brand/liv-logo-horizontal.png', 1600, 594],
+  ['public/brand/liv-logo-horizontal.svg', 'assets/brand/liv-logo-horizontal.png', 900, 334], // printed about 200pt wide on credentials
 ];
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});

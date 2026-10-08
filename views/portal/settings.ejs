@@ -13,8 +13,8 @@
   </form>
   <form class="card" method="post" action="/portal/settings/logo" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
-    <h3>Logo</h3>
-    <% if (platform.logo_path) { %><p><img src="/logo/<%= platform.id %>" alt="Logo" style="max-height:64px;max-width:240px"></p><% } else { %><p class="muted">No logo uploaded. Your company name is printed instead.</p><% } %>
+    <h3>Logo</h3><p class="small muted">Shown on your verification records. It is not printed on LIV credentials: the credential face carries LIV's identity only.</p>
+    <% if (platform.logo_path) { %><p><img src="/logo/<%= platform.id %>" alt="Logo" style="max-height:64px;max-width:240px"></p><% } else { %><p class="muted">No logo uploaded.</p><% } %>
     <div class="field"><input type="file" name="logo" accept="image/png,image/jpeg" required><div class="hint">PNG or JPEG, max 1 MB. A transparent PNG at least 600 px wide works best.</div></div>
     <button class="btn">Upload logo</button>
   </form>

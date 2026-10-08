@@ -47,7 +47,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
   ok(credHtml.includes('Training Completion Credential') && credHtml.includes('Professional Qualification') && credHtml.includes('HSE Governance'), 'credentials page explains record types and the HSE Governance family');
   const hse = await (await pr.get(BASE + '/credentials/hse-governance')).text();
-  ok(hse.includes('From HSE operations to HSE governance.') && hse.includes('in development'), 'HSE Governance page is marked as in development');
+  ok(hse.includes('From HSE operations to HSE governance.') && hse.includes('IN DEVELOPMENT') && !/passing score of|questions in/i.test(hse), 'HSE Governance page is marked as in development');
   for (const sec of ['/research', '/guides', '/standards']) ok((await pr.get(BASE + sec)).status() === 200, `${sec} section renders`);
   const sm = await (await pr.get(BASE + '/sitemap.xml')).text();
   ok(sm.includes('/credentials/hse-governance') && sm.includes(`/partners/${pSlug}`) && !sm.includes('/accreditation<'), 'sitemap lists the new public URLs');
@@ -112,6 +112,9 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const pub = await browser.newPage();
   await pub.goto(verifyUrl);
   ok(await see(pub, '.sb-valid'), `${certNum} shows VALID via QR link`);
+  { const vt = await pub.textContent('body');
+    ok(vt.includes('Education provider') && vt.includes('Demo Safety Training Co.') && vt.includes('LIV Authorized Education Partner'), 'verification record shows the education provider and its LIV authorization');
+    ok(vt.includes('Training Completion Credential'), 'verification record states the record type'); }
   ok(!(await pub.content()).includes(`@example.com`), 'trainee email not exposed publicly');
   await shot(pub, '06-verify-valid');
   const [pdf] = await Promise.all([pub.waitForEvent('download'), pub.click('text=Download original PDF')]);

@@ -172,3 +172,7 @@ Consent for identity checks and any recording or biometric processing (state law
 
 ### Decisions needed before building
 Exam format and duration; pass mark and marking scheme; remote vs in-person; fee amounts and resit rules (attempt limits, waiting period); who writes and reviews the question bank; accommodations policy; data retention period; whether partners get a share of fees.
+
+
+## Professional ecosystem (added Oct 8, 2026; design in FUTURE-CREDENTIAL-ARCHITECTURE.md)
+Not scheduled yet, in this order of dependency: credential schemes and partner scopes (Phase 2) → individual professional account and LIV Professional ID → certification applications and evidence → authorization to test → examination engine → certification decisions → membership (separate from certification) → CPD and renewal → external credential pathways (PMI and others, LIV role only) → professional transcript → certification directory → Saudi regulatory opportunity database. Each step keeps the ISO/IEC 17024 separations; no step claims accreditation.

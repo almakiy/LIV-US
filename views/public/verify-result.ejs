@@ -24,8 +24,8 @@ const banner = {
       <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
       <dt>Issue date</dt><dd><%= longDate(c.issue_date) %></dd>
       <dt>Credential ID</dt><dd class="mono"><%= c.cert_number %></dd>
-      <dt>Education partner</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
-        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">Authorized Education Partner</span><% } %></div></dd>
+      <dt>Education provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
+        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">LIV Authorized Education Partner</span><% } %></div></dd>
       <% if (R === 'revoked') { %><dt>Revoked on</dt><dd><%= longDate(new Date(c.revoked_at)) %></dd><% } %>
     </dl>
     <div class="actions">
