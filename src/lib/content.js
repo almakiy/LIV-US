@@ -2,10 +2,17 @@
 const { marked } = require('marked');
 const sanitizeHtml = require('sanitize-html');
 
-const CATEGORIES = { quality: 'Quality', safety: 'Health & Safety', 'project-management': 'Project Management' };
+// Topics (stored in articles.category) and content types (articles.kind). Keys are stored; labels can change.
+const CATEGORIES = {
+  governance: 'Governance', 'hse-governance': 'HSE Governance', safety: 'Health & Safety', quality: 'Quality', environment: 'Environment', qhse: 'QHSE',
+  'project-management': 'Project Management', 'project-governance': 'Project Governance', 'pmo-governance': 'PMO Governance',
+  'project-information-governance': 'Project Information Governance', 'professional-credentialing': 'Professional Credentialing',
+  'assessment-competence': 'Assessment & Competence', standards: 'Standards', compliance: 'Compliance', 'gcc-workforce': 'Saudi / GCC Workforce Development',
+};
 const KINDS = {
-  article: 'Article', guide: 'Guide', research: 'Research digest', standards: 'Standards explained', 'case-study': 'Case study',
-  briefing: 'Technical briefing', tool: 'Tool / checklist', news: 'News & alert', glossary: 'Glossary',
+  article: 'Article', guide: 'Guide', research: 'Research brief', standards: 'Standards explainer', 'case-study': 'Case study',
+  briefing: 'Professional briefing', framework: 'Framework', checklist: 'Checklist', template: 'Template', tool: 'Tool',
+  glossary: 'Glossary', 'career-guide': 'Career guide', 'industry-analysis': 'Industry analysis', news: 'News & alert',
 };
 const { hasNonLatin } = require('./issuance');
 
@@ -61,6 +68,7 @@ function validateDraft(b) {
     tags: parseTags(Array.isArray(o.tags) ? o.tags.join(',') : o.tags),
     standards: parseStandards(o.standards),
     change_note: str(o.change_note, 300),
+    jurisdiction: str(o.jurisdiction, 80),
     ai_assisted: o.ai_assisted === false ? false : true,
     sources: [],
   };
@@ -78,7 +86,7 @@ function validateDraft(b) {
       else value.sources.push({ title: str(s.title, 200), url: String(s.url).slice(0, 500), publisher: str(s.publisher, 120), accessed: /^\d{4}-\d{2}-\d{2}$/.test(s.accessed || '') ? s.accessed : undefined, excerpt: s.excerpt ? str(s.excerpt, 2000) : undefined });
     });
   }
-  for (const f of ['title', 'summary', 'body_md', 'author_name']) if (hasNonLatin(value[f])) errors.push(`${f} must use English (Latin) letters only`);
+  for (const f of ['title', 'summary', 'body_md', 'author_name', 'jurisdiction']) if (hasNonLatin(value[f])) errors.push(`${f} must use English (Latin) letters only`);
   return { errors, value };
 }
 

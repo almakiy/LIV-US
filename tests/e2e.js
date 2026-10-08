@@ -688,6 +688,47 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await adm.goto(BASE + '/admin/qms');
   ok(await see(adm, 'text=chained entries verified'), 'audit chain verifies again after the original value is restored');
 
+  console.log('Credential schemes and authorized scope');
+  {
+    await adm.goto(BASE + '/admin/schemes');
+    ok(await see(adm, 'text=HSE Governance') && await see(adm, 'text=In development'), 'admin sees the HSE Governance scheme in development');
+    const hseId = psql("SELECT id FROM credential_schemes WHERE slug = 'hse-governance'");
+    const csrfA = await adm.$eval('input[name=_csrf]', (e) => e.value);
+    await adm.request.post(`${BASE}/admin/schemes/${hseId}/status`, { form: { _csrf: csrfA, status: 'published' } });
+    ok(psql(`SELECT status FROM credential_schemes WHERE id = '${hseId}'`) === 'in_development', 'a scheme cannot be published without an approved version');
+    const scopeTitle = `HSE Governance Foundations ${stamp}`;
+    await adm.goto(`${BASE}/admin/platforms/${demoId}`);
+    await adm.fill('input[name=title]', scopeTitle);
+    await adm.selectOption('select[name=scheme_id]', hseId);
+    await adm.fill('input[name=decision_note]', 'E2E review reference');
+    await adm.click('button:has-text("Add scope")');
+    ok(await see(adm, `text=Authorized scope added: ${scopeTitle}`), 'admin records an authorized scope with its basis');
+    psql(`UPDATE platforms SET service_hold = false WHERE id = '${demoId}'`);
+    const rs = await api('POST', '/api/v1/certificates', { certificates: [{ first_name: 'Scope', last_name: 'Holder', email: `scope.${stamp}@example.com`, course_name: scopeTitle.toUpperCase(), completion_date: '2026-10-01' }] });
+    ok(rs.status() === 201, 'credential issued for a course within the scope');
+    const sc = (await rs.json()).certificates[0];
+    ok(psql(`SELECT record_type || '|' || (partner_scope_id IS NOT NULL) || '|' || (scheme_id = '${hseId}') FROM certificates WHERE cert_number = '${sc.cert_number}'`) === 'training_completion|true|true', 'credential is linked to the matching scope and family, as a training completion record');
+    const vr = await (await anon.request.get(sc.verify_url)).text();
+    ok(vr.includes('Authorized scope') && vr.includes(scopeTitle) && vr.includes('HSE Governance family'), 'verification record shows the authorized scope');
+    const apiV = await (await anon.request.get(`${BASE}/api/v1/verify/${sc.cert_number}`)).json();
+    ok(apiV.certificate.record_type === 'training_completion' && apiV.certificate.education_provider.authorized_scope === scopeTitle, 'verification API returns record type and authorized scope');
+    const slugP = psql(`SELECT public_slug FROM platforms WHERE id = '${demoId}'`);
+    ok((await (await anon.request.get(`${BASE}/partners/${slugP}`)).text()).includes(scopeTitle), 'public register lists the active scope');
+    const scopeId = psql(`SELECT id FROM partner_scopes WHERE title = '${scopeTitle}'`);
+    await adm.request.post(`${BASE}/admin/scopes/${scopeId}/status`, { form: { _csrf: csrfA, status: 'suspended', reason: 'E2E' } });
+    ok(!(await (await anon.request.get(`${BASE}/partners/${slugP}`)).text()).includes(scopeTitle), 'a suspended scope leaves the public register');
+    ok((await (await anon.request.get(sc.verify_url)).text()).includes('scope suspended'), 'verification shows that the scope is suspended');
+  }
+
+  console.log('Knowledge distribution');
+  {
+    const slugA = psql("SELECT slug FROM articles WHERE status = 'published' LIMIT 1");
+    const ah = await (await anon.request.get(`${BASE}/knowledge/${slugA}`)).text();
+    ok(ah.includes('Share on LinkedIn') && ah.includes('linkedin.com/sharing/share-offsite/?url=') && ah.includes('Copy link'), 'article page offers LinkedIn sharing and copy link');
+    ok(ah.includes('property="og:type" content="article"') && ah.includes('og-default.png') && ah.includes('article:published_time'), 'article page carries article Open Graph tags and an image');
+    ok((await anon.request.get(BASE + '/static/brand/og-default.png')).status() === 200, 'default social image is served');
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

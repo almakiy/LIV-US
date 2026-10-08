@@ -1,0 +1,8 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Credential schemes</h1></div>
+<p class="small muted">A scheme owns the competency framework, assessment requirements and credential rules. Rules exist only in an approved scheme version; until one is approved the scheme stays <strong>In development</strong> and its public page shows no examination rules. See docs/HSE-GOVERNANCE-SCHEME-ROADMAP.md.</p>
+<div class="table-wrap"><table><tr><th>Scheme</th><th>Class</th><th>Status</th><th>Partners with active scope</th><th>Public page</th><th></th></tr>
+<% schemes.forEach(s => { %><tr><td><strong><%= s.name %></strong><div class="small muted"><%= s.tagline %></div></td><td class="small"><%= (RECORD_TYPES[s.record_type] || {}).label || s.record_type %></td>
+<td><span class="badge b-pending"><%= SCHEME_STATUS[s.status] %></span></td><td><%= counts[s.id] || 0 %></td><td class="small"><% if (s.status !== 'retired') { %><a href="/credentials/<%= s.slug %>" target="_blank">/credentials/<%= s.slug %></a><% } else { %>hidden<% } %></td>
+<td><form method="post" action="/admin/schemes/<%= s.id %>/status" class="row" style="gap:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="status"><% Object.entries(SCHEME_STATUS).forEach(([k, l]) => { %><option value="<%= k %>" <%= s.status === k ? 'selected' : '' %>><%= l %></option><% }) %></select><button class="btn sm secondary">Set</button></form></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

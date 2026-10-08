@@ -20,6 +20,18 @@
   <dt>Agreement</dt><dd><%= agr ? (agr.accepted_at ? 'v' + agr.version + ' accepted by ' + agr.accepted_name + ' on ' + usDate(agr.accepted_at) : 'v' + agr.version + ' not yet accepted') : 'No active agreement' %></dd>
   <dt>Billing</dt><dd><%= [p.billing_name, p.billing_email, p.tax_id && ('Tax ID ' + p.tax_id)].filter(Boolean).join(' · ') || 'Not provided' %></dd>
 </dl></div>
+<h2 class="mt" id="scope">Authorized scope</h2>
+<p class="small muted">Courses or curricula this partner is authorized to deliver. A credential is linked to a scope when its course name matches the scope title exactly (case and spacing ignored). Active scopes are listed on the public register and on matching verification records.</p>
+<% if (scopes.length) { %><div class="table-wrap"><table><tr><th>Title</th><th>Family</th><th>Status</th><th>From</th><th>Until</th><th>Basis</th><th></th></tr>
+<% scopes.forEach(s => { %><tr><td><%= s.title %></td><td class="small"><%= s.scheme_name || '—' %></td><td><span class="badge b-<%= s.status === 'active' ? 'active' : 'suspended' %>"><%= SCOPE_STATUS[s.status] %></span></td><td class="small"><%= usDate(s.granted_on) %></td><td class="small"><%= s.ends_on ? usDate(s.ends_on) : '—' %></td><td class="small"><%= s.decision_note %></td>
+<td><form method="post" action="/admin/scopes/<%= s.id %>/status" class="row" style="gap:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="status"><% Object.entries(SCOPE_STATUS).forEach(([k, l]) => { %><option value="<%= k %>" <%= s.status === k ? 'selected' : '' %>><%= l %></option><% }) %></select><input name="reason" placeholder="Reason" maxlength="500"><button class="btn sm secondary">Update</button></form></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No authorized scope recorded yet.</p><% } %>
+<form class="card mt" method="post" action="/admin/platforms/<%= p.id %>/scopes"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Add authorized scope</h3>
+  <div class="row"><div class="field"><label>Course or curriculum title *</label><input name="title" maxlength="200" required placeholder="As it appears on completion reports"></div>
+  <div class="field"><label>Credential family</label><select name="scheme_id"><option value="">None</option><% schemes.forEach(s => { %><option value="<%= s.id %>"><%= s.name %></option><% }) %></select></div></div>
+  <div class="row"><div class="field"><label>Authorized from</label><input type="date" name="granted_on"></div><div class="field"><label>Until (optional)</label><input type="date" name="ends_on"></div></div>
+  <div class="field"><label>Basis for the decision *</label><input name="decision_note" maxlength="500" required placeholder="e.g. Review LIV-REV-2026-014, curriculum and trainer files approved"></div>
+  <button class="btn">Add scope</button></form>
 <h2 class="mt">Activity</h2>
 <%- include('_audit_table', { rows: log.map(a => ({ ...a, company_name: p.company_name })) }) %>
 <%- include('../partials/app-end') %>

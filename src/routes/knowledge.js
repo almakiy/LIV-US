@@ -30,7 +30,7 @@ r.get('/knowledge/:slug', wrap(async (req, res, next) => {
   const { rows: [a] } = await q(`SELECT * FROM articles WHERE slug = $1 AND status = 'published'`, [req.params.slug]);
   if (!a) return next();
   const { rows: related } = await q(`SELECT slug, title, kind FROM articles WHERE status='published' AND category=$1 AND id <> $2 ORDER BY published_at DESC LIMIT 3`, [a.category, a.id]);
-  res.render('public/knowledge-article', { title: a.title, description: a.summary, a, html: renderMarkdown(a.body_md), minutes: readingMinutes(a.body_md), related, CATEGORIES, KINDS, preview: false });
+  res.render('public/knowledge-article', { title: a.title, description: a.summary, ogType: 'article', article: { published: a.published_at ? new Date(a.published_at).toISOString() : '', author: a.author_name }, a, html: renderMarkdown(a.body_md), minutes: readingMinutes(a.body_md), related, CATEGORIES, KINDS, preview: false });
 }));
 
 r.get('/rss.xml', wrap(async (req, res) => {
@@ -41,7 +41,7 @@ r.get('/rss.xml', wrap(async (req, res) => {
 
 r.get('/sitemap.xml', wrap(async (req, res) => {
   const { rows } = await q(`SELECT slug, updated_at FROM articles WHERE status='published' ORDER BY published_at DESC`);
-  const { SCHEMES } = require('../lib/schemes');
+  const SCHEMES = await require('../lib/scheme-store').listSchemes({ publicOnly: true });
   const { rows: partners } = await q(`SELECT public_slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL`);
   const fixed = ['/', '/verify', '/credentials', ...SCHEMES.map((s) => `/credentials/${s.slug}`), '/partners', ...partners.map((p) => `/partners/${esc(p.public_slug)}`), '/knowledge', '/research', '/guides', '/standards', '/about', '/contact'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);
   const arts = rows.map((a) => `<url><loc>${cfg.baseUrl}/knowledge/${esc(a.slug)}</loc><lastmod>${new Date(a.updated_at).toISOString().slice(0, 10)}</lastmod></url>`);

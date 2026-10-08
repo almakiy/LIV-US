@@ -25,7 +25,7 @@ r.use(wrap(async (req, res, next) => {
 const need = (scope) => (req, res, next) => (req.svc.scopes.includes(scope) ? next() : res.status(403).json({ error: `Missing scope ${scope}.` }));
 
 const view = (a) => ({
-  id: a.id, external_id: a.external_id, slug: a.slug, title: a.title, kind: a.kind, category: a.category,
+  id: a.id, external_id: a.external_id, slug: a.slug, title: a.title, kind: a.kind, category: a.category, jurisdiction: a.jurisdiction || '',
   status: a.status, version: a.version, ai_assisted: a.ai_assisted,
   review: { reviewed_by: a.reviewed_by || null, reviewed_at: a.reviewed_at, next_review_at: a.next_review_at },
   published_at: a.published_at, updated_at: a.updated_at,
@@ -54,6 +54,7 @@ r.post('/drafts', need('content:draft'), wrap(async (req, res) => {
     a = n; created = true;
     await snapshot(a.id, `service:${req.svc.label}`, v.change_note || 'Created by engine');
   }
+  if (v.jurisdiction !== (a.jurisdiction || '')) { await q('UPDATE articles SET jurisdiction = $1 WHERE id = $2', [v.jurisdiction, a.id]); a.jurisdiction = v.jurisdiction; }
   await audit({ actorLabel: `service:${req.svc.label}`, action: created ? 'content.api.create' : 'content.api.update', target: a.slug });
   res.status(created ? 201 : 200).json({ ...view(a), created });
 }));

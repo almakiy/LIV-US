@@ -101,6 +101,7 @@ app.use('/portal', require('./routes/portal'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));
+app.use('/admin', require('./routes/admin-schemes')); // after admin: it ends 'act as partner' mode before the super-admin check
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 

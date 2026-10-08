@@ -159,6 +159,12 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
       );
       const issueDate = todayUtc();
       const results = [];
+      const scopeCache = new Map(); // course name -> the partner's active authorized scope covering it (or null)
+      const scopeOf = async (course) => {
+        const k = String(course || '').trim().toLowerCase();
+        if (!scopeCache.has(k)) scopeCache.set(k, await require('./scheme-store').scopeForCourse(platform.id, course));
+        return scopeCache.get(k);
+      };
       for (const { data } of rows) {
         const { rows: [trainee] } = await c.query(
           `INSERT INTO trainees (platform_id, email, first_name, last_name) VALUES ($1,$2,$3,$4)
@@ -167,6 +173,7 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
           [platform.id, data.email, data.first_name, data.last_name]
         );
         const expiry = null; // certificates do not expire: only an issue date is shown
+        const scope = await scopeOf(data.course_name);
         let cert;
         for (let attempt = 0; attempt < 5 && !cert; attempt++) {
           const certNumber = newCertNumber(Number(issueDate.slice(0, 4)));
@@ -185,11 +192,12 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
             const { rows: [ins] } = await c.query(
               `INSERT INTO certificates (cert_number, platform_id, trainee_id, recipient_first_name, recipient_last_name, recipient_email,
                  template_id, batch_id, course_name, grade, completion_date, issue_date, expiry_date, pdf_path, verification_hash,
-                 holder_ref, id_hash, id_last4)
-               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id, cert_number`,
+                 holder_ref, id_hash, id_last4, record_type, scheme_id, partner_scope_id)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,'training_completion',$19,$20) RETURNING id, cert_number`,
               [certNumber, platform.id, trainee.id, data.first_name, data.last_name, data.email, template?.id || null, batch.id,
                 data.course_name, data.grade || null, data.completion_date, issueDate, expiry, rel, hash,
-                data.serial_no || null, data.national_id ? idHash(data.national_id) : null, data.national_id ? idLast4(data.national_id) : null]
+                data.serial_no || null, data.national_id ? idHash(data.national_id) : null, data.national_id ? idLast4(data.national_id) : null,
+                scope?.scheme_id || null, scope?.id || null]
             );
             fs.writeFileSync(abs, pdf);
             written.push(abs);

@@ -12,7 +12,7 @@ The public language moved from accreditation to authorization and credentials (s
 | `accreditationNote()` in `src/lib/pdf.js` | Issuance statement on credentials | PDF designs, unit test | Rename to `issuanceNote()` |
 | QMS starter document code `LIV-PRO-005` title | Education partner authorization procedure | QMS starter set | Title updated for new installs; existing documents are controlled records and must be revised through the QMS, not edited in code |
 | Table and route names `platforms`, `/admin/platforms` | Education partners | admin routes, many queries | Optional rename to `partners`; low value, high churn |
-| Term "certificate" in code (`certificates` table, `cert_number`, routes `/portal/certificates`) | Credential record | everywhere | Keep: "certificate" remains correct for the Training Completion Credential document; add a `record_type` column when more types exist |
+| Term "certificate" in code (`certificates` table, `cert_number`, routes `/portal/certificates`) | Credential record | everywhere | Keep: "certificate" remains correct for the Training Completion Credential document; `record_type` now classifies each row |
 | `platforms.primary_color`, `platforms.logo_path` | Partner branding for the portal and verification record only | settings, verification page | No longer used on credentials; keep |
 | `pdf-security` option `colors: 'brand'` | Now means LIV navy | templates | Rename value to `liv` with a data update |
 | Env `BASE_URL` | Public base URL | config | `PUBLIC_BASE_URL` now preferred; `BASE_URL` kept as fallback |

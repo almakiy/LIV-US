@@ -167,7 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_articles_pub ON articles(status, published_at DES
 -- Knowledge hub, step 1 of the engines design (docs/KNOWLEDGE-ENGINES.md): content types, human review sign-off,
 -- freshness, version history and scoped service keys for the Content API. Engines may only create drafts.
 ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_kind_check;
-ALTER TABLE articles ADD CONSTRAINT articles_kind_check CHECK (kind IN ('article','research','guide','standards','case-study','briefing','tool','news','glossary'));
+ALTER TABLE articles ADD CONSTRAINT articles_kind_check CHECK (kind IN ('article','research','guide','standards','case-study','briefing','tool','news','glossary','framework','checklist','template','career-guide','industry-analysis'));
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS reviewed_by VARCHAR(150) NOT NULL DEFAULT '';
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS next_review_at DATE;
@@ -545,4 +545,58 @@ CREATE TABLE IF NOT EXISTS qms_meetings (
 -- Certificate designs available to templates.
 ALTER TABLE certificate_templates DROP CONSTRAINT IF EXISTS certificate_templates_design_check;
 ALTER TABLE certificate_templates ADD CONSTRAINT certificate_templates_design_check CHECK (design IN ('classic','modern','executive'));
+
+-- Phase 2 (Oct 2026): credential schemes, partner authorized scope, record classification on each credential.
+CREATE TABLE IF NOT EXISTS credential_schemes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug VARCHAR(80) NOT NULL UNIQUE,
+  name VARCHAR(150) NOT NULL,
+  record_type VARCHAR(40) NOT NULL DEFAULT 'assessed_qualification' CHECK (record_type IN ('training_completion','assessed_qualification','professional_certification','external_pathway')),
+  status VARCHAR(20) NOT NULL DEFAULT 'in_development' CHECK (status IN ('in_development','published','suspended','retired')),
+  tagline VARCHAR(200) NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT '',
+  positioning TEXT NOT NULL DEFAULT '',
+  focus JSONB NOT NULL DEFAULT '[]',
+  pending JSONB NOT NULL DEFAULT '[]',
+  sort INT NOT NULL DEFAULT 100,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Rules (eligibility, assessment, validity, renewal, CPD) live only in an approved version; none is approved yet.
+CREATE TABLE IF NOT EXISTS scheme_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scheme_id UUID NOT NULL REFERENCES credential_schemes(id) ON DELETE CASCADE,
+  version VARCHAR(20) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','approved','retired')),
+  notes TEXT NOT NULL DEFAULT '',
+  qms_document_id UUID,
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (scheme_id, version)
+);
+CREATE TABLE IF NOT EXISTS partner_scopes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  scheme_id UUID REFERENCES credential_schemes(id),
+  title VARCHAR(200) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','withdrawn')),
+  granted_on DATE NOT NULL DEFAULT CURRENT_DATE,
+  ends_on DATE,
+  decision_note VARCHAR(500) NOT NULL DEFAULT '',
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_partner_scopes_platform ON partner_scopes(platform_id, status);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS record_type VARCHAR(40) NOT NULL DEFAULT 'training_completion';
+ALTER TABLE certificates DROP CONSTRAINT IF EXISTS certificates_record_type_check;
+ALTER TABLE certificates ADD CONSTRAINT certificates_record_type_check CHECK (record_type IN ('training_completion','assessed_qualification','professional_certification'));
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS scheme_id UUID REFERENCES credential_schemes(id);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS partner_scope_id UUID REFERENCES partner_scopes(id);
+
+-- Knowledge authority: broader topics, more content types, jurisdiction.
+ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_category_check;
+ALTER TABLE articles ADD CONSTRAINT articles_category_check CHECK (category IN ('governance','hse-governance','safety','quality','environment','qhse','project-management','project-governance','pmo-governance','project-information-governance','professional-credentialing','assessment-competence','standards','compliance','gcc-workforce'));
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS jurisdiction VARCHAR(80) NOT NULL DEFAULT '';
 `;

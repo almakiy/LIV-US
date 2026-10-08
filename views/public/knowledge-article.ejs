@@ -5,7 +5,8 @@
   <span class="badge b-active"><%= KINDS[a.kind] %></span>
   <h1 style="margin:10px 0 6px"><%= a.title %></h1>
   <p class="muted"><%= a.summary %></p>
-  <p class="small muted"><%= a.author_name || brand %> · <%= a.published_at ? longDate(a.published_at) : 'Draft' %> · <%= minutes %> min read</p>
+  <p class="small muted"><%= a.author_name || brand %> · <%= a.published_at ? longDate(a.published_at) : 'Draft' %><%= a.reviewed_at ? ' · Last reviewed ' + longDate(a.reviewed_at) : '' %> · <%= minutes %> min read<%= a.jurisdiction ? ' · Jurisdiction: ' + a.jurisdiction : '' %></p>
+  <% if (!preview) { %><p class="actions"><a class="btn sm secondary" href="https://www.linkedin.com/sharing/share-offsite/?url=<%= encodeURIComponent(canonical) %>" target="_blank" rel="noopener">Share on LinkedIn</a> <button type="button" class="btn sm secondary" data-copy="<%= canonical %>">Copy link</button></p><% } %>
   <div class="prose"><%- html %></div>
   <% if (a.tags && a.tags.length) { %><p class="small mt"><% a.tags.forEach(t => { %><a class="badge b-pending" href="/knowledge?q=<%= encodeURIComponent(t) %>" style="text-decoration:none">#<%= t %></a> <% }) %></p><% } %>
   <% if ((a.sources && a.sources.length) || (a.standards && a.standards.length)) { %><section class="mt"><h3>Sources and standards</h3>

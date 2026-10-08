@@ -86,7 +86,9 @@ r.get('/platforms/:id', wrap(async (req, res, next) => {
   const newPassword = req.session.newTempPassword || null; delete req.session.newTempPassword;
   const { rows: [st] } = await q(`SELECT count(*)::int AS total, count(*) FILTER (WHERE status='revoked')::int AS revoked FROM certificates WHERE platform_id=$1`, [p.id]);
   const { rows: log } = await q('SELECT * FROM audit_logs WHERE platform_id = $1 ORDER BY created_at DESC LIMIT 20', [p.id]);
-  res.render('admin/platform', { title: p.company_name, p, users, st, log, agr: agr || null, newPassword });
+  const store = require('../lib/scheme-store');
+  const scopes = await store.scopesFor(p.id); const schemes = await store.listSchemes();
+  res.render('admin/platform', { title: p.company_name, p, users, st, log, agr: agr || null, newPassword, scopes, schemes, SCOPE_STATUS: store.SCOPE_STATUS });
 }));
 
 r.post('/platforms/:id/status', wrap(async (req, res, next) => {
@@ -146,6 +148,7 @@ function readArticleForm(b) {
     kind: KINDS[b.kind] ? b.kind : 'article',
     author_name: String(b.author_name || '').trim().slice(0, 150),
     tags: parseTags(b.tags),
+    jurisdiction: String(b.jurisdiction || '').trim().slice(0, 80),
     reviewed_by: String(b.reviewed_by || '').trim().slice(0, 150),
     next_review_at: /^\d{4}-\d{2}-\d{2}$/.test(b.next_review_at || '') ? b.next_review_at : null,
     standards: parseStandards(b.standards),
@@ -219,6 +222,7 @@ r.post('/content', wrap(async (req, res) => {
     saved = x;
     await snapshot(x.id, by, f.change_note || 'Created');
   }
+  await q('UPDATE articles SET jurisdiction = $1 WHERE id = $2', [f.jurisdiction, saved.id]);
   await audit({ user: req.user, action: `content.${saved.status === 'published' ? 'publish' : 'save'}`, target: slug });
   flash(req, 'success', saved.status === 'published' ? 'Saved and published.' : 'Draft saved.');
   res.redirect(`/admin/content/${saved.id}`);

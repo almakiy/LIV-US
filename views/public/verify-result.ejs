@@ -18,7 +18,8 @@ const banner = {
   <% if (c && R !== 'tampered') { %>
   <div class="card details">
     <dl>
-      <dt>Record type</dt><dd>Training Completion Credential <span class="muted small">(records completion of training; not a professional qualification or certification)</span></dd>
+      <% const RT = (recordTypes[c.record_type] || recordTypes.training_completion); %>
+      <dt>Record type</dt><dd><%= RT.label %> <span class="muted small">(<%= RT.disclosure %>)</span></dd>
       <dt>Credential holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
       <dt>Course</dt><dd><%= c.course_name %></dd>
       <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
@@ -26,6 +27,7 @@ const banner = {
       <dt>Credential ID</dt><dd class="mono"><%= c.cert_number %></dd>
       <dt>Education provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
         <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">LIV Authorized Education Partner</span><% } %></div></dd>
+      <% if (c.scope_title) { %><dt>Authorized scope</dt><dd><%= c.scope_title %><% if (c.scheme_name) { %> <span class="muted small">(<%= c.scheme_name %> family)</span><% } %><% if (c.scope_status !== 'active') { %> <span class="badge b-suspended">scope <%= c.scope_status %></span><% } %></dd><% } %>
       <% if (R === 'revoked') { %><dt>Revoked on</dt><dd><%= longDate(new Date(c.revoked_at)) %></dd><% } %>
     </dl>
     <div class="actions">

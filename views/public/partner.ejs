@@ -6,7 +6,7 @@
     <dt>Status</dt><dd>Authorized</dd>
     <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
     <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a></dd><% } %>
-    <dt>Authorized scope</dt><dd class="muted">Published scope listings are being prepared. Contact <%= brand %> to confirm whether a specific course is within this partner's authorized scope.</dd>
+    <dt>Authorized scope</dt><dd><% if (scopes.length) { %><ul class="mb0"><% scopes.forEach(s => { %><li><%= s.title %><% if (s.scheme_name) { %> <span class="muted small">(<%= s.scheme_name %> family)</span><% } %> <span class="muted small">since <%= longDate(s.granted_on) %><%= s.ends_on ? ', until ' + longDate(s.ends_on) : '' %></span></li><% }) %></ul><% } else { %><span class="muted">No scope is published yet. Contact <%= brand %> to confirm whether a specific course is within this partner's authorized scope.</span><% } %></dd>
   </dl></div>
   <p class="small muted mt">Status reflects <%= brand %> records at the time of viewing. Authorization is a private, voluntary program of <%= legalEntity %> and is not a government approval.</p>
 </div></section>

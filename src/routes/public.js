@@ -24,19 +24,21 @@ r.get('/partners', wrap(async (req, res) => {
   res.render('public/partners', { title: 'Education Partner Program', description: 'Become an Authorized Education Partner and see the public register of partners.', partners });
 }));
 r.get('/partners/:slug', wrap(async (req, res, next) => {
-  const { rows: [p] } = await q(`SELECT company_name, country, website FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  const { rows: [p] } = await q(`SELECT id, company_name, country, website FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
   const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
-  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Education Partner of ${cfg.brand}.`, p: { ...p, website } });
+  const scopes = await schemeStore.scopesFor(p.id, { activeOnly: true });
+  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Education Partner of ${cfg.brand}.`, p: { ...p, website }, scopes });
 }));
 
 // Credential types and credential families.
-const { SCHEMES, schemeBySlug } = require('../lib/schemes');
-r.get('/credentials', (req, res) => res.render('public/credentials', { title: 'Credentials', description: `Types of ${cfg.brand} records and credential families.`, schemes: SCHEMES }));
-r.get('/credentials/:slug', (req, res, next) => {
-  const s = schemeBySlug(req.params.slug); if (!s) return next();
-  res.render('public/credential-scheme', { title: s.name, description: s.tagline, s });
-});
+const schemeStore = require('../lib/scheme-store');
+r.get('/credentials', wrap(async (req, res) => res.render('public/credentials', { title: 'Credentials', description: `Types of ${cfg.brand} records and credential families.`, schemes: await schemeStore.listSchemes({ publicOnly: true }), SCHEME_STATUS: schemeStore.SCHEME_STATUS })));
+r.get('/credentials/:slug', wrap(async (req, res, next) => {
+  const s = await schemeStore.schemeBySlug(req.params.slug);
+  if (!s || s.status === 'retired') return next();
+  res.render('public/credential-scheme', { title: s.name, description: s.tagline, s: { ...s, status: schemeStore.SCHEME_STATUS[s.status] }, RECORD_TYPES: schemeStore.RECORD_TYPES });
+}));
 
 // Public fee schedule, shown only after the owner approves the fees (PUBLIC_FEES=true).
 r.get('/fees', wrap(async (req, res, next) => {
@@ -70,7 +72,7 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
   const status = out.result === 'not_found' || out.result === 'invalid_format' ? 404 : 200;
   res.status(status).render('public/verify-result', {
     // Only echo a token the visitor already holds (from the QR code) and that verified; never derive it here.
-    title: 'Credential Verification', out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
+    title: 'Credential Verification', recordTypes: require('../lib/schemes').RECORD_TYPES, out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
     shareUrl: c ? `${cfg.baseUrl}/verify/${c.cert_number}` : '',
   });
 }));

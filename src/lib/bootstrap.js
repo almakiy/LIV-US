@@ -52,6 +52,6 @@ async function seedSampleContent() {
 }
 
 async function bootstrap() {
-  try { await resetAdminFromEnv(); await bootstrapAdmin(); await seedSampleContent(); if (await require('./billing-store').seedCatalog()) console.log('[bootstrap] fee schedule loaded into the price catalog (edit it in Admin > Billing)'); } catch (e) { console.warn(`[bootstrap] skipped: ${e.message} (did you run "npm run migrate"?)`); }
+  try { await resetAdminFromEnv(); await bootstrapAdmin(); await seedSampleContent(); if (await require('./billing-store').seedCatalog()) console.log('[bootstrap] fee schedule loaded into the price catalog (edit it in Admin > Billing)'); if (await require('./scheme-store').seedSchemes()) console.log('[bootstrap] credential schemes added (Admin > Schemes)'); } catch (e) { console.warn(`[bootstrap] skipped: ${e.message} (did you run "npm run migrate"?)`); }
 }
 module.exports = { bootstrap };
