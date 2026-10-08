@@ -36,6 +36,20 @@ app.use(session({
   saveUninitialized: false,
   cookie: { httpOnly: true, sameSite: 'lax', secure: cfg.isProd, maxAge: 1000 * 60 * 60 * 8 },
 }));
+// express-session sends the response first and writes the session after it, so a browser that follows a redirect at once
+// (or submits a form the moment it appears) can read the previous session: a lost confirmation message, a lost sign-in
+// step, or a form token reported as expired. A changed session is saved before the page or the redirect is sent.
+app.use((req, res, next) => {
+  const snap = (s) => JSON.stringify(s, function omitCookie(k, v) { return this === s && k === 'cookie' ? undefined : v; });
+  const id = req.sessionID; const before = snap(req.session);
+  const saveFirst = (send) => (...args) => {
+    if (!req.session || (req.sessionID === id && snap(req.session) === before)) return send(...args);
+    req.session.save((err) => (err ? next(err) : send(...args)));
+  };
+  res.redirect = saveFirst(res.redirect.bind(res));
+  res.render = saveFirst(res.render.bind(res));
+  next();
+});
 
 // Load current user + view locals
 app.use(async (req, res, next) => {
@@ -102,6 +116,7 @@ app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin', require('./routes/admin-schemes')); // after admin: it ends 'act as partner' mode before the super-admin check
+app.use('/admin', require('./routes/admin-system'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 

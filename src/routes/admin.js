@@ -10,6 +10,7 @@ const { mergeExcerpts, CATEGORIES, KINDS, slugify, renderMarkdown, readingMinute
 const { uniqueSlug, snapshot, contentChanged } = require('../lib/article-store');
 const { newApiKey } = require('../lib/crypto');
 const { requireSuper, wrap, flash } = require('../lib/guards');
+const { refusedPassword } = require('../lib/dev-defaults');
 
 const r = express.Router();
 // Visiting /admin while acting on behalf of a provider returns to admin mode.
@@ -54,6 +55,7 @@ r.post('/platforms/new', wrap(async (req, res) => {
   if (!f.company_name || !f.full_name || !f.email || !f.password) return fail('Please fill in all required fields.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) return fail('Please enter a valid email.');
   if (f.password.length < 10) return fail('Temporary password must be at least 10 characters.');
+  if (refusedPassword(f.password)) return fail('That is a published development password; choose another one.');
   if ((await q('SELECT 1 FROM users WHERE email = $1', [f.email])).rows.length) return fail('A user with this email already exists.');
   const hash = await bcrypt.hash(f.password, 12);
   const id = await tx(async (c) => {

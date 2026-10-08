@@ -1,7 +1,5 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const path = require('path');
-const fs = require('fs');
 const cfg = require('../config');
 const { q, tx } = require('../db');
 const { verifyCertificate, CERT_RE } = require('../lib/verify');
@@ -10,6 +8,8 @@ const { audit } = require('../lib/audit');
 const { RECOMMENDED } = require('../lib/pdf-security');
 const { limiter, wrap, flash } = require('../lib/guards');
 const { createCase } = require('../lib/qms-store');
+const { getFile } = require('../lib/files');
+const { refusedPassword } = require('../lib/dev-defaults');
 
 const r = express.Router();
 const verifyLimiter = limiter(1, 30);
@@ -82,9 +82,9 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   const id = String(req.params.cert).toUpperCase();
   const { rows: [c] } = await q(`SELECT cert_number, pdf_path, verification_hash FROM certificates WHERE cert_number = $1`, [id]);
   if (!c || !req.query.t || !safeEqual(String(req.query.t), qrToken(c.verification_hash))) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
-  const abs = path.join(cfg.storageDir, c.pdf_path);
-  if (!fs.existsSync(abs)) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
-  res.download(abs, `${c.cert_number}.pdf`);
+  const file = c.pdf_path && await getFile(c.pdf_path);
+  if (!file) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
+  res.attachment(`${c.cert_number}.pdf`).type(file.type).send(file.content);
 }));
 
 r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Education Partner', form: {}, error: null }));
@@ -95,6 +95,7 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   if (!f.company_name || !f.full_name || !f.email || !f.password) error = 'Please fill in all required fields.';
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) error = 'Please enter a valid email.';
   else if (f.password.length < 10) error = 'Password must be at least 10 characters.';
+  else if (refusedPassword(f.password)) error = 'That is a published development password; choose another one.';
   else if (!f.agree) error = 'You must accept the Education Partner Program terms.';
   if (!error) {
     const { rows } = await q('SELECT 1 FROM users WHERE email = $1', [f.email]);
@@ -140,8 +141,9 @@ r.get('/sample.csv', (req, res) => res.type('text/csv; charset=utf-8').attachmen
 r.get('/logo/:platformId', wrap(async (req, res, next) => {
   if (!/^[0-9a-f-]{36}$/i.test(req.params.platformId)) return next();
   const { rows: [p] } = await q('SELECT logo_path FROM platforms WHERE id = $1', [req.params.platformId]);
-  if (!p?.logo_path) return next();
-  res.set('Cache-Control', 'public, max-age=86400').sendFile(path.join(cfg.storageDir, p.logo_path));
+  const file = p?.logo_path && await getFile(p.logo_path);
+  if (!file) return next();
+  res.set('Cache-Control', 'public, max-age=86400').type(file.type).send(file.content);
 }));
 
 module.exports = r;

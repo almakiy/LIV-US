@@ -29,6 +29,15 @@ jobs:
       - run: npm run test:unit
       - run: npx playwright install --with-deps chromium
       - run: npm run migrate && npm run seed
-      - run: node src/server.js &
+      - run: node src/server.js > server.log 2>&1 &
       - run: npx wait-on http://localhost:3000 || sleep 5
       - run: node tests/e2e.js http://localhost:3000
+        env:
+          E2E_FAILURE_DIR: e2e-failure   # screenshots of every open page when a check fails
+      - name: Server log (on failure)
+        if: failure()
+        run: tail -n 200 server.log || true
+      - name: Failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: e2e-failure, path: e2e-failure, if-no-files-found: ignore }

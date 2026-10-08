@@ -7,6 +7,7 @@ const cfg = require('../config');
 const { q } = require('../db');
 const { SAMPLE_ARTICLES } = require('./sample-content');
 const { setAdminPassword } = require('./admin-account');
+const { refusedPassword } = require('./dev-defaults');
 
 // No-shell recovery: set the ADMIN_RESET_PASSWORD secret (10+ chars), restart, log in, then delete the secret.
 async function resetAdminFromEnv() {
@@ -27,8 +28,10 @@ async function bootstrapAdmin() {
     return;
   }
   const email = (process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').trim().toLowerCase();
-  const fromEnv = !!process.env.SEED_ADMIN_PASSWORD;
-  const password = process.env.SEED_ADMIN_PASSWORD || `${crypto.randomBytes(9).toString('base64url')}Aa1`;
+  const refused = refusedPassword(process.env.SEED_ADMIN_PASSWORD);
+  if (refused) console.warn('[bootstrap] SEED_ADMIN_PASSWORD is a published development password; a random password is used instead.');
+  const fromEnv = !!process.env.SEED_ADMIN_PASSWORD && !refused;
+  const password = fromEnv ? process.env.SEED_ADMIN_PASSWORD : `${crypto.randomBytes(9).toString('base64url')}Aa1`;
   const taken = await q('SELECT 1 FROM users WHERE email = $1', [email]);
   if (taken.rows.length) { console.warn(`[bootstrap] ${email} already exists as a non-admin user; set SEED_ADMIN_EMAIL to another address.`); return; }
   await q("INSERT INTO users (role, full_name, email, password_hash) VALUES ('super_admin', 'LIV Administrator', $1, $2)", [email, await bcrypt.hash(password, 12)]);

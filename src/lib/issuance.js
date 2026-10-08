@@ -5,6 +5,7 @@ const cfg = require('../config');
 const { newCertNumber, certHmac, qrToken, fmtDate, normalizeId, idHash, idLast4 } = require('./crypto');
 const { renderCertificate } = require('./pdf');
 const { audit } = require('./audit');
+const { putFile } = require('./files');
 
 const FIELDS = ['serial_no', 'full_name', 'first_name', 'last_name', 'national_id', 'email', 'course_name', 'completion_date'];
 // email, course and date are always required; the name comes either as full_name or as first_name + last_name.
@@ -141,7 +142,7 @@ async function validateRows(rows, platformId) {
 }
 
 const verifyUrl = (certNumber, hash) => `${cfg.baseUrl}/verify/${certNumber}?t=${qrToken(hash)}`;
-const pdfRelPath = (platformId, certNumber) => path.join('pdfs', platformId, `${certNumber}.pdf`);
+const pdfRelPath = (platformId, certNumber) => path.posix.join('pdfs', platformId, `${certNumber}.pdf`);
 
 /**
  * Issues certificates for already-validated rows inside one transaction.
@@ -185,8 +186,6 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
           const url = verifyUrl(certNumber, hash);
           const pdf = await renderCertificate({ ...hashInput, verify_url: url, verification_hash: hash }, platform, template);
           const rel = pdfRelPath(platform.id, certNumber);
-          const abs = path.join(cfg.storageDir, rel);
-          fs.mkdirSync(path.dirname(abs), { recursive: true });
           await c.query('SAVEPOINT ins');
           try {
             const { rows: [ins] } = await c.query(
@@ -199,8 +198,8 @@ async function issue({ rows, platform, template, user, source = 'csv', fileName,
                 data.serial_no || null, data.national_id ? idHash(data.national_id) : null, data.national_id ? idLast4(data.national_id) : null,
                 scope?.scheme_id || null, scope?.id || null]
             );
-            fs.writeFileSync(abs, pdf);
-            written.push(abs);
+            const copy = await putFile(rel, pdf, c); // stored with the record, in the same transaction
+            if (copy) written.push(copy);
             cert = { ...ins, verify_url: url };
           } catch (e) {
             await c.query('ROLLBACK TO SAVEPOINT ins');

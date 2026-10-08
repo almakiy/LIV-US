@@ -4,7 +4,8 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execSync } = require('child_process');
+const crypto = require('crypto');
+const { execSync, spawn } = require('child_process');
 
 const BASE = process.argv[2] || 'http://localhost:3000';
 const SHOTS = process.argv[3] || null;
@@ -12,11 +13,16 @@ let passed = 0;
 const ok = (cond, msg) => { if (!cond) throw new Error('FAIL: ' + msg); passed++; console.log('  ✓', msg); };
 const shot = async (page, name) => { if (SHOTS) { fs.mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, name + '.png'), fullPage: true }); } };
 const see = (p, sel) => p.locator(sel).first().waitFor({ timeout: 20000 }).then(() => true).catch(() => false);
+// Waits for a navigation to land: page.url() read right after a click can still be the previous page.
+const at = (p, re) => p.waitForURL(re, { timeout: 20000 }).then(() => true).catch(() => false);
+let browserRef = null; // for the failure report
 const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`).toString().trim();
+const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`, { stdio: 'pipe' }); return false; } catch { return true; } };
 
 (async () => {
   require('dotenv').config({ quiet: true });
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+  browserRef = browser;
   const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 860 } });
   const page = await ctx.newPage();
   page.on('dialog', (d) => d.accept());
@@ -59,7 +65,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await page.fill('input[name=email]', 'demo@trainingco.example');
   await page.fill('input[name=password]', 'ChangeMe-Demo-2026');
   await page.click('button:has-text("Log in")');
-  ok(page.url().endsWith('/portal'), 'demo admin logged in');
+  ok(await at(page, /\/portal$/), 'demo admin logged in');
   await shot(page, '02-dashboard');
 
   const csv = path.join(os.tmpdir(), `batch-${stamp}.csv`);
@@ -75,7 +81,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await page.goto(BASE + '/portal/issue');
   await page.setInputFiles('input[name=csv]', csv);
   await page.click('button:has-text("Upload")');
-  ok(page.url().endsWith('/issue/map'), 'CSV uploaded, mapping step');
+  ok(await at(page, /\/issue\/map$/), 'CSV uploaded, mapping step');
   ok(await page.$eval('select[name=last_name]', (s) => s.value) === 'Surname', 'auto-mapped Surname → last_name');
   await shot(page, '03-map');
   await page.click('button:has-text("Validate rows")');
@@ -87,7 +93,8 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   ok(await see(page, 'text=Some rows have errors'), 'issuance blocked until skip is ticked');
   await page.check('input[name=skip_invalid]');
   await page.click('button:has-text("Issue 3 certificate")');
-  ok(await see(page, 'text=3 certificate(s) issued, 3 row(s) skipped'), 'issued 3, skipped 3');
+  // The confirmation comes from the session after a redirect: it must survive a browser that follows the redirect at once.
+  ok(await at(page, /\/portal\/batches\//) && await see(page, 'text=3 certificate(s) issued, 3 row(s) skipped'), 'issued 3, skipped 3');
   await shot(page, '05-batch');
 
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('text=Download results CSV')]);
@@ -188,7 +195,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await ap.fill('input[name=password]', 'Applicant-Pass-2026');
   await ap.check('input[name=agree]');
   await ap.click('button:has-text("Submit application")');
-  ok(ap.url().endsWith('/portal') && await see(ap, 'text=Authorization status'), 'applicant lands in portal with pending banner');
+  ok(await at(ap, /\/portal$/) && await see(ap, 'text=Authorization status'), 'applicant lands in portal with pending banner');
   await ap.goto(BASE + '/portal/issue/review');
   await ap.goto(BASE + '/portal/issue');
   ok(await see(ap, 'text=pending'), 'pending platform sees status');
@@ -201,7 +208,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await adm.fill('input[name=email]', 'admin@liv.local');
   await adm.fill('input[name=password]', 'ChangeMe-Admin-2026');
   await adm.click('button:has-text("Log in")');
-  ok(adm.url().endsWith('/admin'), 'super admin logged in');
+  ok(await at(adm, /\/admin$/), 'super admin logged in');
   await shot(adm, '12-admin');
   await adm.goto(BASE + '/admin/platforms?status=pending');
   await shot(adm, '13-admin-platforms');
@@ -321,7 +328,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
 
   const login2 = async (pw) => { const c = await browser.newContext(); const pg = await c.newPage(); await pg.goto(BASE + '/login'); await pg.fill('input[name=email]', partnerEmail); await pg.fill('input[name=password]', pw); await pg.click('button:has-text("Log in")'); return pg; };
   let pg = await login2('Applicant-Pass-2026');
-  ok(pg.url().endsWith('/login/2fa') && await see(pg, 'text=Two-factor sign-in'), 'password alone no longer signs in: a code is required');
+  ok(await at(pg, /\/login\/2fa$/) && await see(pg, 'text=Two-factor sign-in'), 'password alone no longer signs in: a code is required');
   await pg.goto(BASE + '/portal');
   ok(pg.url().includes('/login'), 'the portal stays closed until the code is entered');
   pg = await login2('Applicant-Pass-2026');
@@ -729,12 +736,90 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
     ok((await anon.request.get(BASE + '/static/brand/og-default.png')).status() === 200, 'default social image is served');
   }
 
+  console.log('Durable credential files (Phase 0)');
+  {
+    const STORAGE = process.env.STORAGE_DIR || path.join(__dirname, '..', 'storage');
+    const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
+    const row = (i) => resultsCsv.split('\n')[i].split(',');
+    const pdfAt = (url) => anon.request.get(url.replace('?t=', '/pdf?t='));
+    const [key1, key3] = [1, 3].map((i) => psql(`SELECT pdf_path FROM certificates WHERE cert_number = '${row(i)[0]}'`));
+    const stored1 = psql(`SELECT sha256 FROM stored_files WHERE key = '${key1}'`);
+    ok(/^[0-9a-f]{64}$/.test(stored1) && sha(await (await pdfAt(verifyUrl)).body()) === stored1, 'an issued PDF is stored in the database with its SHA-256');
+    fs.rmSync(path.join(STORAGE, ...key1.split('/')), { force: true });
+    const again = await pdfAt(verifyUrl);
+    ok(again.status() === 200 && sha(await again.body()) === stored1, 'the PDF still downloads byte for byte after its disk copy is lost (as on a redeploy)');
+    ok(psqlRefused(`UPDATE stored_files SET bytes = 1 WHERE key = '${key1}'`), 'a stored credential PDF cannot be changed');
+    // A file kept only on disk (stored before this release) is copied in; a file lost everywhere is reported, never re-rendered.
+    psql(`DELETE FROM stored_files WHERE key = '${key3}'`);
+    const cells = async (label) => (await adm.locator('tr', { hasText: label }).first().innerText()).split('\t').map((t) => t.trim());
+    await adm.goto(BASE + '/admin/system');
+    ok((await cells('Files only on disk'))[1] === '1' && (await cells('CERT_HMAC_SECRET'))[1] === 'set', 'system status counts the disk-only file and reports secrets without values');
+    await adm.click('button:has-text("Copy disk-only files now")');
+    ok(await see(adm, 'text=1 file(s) copied from disk into the database') && psql(`SELECT count(*) FROM stored_files WHERE key = '${key3}'`) === '1', 'the administrator copies it into the database');
+    await adm.click('button:has-text("Check file integrity")');
+    ok(await see(adm, 'text=stored file(s) match their recorded SHA-256'), 'the integrity check confirms every stored file');
+    psql(`DELETE FROM stored_files WHERE key = '${key3}'`); fs.rmSync(path.join(STORAGE, ...key3.split('/')), { force: true });
+    await adm.goto(BASE + '/admin/system');
+    ok((await cells('missing everywhere'))[1] === '1' && await see(adm, `td:has-text("${row(3)[0]}")`), 'a credential whose file is lost everywhere is listed for a decision');
+    ok((await pdfAt(row(3).pop())).status() === 404 && psql(`SELECT count(*) FROM stored_files WHERE key = '${key3}'`) === '0', 'that PDF is not regenerated');
+    const anonSystem = await anon.request.get(BASE + '/admin/system', { maxRedirects: 0 });
+    ok(anonSystem.status() !== 200, 'system status is for LIV administrators only');
+  }
+
+  console.log('Deployed server guard (Phase 0)');
+  {
+    // A second server with REPLIT_DEPLOYMENT=1 behaves like the published site: the README's development passwords never sign in.
+    const port2 = 3100 + (process.pid % 500); const base2 = `http://localhost:${port2}`;
+    const srv = spawn(process.execPath, ['src/server.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: String(port2), REPLIT_DEPLOYMENT: '1' }, stdio: 'ignore' });
+    try {
+      const c2 = await browser.newContext(); const p2 = await c2.newPage();
+      for (let i = 0; i < 60 && !(await p2.request.get(base2 + '/').then((r) => r.ok()).catch(() => false)); i++) await new Promise((r) => setTimeout(r, 250));
+      await p2.goto(base2 + '/login'); await p2.fill('input[name=email]', 'admin@liv.local'); await p2.fill('input[name=password]', 'ChangeMe-Admin-2026');
+      await p2.click('button:has-text("Log in")');
+      ok(await see(p2, 'text=development password that is published in the documentation') && !p2.url().endsWith('/admin'), 'a deployed server refuses the published development password');
+      ok(psql("SELECT count(*) FROM audit_logs WHERE action = 'user.login_refused_dev_password'") !== '0', 'the refused sign-in is recorded in the audit log');
+      await c2.close();
+    } finally { srv.kill(); }
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');
   const cross = await page.request.get(`${BASE}/portal/batches/00000000-0000-0000-0000-000000000000`);
   ok(cross.status() === 404, 'unknown batch → 404');
 
+  console.log('Demo data removal (Phase 0; runs last because it removes the demo partner)');
+  {
+    const purge = (args) => execSync(`node scripts/purge-demo.js ${args}`, { cwd: path.join(__dirname, '..'), env: process.env, stdio: 'pipe' }).toString();
+    const demoCert = psql(`SELECT cert_number FROM certificates WHERE platform_id = '${demoId}' AND status = 'active' LIMIT 1`);
+    const statusBefore = psql(`SELECT accreditation_status FROM platforms WHERE id = '${demoId}'`);
+    ok(purge('').includes('Dry run: nothing changed') && psql(`SELECT accreditation_status FROM platforms WHERE id = '${demoId}'`) === statusBefore
+      && (await anon.request.get(`${BASE}/verify/${demoCert}`)).status() === 200, 'purge-demo dry run lists the demo data and changes nothing');
+    await adm.goto(BASE + '/admin/system');
+    ok(await see(adm, 'h3:has-text("Demo data")') && await see(adm, 'text=sample credential(s)'), 'Admin > System offers the removal of the demo data');
+    await adm.click('button:has-text("Remove demo data")');
+    ok(await see(adm, 'text=Type REMOVE to confirm the removal') && (await anon.request.get(`${BASE}/verify/${demoCert}`)).status() === 200, 'the removal needs the typed confirmation');
+    await adm.fill('input[name=confirm]', 'REMOVE'); await adm.click('button:has-text("Remove demo data")');
+    ok(await see(adm, 'text=Demo data removed') && (await anon.request.get(`${BASE}/verify/${demoCert}`)).status() === 404, 'after the removal the demo credentials no longer verify');
+    ok(!(await (await anon.request.get(BASE + '/partners')).text()).includes('Demo Safety Training Co.') && psql("SELECT count(*) FROM audit_logs WHERE action = 'demo.purge'") === '1'
+      && purge('').includes('delete: 0 credential(s)'), 'the demo partner leaves the public register, the removal is in the audit log, and nothing is left to delete');
+  }
+
   await browser.close();
   console.log(`\nAll ${passed} checks passed.`);
-})().catch((e) => { console.error(e.message); process.exit(1); });
+})().catch(async (e) => {
+  console.error(e.message);
+  // Report what every open page shows (address, heading, messages); with E2E_FAILURE_DIR set, also a screenshot of each.
+  let n = 0;
+  for (const c of browserRef ? browserRef.contexts() : []) {
+    for (const p of c.pages()) {
+      const info = await p.evaluate(() => ({ h1: (document.querySelector('h1') || {}).textContent || '', alerts: [...document.querySelectorAll('.alert')].map((a) => a.textContent.trim()) })).catch(() => ({}));
+      console.error(`  page ${p.url()} h1=${JSON.stringify((info.h1 || '').trim())} messages=${JSON.stringify(info.alerts || [])}`);
+      if (process.env.E2E_FAILURE_DIR) {
+        fs.mkdirSync(process.env.E2E_FAILURE_DIR, { recursive: true });
+        await p.screenshot({ path: path.join(process.env.E2E_FAILURE_DIR, `page-${++n}.png`), fullPage: true }).catch(() => {});
+      }
+    }
+  }
+  process.exit(1);
+});

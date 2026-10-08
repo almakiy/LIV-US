@@ -599,4 +599,19 @@ ALTER TABLE certificates ADD COLUMN IF NOT EXISTS partner_scope_id UUID REFERENC
 ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_category_check;
 ALTER TABLE articles ADD CONSTRAINT articles_category_check CHECK (category IN ('governance','hse-governance','safety','quality','environment','qhse','project-management','project-governance','pmo-governance','project-information-governance','professional-credentialing','assessment-competence','standards','compliance','gcc-workforce'));
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS jurisdiction VARCHAR(80) NOT NULL DEFAULT '';
+
+-- Durable files (Phase 0): credential PDFs and partner logos, so they survive redeploys and are in database backups.
+-- Written once: an issued credential keeps its exact bytes. Deletion stays possible for demo data only (scripts/purge-demo.js).
+CREATE TABLE IF NOT EXISTS stored_files (
+  key TEXT PRIMARY KEY,                    -- the relative path kept on the record, e.g. pdfs/<partner>/<credential>.pdf
+  content BYTEA NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  bytes INT NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE OR REPLACE FUNCTION stored_files_write_once() RETURNS trigger AS $f$
+BEGIN RAISE EXCEPTION 'stored_files rows are written once and cannot be changed'; END $f$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS stored_files_no_update ON stored_files;
+CREATE TRIGGER stored_files_no_update BEFORE UPDATE ON stored_files FOR EACH ROW EXECUTE FUNCTION stored_files_write_once();
 `;

@@ -8,6 +8,7 @@
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "reset-admin": "node scripts/reset-admin.js",
+    "purge-demo": "node scripts/purge-demo.js",
     "test": "node tests/e2e.js",
     "test:unit": "node --test tests/unit/*.test.js",
     "engine:review-file": "node engines/cli.js review-file",

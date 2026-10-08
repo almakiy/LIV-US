@@ -1,0 +1,33 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>System status</h1></div>
+<p class="small muted">Read-only checks of this server. Secrets are reported as set or not set; their values are never shown. Steps for each item: docs/BUILD-PLAN.md, Phase 0.</p>
+<% const label = { ok: 'OK', warn: 'Check', bad: 'Action needed', info: 'Info' }; const cls = { ok: 'b-active', warn: 'b-pending', bad: 'b-revoked', info: 'b-neutral' }; %>
+<% sections.forEach(s => { %>
+<h3 class="mt"><%= s.title %></h3>
+<div class="table-wrap"><table><tr><th style="width:30%">Item</th><th style="width:24%">Value</th><th style="width:12%">Status</th><th>Note</th></tr>
+<% s.rows.forEach(r => { %><tr><td><%= r.item %></td><td><%= r.value %></td><td><span class="badge <%= cls[r.state] %>"><%= label[r.state] %></span></td><td class="small"><%= r.note %></td></tr><% }) %></table></div>
+<% }) %>
+<% if (durable) { %>
+<div class="card mt"><h3>File maintenance</h3>
+  <p class="small muted">Copying is byte for byte and runs at every start as well. The integrity check reads every stored file and compares it with the SHA-256 recorded when it was saved.</p>
+  <div class="row" style="gap:8px">
+    <form method="post" action="/admin/system/backfill" style="flex:0 0 auto"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Copy disk-only files now</button></form>
+    <form method="post" action="/admin/system/integrity" style="flex:0 0 auto"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Check file integrity</button></form>
+  </div>
+  <% if (missingCount) { %><h3 class="mt">Records whose file is missing everywhere (<%= missingCount %>)</h3>
+  <div class="table-wrap"><table><tr><th>Record</th><th>Type</th><th>File key</th></tr>
+  <% missing.forEach(m => { %><tr><td><%= m.ref %></td><td><%= m.kind %></td><td class="small"><%= m.key %></td></tr><% }) %></table></div><% } %>
+</div>
+<% } %>
+<% if (demo) { %>
+<div class="card mt"><h3>Demo data</h3>
+  <p class="small">The demo partner created by <code>npm run seed</code> (<%= demo.company_name %>) is on this server with <strong><%= demo.n.credentials %></strong> sample credential(s), <%= demo.n.batches %> batch(es) and <%= demo.n.users %> user(s). On a public server its sample credentials must not verify.</p>
+  <p class="small muted">Removal deletes the sample credentials with their files and verification logs, revokes its API keys, suspends the partner and locks its users. Invoices and the audit log are kept. The same action: <code>npm run purge-demo</code>.</p>
+  <form method="post" action="/admin/system/purge-demo" class="row" style="gap:8px" data-confirm="Remove the demo partner's sample credentials? Their verification links will answer not found. This cannot be undone.">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label style="flex:0 0 220px">Type REMOVE to confirm<input name="confirm" autocomplete="off"></label>
+    <button class="btn sm danger" style="flex:0 0 auto">Remove demo data</button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/app-end') %>

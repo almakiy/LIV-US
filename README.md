@@ -16,12 +16,14 @@ npm run seed                  # super admin + demo platform + 3 sample certifica
 npm start                     # http://localhost:3000
 ```
 
-Seed logins (change them right away):
+Seed logins, for local runs and CI only:
 
 | Role | Email | Password |
 |---|---|---|
 | Super admin (LIV) | `admin@liv.local` (or `SEED_ADMIN_EMAIL`) | `ChangeMe-Admin-2026` (or `SEED_ADMIN_PASSWORD`) |
 | Demo provider (active) | `demo@trainingco.example` | `ChangeMe-Demo-2026` |
+
+These passwords are public, so a deployed server (`NODE_ENV=production`, or a Replit deployment, which sets `REPLIT_DEPLOYMENT=1`) refuses them at sign-in and when a password is set, and `npm run seed` does not run there. Demo data already on a public server: Admin → System → Remove demo data, or `npm run purge-demo` (dry run), then `npm run purge-demo -- --apply`.
 
 ## Docker
 
@@ -90,9 +92,10 @@ docker compose exec app node scripts/seed.js
 ## Security design
 - **Certificate ID:** `LIV-YYYY-XXXXXXXX`, 8 random characters from an unambiguous 31-character alphabet. IDs are not sequential and can't be guessed.
 - **Integrity:** an HMAC-SHA256, signed with `CERT_HMAC_SECRET`, covers the recipient snapshot, course, grade and dates. Each verification recomputes it, so any edit made directly in the database shows as **INVALID**. The QR code carries a 16-hex-character token taken from that HMAC, so a forged QR code fails as well.
-- **Immutable records:** certificates store a snapshot of the recipient's details. They are never deleted, only revoked.
+- **Immutable records:** certificates store a snapshot of the recipient's details. They are never deleted, only revoked (the one exception is the seeded demo partner's sample credentials, removed with `npm run purge-demo`).
+- **Durable files:** each credential PDF and partner logo is stored in PostgreSQL (`stored_files`, with its SHA-256) in the same transaction as its record, so it survives redeploys on hosts that wipe the disk. Rows are written once (a trigger refuses updates); the copy under `STORAGE_DIR` is kept for older releases. Files found only on disk are copied in at start. A file lost everywhere is listed in Admin → System and never regenerated.
 - **Passwords:** bcrypt with cost 12, plus constant-time login so attackers can't tell which emails exist.
-- **Sessions:** stored in PostgreSQL, with httpOnly, SameSite=Lax cookies (Secure in production).
+- **Sessions:** stored in PostgreSQL, with httpOnly, SameSite=Lax cookies (Secure in production). A changed session is saved before the page or redirect is sent, so a browser that follows a redirect at once never reads the previous session (lost confirmation messages or sign-in steps).
 - **Every form is CSRF-protected**, and the app sends Helmet security headers including a strict CSP.
 - **Rate limits:** verification, login, apply, contact and the API.
 - **CSV exports** guard against formula injection.
@@ -109,7 +112,7 @@ The test suite makes 43 checks. They cover CSV issuance end to end, every valida
 ## Before production
 1. **`CERT_HMAC_SECRET`:** generate it once, store it in a secrets manager and back it up. If it's lost or changed, every certificate already issued will fail verification.
 2. **`BASE_URL`:** set it to the final domain *before* issuing real certificates. The URL is printed into each QR code.
-3. **Storage:** PDFs and logos are kept on disk (`STORAGE_DIR`). Use a persistent volume, or switch to S3 or R2 for multi-instance hosting.
+3. **Storage:** PDFs and logos are kept in PostgreSQL (see Durable files), so the database backup covers them. The server applies the idempotent schema at start (`MIGRATE_ON_START=false` turns this off; `npm run migrate` does the same by hand), so a host that only runs `npm start` gets new tables. Admin → System shows the storage state, secrets (set or not, never values), the 2FA policy and demo data, and removes the seeded demo partner.
 4. **HTTPS:** serve the app over HTTPS, with Express's `trust proxy` setting already configured for one proxy. Session cookies are marked Secure in production.
 5. **Database:** schedule PostgreSQL backups.
 6. **Not built yet:**

@@ -6,8 +6,11 @@ const must = (k, dflt) => {
   return v;
 };
 const isProd = process.env.NODE_ENV === 'production';
+// A server the public can reach: production mode, or a Replit deployment (REPLIT_DEPLOYMENT=1) even when NODE_ENV is not set.
+const isDeployed = isProd || process.env.REPLIT_DEPLOYMENT === '1';
 module.exports = {
   isProd,
+  isDeployed,
   port: parseInt(process.env.PORT || '3000', 10),
   // Public base URL used for canonical links, sitemap, RSS, Open Graph, QR codes and verification links.
   // PUBLIC_BASE_URL wins; BASE_URL is kept for existing deployments. Production target: https://livcredentials.org

@@ -1,6 +1,6 @@
 # LIV — Build plan in phases (for owner review)
 
-Status (October 8, 2026): **proposal for review**. Only Phase 0 is proposed for approval now; nothing in this plan is built until the owner approves the phase. Each phase ends with a review before the next one starts.
+Status (October 8, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
 
 This plan merges every open item from: the A–T brief (October 8; it was sent twice with identical text and is already applied, see §2), `ROADMAP.md`, `PARTNER-GATEWAY.md` (still to build), `EXAM-SYSTEM.md` (E1–E5), `CREDENTIAL-MODEL.md`, `RECOGNITION-ROADMAP.md`, `GLOBAL-STRATEGY.md`, `FUTURE-CREDENTIAL-ARCHITECTURE.md`, `HSE-GOVERNANCE-SCHEME-ROADMAP.md`, `LEGACY-NAMING.md`, the pre-launch checklist and Phase 2 backlog in `LIV-Phase1-Architecture.md` (§13, §14), and findings from a repository audit (tagged **audit**; these are proposals, not owner decisions).
 
@@ -56,7 +56,7 @@ Built and tested (CI green on `ca4bd42`; 69 unit tests, 214 end-to-end checks): 
 6. **No public privacy notice, terms of use or complaints and appeals page**, while the site processes personal data (contact and application forms, holder names and emails, ID hashes). Texts must come from counsel (1.6).
 7. **"Add to LinkedIn profile" on the verification page names the Education Partner as the issuing organization.** Under decision A, LIV is the visible issuer; the record class should also appear so a completion credential is not read as a certification (1.1).
 8. **Authorized scope is informational only:** a credential links to a scope when the course title matches, but a partner can still issue for any course title. A course catalog under each scope makes it real (1.3).
-9. **One CI run failed** at the CSV issuance step ("issued 3, skipped 3") before later runs passed; the root cause is not known (0.3).
+9. **Two CI runs failed intermittently** (the issuance confirmation, and the two-factor sign-in step). Root cause found in Phase 0: the app sent each response before writing the session, so a browser that followed a redirect at once could read the previous session (0.3).
 10. **Older documents conflict with later decisions** (see §6). `ROADMAP.md` is marked accordingly.
 
 ## 4. Phases
@@ -75,16 +75,24 @@ Owner checklist for Phase 0 (no code; I prepare step-by-step instructions):
 
 | # | Action |
 |---|---|
-| 0.5 | Confirm that the Replit deployment runs this branch (the footer says "Leadership Institute of Validation" and `/credentials` exists); pull the latest commit, run the migration, restart. |
+| 0.5 | Confirm that the Replit deployment runs this branch (the footer says "Leadership Institute of Validation" and `/credentials` exists); pull the latest commit and redeploy (the schema is applied at start). Then open Admin → System. |
 | 0.6 | Replit Secrets: `NODE_ENV=production`; `SESSION_SECRET` and `CERT_HMAC_SECRET` set and copied offline to a password manager (also `TOTP_ENCRYPTION_KEY` if it is set; do not add or change it once anyone uses 2FA, since the 2FA key otherwise comes from `CERT_HMAC_SECRET`); delete `BRAND_LONG_NAME` if it still holds the earlier name; `REQUIRE_2FA=admin`. |
-| 0.7 | Accounts: no account uses a development password; run `purge-demo` if demo data exists in production; check that a credential PDF downloads unchanged after a redeploy (after 0.1). |
+| 0.7 | Accounts: no account uses a development password (change it before deploying this release, or the deployed server will refuse it); remove demo data from Admin → System if it is there; check that a credential PDF downloads unchanged after a redeploy. |
 | 0.8 | Backups: confirm the production database backup and restore option on Replit; keep a monthly off-platform export; test one restore. |
 | 0.9 | Domain: register `livcredentials.org`, connect it in Replit, then set `PUBLIC_BASE_URL=https://livcredentials.org`. QR codes print the base URL, so issue real credentials only after the switch, and keep the Replit address working for anything issued before it. |
 | 0.10 | Stripe: one payment in test mode (test key and webhook secret in Replit Secrets), then live keys. |
 | 0.11 | Decisions D-0.1 to D-0.6 (§5). |
+| 0.12 | If the deployment can run more than one instance at a time, keep it at one for now: the import wizard keeps its temporary upload (with raw ID numbers, deliberately outside the database and its backups) on the instance's disk for up to 6 hours, so a second instance would not find it. |
 
 **Done when:** a PDF keeps the same SHA-256 after the storage folder is deleted (test) and after a Replit redeploy (owner check); development passwords are refused in production mode (test); CI is green three runs in a row; the checklist is ticked.
 **Depends on:** nothing. **Owner inputs:** the checklist and D-0.x.
+
+**Status (October 8, 2026): tasks 0.1–0.4 built.**
+- 0.1: `src/lib/files.js`, table `stored_files` (write-once trigger), issuance, verification download, portal download and batch ZIP (one file at a time), logo upload and display; copy from disk at start and from Admin → System. Nothing is ever re-rendered. The server now applies the idempotent schema at start (`src/lib/migrate.js`, advisory lock; `MIGRATE_ON_START=false` turns it off), so a deployment that only runs `npm start` gets the new table.
+- 0.2: `src/lib/dev-defaults.js` (published passwords and the demo identity), refusal at sign-in, password change, new partner users, applications and the first-run admin on a deployed server (`NODE_ENV=production` or `REPLIT_DEPLOYMENT=1`); `npm run seed` stops on a deployed server; demo removal from Admin → System (typed confirmation) or `npm run purge-demo` (dry run, then `--apply`), both through `src/lib/demo-purge.js`.
+- 0.3: root cause found in the app, not in the test: express-session sends a response before it writes the session, so a browser that follows a redirect at once (or posts a form as soon as it appears) could read the previous session. Under load, 3 of 26 repeated issuance runs lost a step (two lost confirmations, one lost upload) before the fix and 0 of 40 after it. A changed session is now saved before the page or redirect is sent (`src/app.js`). The end-to-end test also waits for each navigation, prints every open page on failure, and CI keeps the server log and screenshots.
+- 0.4: Admin → System (`/admin/system`): version, base URL, mode, secrets (set or not), 2FA policy, demo data, Stripe mode, public flags, file store, database.
+- Tests: unit tests (`tests/unit/phase0.test.js`) and end-to-end checks for durable files, the deployed-server guard and demo removal.
 
 ### Phase 1 — Finish repositioning and make partner scope real
 **Goal:** every public and partner-facing surface tells the same accurate story, and authorized scope controls what a partner can issue.
@@ -196,6 +204,7 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 
 | # | Task | Source | Size |
 |---|---|---|---|
+| K.0 | Move the engines' monthly spend ledger (`engines/data/usage.jsonl`) into the database before paid calls run on a host that wipes the disk at redeploy; otherwise the month's spend would reset. | audit | S |
 | K.1 | Producer engine (drafts only, through the Content API). | Q, `KNOWLEDGE-ENGINES.md` | M |
 | K.2 | Scout engine (horizon scanning). | `KNOWLEDGE-ENGINES.md` | M |
 | K.3 | Saudi regulatory requirements database with the fields from S, admin-only until verified; "mandatory" only with an official source, a verified date and a reviewer. | S | M |
@@ -260,4 +269,4 @@ Track K and Track M: any time after Phase 1. Track O: starts now.
 | C5 | Pre-launch checklist: assumed-name filing for the earlier long name | File for "Leadership Institute of Validation" and "LIV"; counsel to confirm. |
 
 ## 7. Review gate
-Next step on approval: **Phase 0 only** (tasks 0.1–0.4), with tests, push, report and the owner checklist in plain steps. Phase 1 starts after the Phase 0 review.
+Phase 0 code is done; its owner checklist (0.5–0.12) and decisions D-0.x are open. Next on approval: **Phase 1**, with the decisions D-1.1 to D-1.3.

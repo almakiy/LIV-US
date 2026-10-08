@@ -1,15 +1,22 @@
-// Seeds a super admin and a demo active platform with sample certificates.
-require('../src/config');
+// Seeds a super admin and a demo active platform with sample certificates. Development and CI only.
+const cfg = require('../src/config');
 const bcrypt = require('bcryptjs');
 const { pool, q } = require('../src/db');
 const { issue, validateRows } = require('../src/lib/issuance');
 const { RECOMMENDED } = require('../src/lib/pdf-security');
+const { DEV_PASSWORDS, DEMO_PARTNER } = require('../src/lib/dev-defaults');
+
+if (cfg.isDeployed) {
+  console.error('npm run seed adds development accounts and a demo partner with sample credentials, so it does not run on a deployed server.\n'
+    + 'The first super admin is created at start (SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD, or a random password printed once). Demo data already there: npm run purge-demo.');
+  process.exit(1);
+}
 
 (async () => {
   const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@liv.local').toLowerCase();
-  const adminPass = process.env.SEED_ADMIN_PASSWORD || 'ChangeMe-Admin-2026';
-  const demoEmail = 'demo@trainingco.example';
-  const demoPass = process.env.SEED_DEMO_PASSWORD || 'ChangeMe-Demo-2026';
+  const adminPass = process.env.SEED_ADMIN_PASSWORD || DEV_PASSWORDS[0];
+  const demoEmail = DEMO_PARTNER.email;
+  const demoPass = process.env.SEED_DEMO_PASSWORD || DEV_PASSWORDS[1];
 
   const { rows: ex } = await q('SELECT 1 FROM users WHERE email = $1', [adminEmail]);
   if (!ex.length) {
@@ -19,7 +26,7 @@ const { RECOMMENDED } = require('../src/lib/pdf-security');
   const { rows: [has] } = await q('SELECT id FROM users WHERE email = $1', [demoEmail]);
   if (!has) {
     const { rows: [p] } = await q(`INSERT INTO platforms (company_name, website, country, contact_email, accreditation_status, primary_color)
-      VALUES ('Demo Safety Training Co.','https://example.com','United States',$1,'active','#0B1F3A') RETURNING *`, [demoEmail]);
+      VALUES ($1,'https://example.com','United States',$2,'active','#0B1F3A') RETURNING *`, [DEMO_PARTNER.company, demoEmail]);
     await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin','Demo Admin',$2,$3)`, [p.id, demoEmail, await bcrypt.hash(demoPass, 12)]);
     const { rows: [tpl] } = await q(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config)
       VALUES ($1,'Executive','executive','Dr. Sarah Mitchell','Director of Training',$2) RETURNING *`, [p.id, RECOMMENDED]);

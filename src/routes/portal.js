@@ -17,6 +17,8 @@ const { normalizeConfig, RECOMMENDED } = require('../lib/pdf-security');
 const { requirePlatformAdmin, requireActivePlatform, wrap, flash } = require('../lib/guards');
 const { pendingAgreement } = require('../lib/agreements');
 const { renderMarkdown } = require('../lib/content');
+const { putFile, getFile } = require('../lib/files');
+const { refusedPassword } = require('../lib/dev-defaults');
 
 const r = express.Router();
 r.use(requirePlatformAdmin);
@@ -201,12 +203,20 @@ r.get('/batches/:id/pdfs.zip', wrap(async (req, res, next) => {
   if (!d) return next();
   res.attachment(`batch-${d.batch.id.slice(0, 8)}-certificates.zip`);
   const zip = archiver('zip', { zlib: { level: 6 } });
-  zip.on('error', next);
+  let failed = null;
+  zip.on('error', (e) => { failed = e; });
   zip.pipe(res);
+  // One file at a time: a batch can hold thousands of PDFs, so they are never all in memory together.
   for (const c of d.certs) {
-    const abs = path.join(cfg.storageDir, c.pdf_path);
-    if (fs.existsSync(abs)) zip.file(abs, { name: `${c.cert_number}_${c.recipient_last_name}.pdf`.replace(/[^\w.\-]/g, '_') });
+    const file = !failed && c.pdf_path && await getFile(c.pdf_path);
+    if (!file) continue;
+    await new Promise((resolve) => {
+      const done = () => { zip.off('entry', done); zip.off('error', done); resolve(); };
+      zip.on('entry', done); zip.on('error', done);
+      zip.append(file.content, { name: `${c.cert_number}_${c.recipient_last_name}.pdf`.replace(/[^\w.\-]/g, '_') });
+    });
   }
+  if (failed) return next(failed);
   await zip.finalize();
 }));
 
@@ -246,7 +256,9 @@ r.get('/certificates/:num', wrap(async (req, res, next) => {
 r.get('/certificates/:num/pdf', wrap(async (req, res, next) => {
   const c = await ownCert(req);
   if (!c) return next();
-  res.download(path.join(cfg.storageDir, c.pdf_path), `${c.cert_number}.pdf`);
+  const file = c.pdf_path && await getFile(c.pdf_path);
+  if (!file) return res.status(404).render('error', { title: 'Not found', message: 'The PDF of this credential is not available. Please contact LIV; the credential record and its verification page are not affected.' });
+  res.attachment(`${c.cert_number}.pdf`).type(file.type).send(file.content);
 }));
 
 r.post('/certificates/:num/revoke', wrap(async (req, res, next) => {
@@ -411,12 +423,11 @@ r.post('/settings/logo', logoUpload.single('logo'), csrfCheck, wrap(async (req, 
   if (b && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) ext = 'png';
   else if (b && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) ext = 'jpg';
   if (!ext) { flash(req, 'error', 'Logo must be a PNG or JPEG file under 1 MB.'); return res.redirect('/portal/settings'); }
-  const rel = path.join('logos', `${pid(req)}-${Date.now()}.${ext}`);
-  fs.mkdirSync(path.join(cfg.storageDir, 'logos'), { recursive: true });
-  fs.writeFileSync(path.join(cfg.storageDir, rel), b);
+  const rel = path.posix.join('logos', `${pid(req)}-${Date.now()}.${ext}`);
+  await putFile(rel, b);
   await q('UPDATE platforms SET logo_path=$1 WHERE id=$2', [rel, pid(req)]);
   await audit({ user: req.user, platformId: pid(req), action: 'platform.update_logo' });
-  flash(req, 'success', 'Logo updated. New certificates will use it.');
+  flash(req, 'success', 'Logo updated. It appears on your verification records; LIV credentials carry the LIV identity only.');
   res.redirect('/portal/settings');
 }));
 
@@ -427,6 +438,7 @@ r.post('/settings/users', wrap(async (req, res) => {
   if (!full_name || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || password.length < 10) {
     flash(req, 'error', 'Name, valid email and a temporary password of 10+ characters are required.'); return res.redirect('/portal/settings');
   }
+  if (refusedPassword(password)) { flash(req, 'error', 'That is a published development password; choose another one.'); return res.redirect('/portal/settings'); }
   try {
     await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash, must_change_password) VALUES ($1,'platform_admin',$2,$3,$4,true)`, [pid(req), full_name, email, await bcrypt.hash(password, 12)]);
   } catch (e) {

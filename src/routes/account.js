@@ -6,6 +6,7 @@ const { q } = require('../db');
 const { audit } = require('../lib/audit');
 const totp = require('../lib/totp');
 const { requireLogin, limiter, wrap, flash } = require('../lib/guards');
+const { refusedPassword } = require('../lib/dev-defaults');
 
 const r = express.Router();
 r.use(requireLogin);
@@ -31,6 +32,7 @@ r.post('/password', limiter(15, 10), wrap(async (req, res) => {
   if (!(await bcrypt.compare(cur, u.password_hash))) return back(req, res, 'error', 'The current password is not correct.', '#password');
   if (nw.length < 10) return back(req, res, 'error', 'The new password must be at least 10 characters.', '#password');
   if (nw !== nw2) return back(req, res, 'error', 'The new passwords do not match.', '#password');
+  if (refusedPassword(nw)) return back(req, res, 'error', 'That is a published development password; choose another one.', '#password');
   if (await bcrypt.compare(nw, u.password_hash)) return back(req, res, 'error', 'Choose a password different from the current one.', '#password');
   await q('UPDATE users SET password_hash = $1, must_change_password = false, password_changed_at = now() WHERE id = $2', [await bcrypt.hash(nw, 12), u.id]);
   await q(`DELETE FROM sessions WHERE sess->>'userId' = $1 AND sid <> $2`, [u.id, req.sessionID]).catch(() => {});

@@ -14,6 +14,7 @@
     <a href="/admin/qms" class="<%= path.startsWith('/admin/qms') ? 'on' : '' %>">Compliance</a>
     <a href="/admin/service-keys" class="<%= path.startsWith('/admin/service-keys') ? 'on' : '' %>">Service keys</a>
     <a href="/admin/messages" class="<%= path.startsWith('/admin/messages') ? 'on' : '' %>">Messages</a>
+    <a href="/admin/system" class="<%= path.startsWith('/admin/system') ? 'on' : '' %>">System</a>
   <% } else { %>
     <div class="sec"><%= user.company_name %></div>
     <a href="/portal" class="<%= path === '/portal' || path === '/portal/' ? 'on' : '' %>">Dashboard</a>
