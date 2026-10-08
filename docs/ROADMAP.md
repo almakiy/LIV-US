@@ -3,6 +3,8 @@
 Direction set by the owner on October 4, 2026. This supersedes the "Phase 2 backlog" in
 `LIV-Phase1-Architecture.md` where the two differ.
 
+> **Current plan (October 8, 2026):** `BUILD-PLAN.md` sets the phases and their order. Where this roadmap's phase numbers, delivery order or wording rules differ, `BUILD-PLAN.md` and `REPOSITIONING.md` apply.
+
 ## Product layers
 
 | Layer | What it is | Status |
@@ -54,6 +56,8 @@ Implementation notes:
   record plus the unique per-certificate pattern; do not market the watermark as unforgeable.
 
 ## Delivery order (owner's priority, October 5, 2026)
+> Updated October 8, 2026: commerce and the gateway slice are built; the order now follows the brief's priorities (`BUILD-PLAN.md` §6, C4).
+
 1. Knowledge engines (Producer, Scout; Reviewer scaffold built) → 2. Commerce → 3. Partner gateway → 4. Badges (Open Badges 3.0, LinkedIn) → 5. Examinations (candidate accounts, exams, LIV credential) → 6. Course catalogue and curriculum studio → 7. Recognition by other bodies (ISO 9001/21001, CPD/IACET, ANAB/NCCA) → 8. Printing and shipping.
 Adjustments recommended: pull the account-security and agreement parts of the gateway (agreement acceptance, password reset, 2FA, billing contact) forward into the commerce step; start the non-software work for exams (job-task analysis, content outline, item writers, proctoring vendor, governance board) and the ISO 9001/21001 and CPD paperwork in parallel, since they have long lead times. Market, site structure, marketing and operations plan for the non-US market: `docs/GLOBAL-STRATEGY.md`. **Target markets (decided): GCC and MENA**; Arabic versions of key public pages planned; attestation (apostille) service arrives with printing and shipping.
 
@@ -70,6 +74,8 @@ Adjustments recommended: pull the account-security and agreement parts of the ga
 - Fix remaining items from the pre-launch checklist (secrets, `BASE_URL`, HTTPS, backups).
 
 ### Certificate content rules (decided)
+> Updated October 8, 2026: wording now follows `REPOSITIONING.md`. LIV authorizes Education Partners and issues credentials; it is not described as an accreditation body. The note reads "Issued by LIV on the basis of the completion report of an Authorized Education Partner" and the header "Professional credentialing & verification · Virginia, United States of America". The no-grade and no-expiry rules apply to Training Completion Credentials (`BUILD-PLAN.md` §6, C2 and C3).
+
 - A certificate states that the trainee **successfully completed** the course (pass and completion): **no grade/score** is collected or printed.
 - Certificates **do not expire**: only a completion date and an **issue date** are shown. Templates no longer have a validity period, and the verification result is only VALID or REVOKED (plus TAMPERED / NOT FOUND).
 - LIV is an **accreditation body**, not a training provider. The certificate carries one short official line only: "Issued by LIV on the basis of the completion report of an accredited education partner." No long explanations on the face of the certificate; any extra wording goes in small print.
@@ -134,10 +140,10 @@ Today certificates are **digital only** (PDF with a signed QR and the online ver
 ## Legal guardrails (carry across all phases)
 - Keep the non-government and non-college disclaimers on every page.
 - ISO-style wording must not imply LIV is accredited by, or equivalent to, an IAF/ANAB-recognized
-  certification body unless that becomes true. Describe LIV as a private accreditation organization
-  of training providers.
+  certification body unless that becomes true. Describe LIV as a private professional credentialing
+  and verification organization that authorizes education partners (updated October 8, 2026).
 - Complete the Virginia assumed-name filing and USPTO clearance before launch (see §13 of the
-  architecture document).
+  architecture document), for the current name "Leadership Institute of Validation" and "LIV".
 
 ## Quality records (built; readiness for recognition)
 Built: controlled documents with immutable approved versions, complaints and appeals register with independent-reviewer rule and deadlines (public contact form feeds it), corrective actions with verified effectiveness, partner surveillance reviews, yearly impartiality declarations, management review / internal audit / impartiality committee records, a tamper-evident audit log (hash chain, append-only), a readiness dashboard and an assessor ZIP. See `docs/QMS-RECORDS.md` (Admin → Compliance).
@@ -146,6 +152,8 @@ Built: controlled documents with immutable approved versions, complaints and app
 CPD recognition (for example CPD Standards Office or IACET) and ISO/IEC 17024 accreditation of the credential scheme, to strengthen LIV's standing. The PMI-style credential model is built in the later phases (6–9). Plan, targets and readiness work: `docs/RECOGNITION-ROADMAP.md`. No recognition is claimed on the site or on certificates until granted.
 
 ## Phase 9 — LIV examinations (planned)
+
+> Updated October 8, 2026: the principle below is superseded in part by the credential classification model. Training Completion Credentials continue to be issued on the partner's completion report; examinations lead to Assessed Professional Qualifications or Professional Certifications (`BUILD-PLAN.md` §6, C1; Phases 5 and 6).
 
 **Principle:** a trainee receives a certificate only after passing an examination run and supervised by **LIV**, not by the education partner. The partner delivers the training and reports completion; LIV controls assessment. Process design follows the public principles used by professional certification bodies such as CQI/IRCA (registration, candidate guidance, controlled exams, marking and moderation, fees, resits, appeals). We use the process ideas only; we do **not** copy their documents or branding, and we do not state or imply IRCA approval or equivalence unless it is granted.
 
