@@ -6,7 +6,7 @@ const DOC_TYPES = { policy: 'Policy', procedure: 'Procedure', form: 'Form', stan
 const ACTION_SOURCES = { internal_audit: 'Internal audit', complaint: 'Complaint', appeal: 'Appeal', partner_review: 'Partner review', management_review: 'Management review', external_audit: 'External audit', other: 'Other' };
 const MEETING_KINDS = { management_review: 'Management review', internal_audit: 'Internal audit', impartiality_committee: 'Impartiality committee' };
 const REVIEW_TYPES = { initial: 'Initial', periodic: 'Periodic', special: 'Special' };
-const REVIEW_OUTCOMES = { satisfactory: 'Satisfactory', conditions: 'Satisfactory with conditions', suspend: 'Suspend accreditation', withdraw: 'Withdraw accreditation' };
+const REVIEW_OUTCOMES = { satisfactory: 'Satisfactory', conditions: 'Satisfactory with conditions', suspend: 'Suspend authorization', withdraw: 'Withdraw authorization' };
 
 // Service levels (defaults; publish them in the complaints and appeals procedure).
 const ACK_BUSINESS_DAYS = 5;
@@ -70,7 +70,7 @@ const STARTER_DOCS = [
   ['LIV-PRO-002', 'Records control procedure', 'procedure', ['Purpose and scope', 'Records kept and owners', 'Retention periods', 'Protection and confidentiality', 'Disposal', 'Provision of records to assessors']],
   ['LIV-PRO-003', 'Complaints and appeals procedure', 'procedure', ['Purpose and scope', 'Who can complain or appeal', 'How to submit', 'Acknowledgement and decision deadlines', 'Independent review of appeals', 'Outcomes and notification', 'Escalation', 'Records']],
   ['LIV-PRO-004', 'Corrective action procedure', 'procedure', ['Purpose and scope', 'Sources of nonconformities', 'Containment and correction', 'Root-cause analysis', 'Corrective action and due dates', 'Verification of effectiveness', 'Closure']],
-  ['LIV-PRO-005', 'Partner accreditation procedure', 'procedure', ['Purpose and scope', 'Application and eligibility', 'Documentary review of trainers, curricula and methods', 'Accreditation decision and conditions', 'Agreement with the partner', 'Public register', 'Suspension and withdrawal']],
+  ['LIV-PRO-005', 'Education partner authorization procedure', 'procedure', ['Purpose and scope', 'Application and eligibility', 'Documentary review of trainers, curricula and methods', 'Authorization decision and conditions', 'Agreement with the partner', 'Public register', 'Suspension and withdrawal']],
   ['LIV-PRO-006', 'Partner surveillance procedure', 'procedure', ['Purpose and scope', 'Review frequency and triggers', 'Evidence reviewed', 'Findings and outcomes', 'Follow-up of conditions', 'Records']],
   ['LIV-PRO-007', 'Internal audit procedure', 'procedure', ['Purpose and scope', 'Audit programme and frequency', 'Auditor independence', 'Conducting and reporting', 'Nonconformities and follow-up']],
   ['LIV-PRO-008', 'Management review procedure', 'procedure', ['Purpose and scope', 'Frequency and participants', 'Review inputs', 'Review outputs and actions', 'Records']],

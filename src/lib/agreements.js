@@ -4,10 +4,10 @@ const { q } = require('../db');
 
 const PLACEHOLDER = '[PLACEHOLDER';
 const hasPlaceholder = (body) => String(body || '').includes(PLACEHOLDER);
-const STARTER_TITLE = 'Accredited Partner Agreement';
-const STARTER_BODY = `# Accredited Partner Agreement
+const STARTER_TITLE = 'Authorized Education Partner Agreement';
+const STARTER_BODY = `# Authorized Education Partner Agreement
 
-${['Parties and definitions', 'Scope of accreditation', 'Partner obligations (trainers, curricula, methods, records)', 'Completion reports and certificates', 'Use of the LIV name and marks', 'Fees and payment', 'Reviews, audits and surveillance', 'Impartiality, complaints and appeals', 'Suspension and withdrawal', 'Data protection', 'Limitation of liability', 'Governing law and disputes', 'General provisions'].map((h, i) => `## ${i + 1}. ${h}\n\n${PLACEHOLDER}: text to be supplied by counsel.]\n`).join('\n')}`;
+${['Parties and definitions', 'Authorized scope', 'Partner obligations (trainers, curricula, methods, records)', 'Completion reports and credentials', 'Use of the LIV name and marks', 'Fees and payment', 'Reviews, audits and surveillance', 'Impartiality, complaints and appeals', 'Suspension and withdrawal', 'Data protection', 'Limitation of liability', 'Governing law and disputes', 'General provisions'].map((h, i) => `## ${i + 1}. ${h}\n\n${PLACEHOLDER}: text to be supplied by counsel.]\n`).join('\n')}`;
 
 /** The active agreement the partner has not accepted yet (null when none is active or it was accepted). */
 async function pendingAgreement(platformId) {

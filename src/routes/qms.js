@@ -291,7 +291,7 @@ r.post('/partners/:id/reviews', idParam, wrap(async (req, res, next) => {
   await q(`INSERT INTO qms_partner_reviews (platform_id, review_type, reviewed_on, reviewer_name, scope, findings, outcome, next_review_due, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
     [p.id, f.review_type, f.reviewed_on, f.reviewer_name, f.scope, f.findings, f.outcome, f.next_review_due, req.user.id]);
   await audit({ user: req.user, platformId: p.id, action: 'qms.partner.review', target: p.company_name, metadata: { outcome: f.outcome } });
-  back(req, res, `/admin/qms/partners/${p.id}`, 'success', f.outcome === 'suspend' || f.outcome === 'withdraw' ? 'Review recorded. Update the partner\'s accreditation status on its page to match the outcome.' : 'Review recorded.');
+  back(req, res, `/admin/qms/partners/${p.id}`, 'success', f.outcome === 'suspend' || f.outcome === 'withdraw' ? 'Review recorded. Update the partner\'s authorization status on its page to match the outcome.' : 'Review recorded.');
 }));
 
 // ---------- Impartiality declarations ----------

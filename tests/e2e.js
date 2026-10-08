@@ -24,11 +24,35 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
 
   console.log('Public site');
   await page.goto(BASE + '/');
-  ok((await page.title()).includes('LIV | Leading Institute of Verification'), 'homepage renders');
+  ok((await page.title()).includes('LIV | Leadership Institute of Validation'), 'homepage renders');
   await shot(page, '01-home');
   await page.fill('input[name=id]', 'not-an-id');
   await page.click('.hero-search button');
-  ok(await see(page, 'text=valid Certificate ID'), 'invalid ID format rejected');
+  ok(await see(page, 'text=valid Credential ID'), 'invalid ID format rejected');
+
+  {
+  console.log('Institutional repositioning');
+  const repo = await browser.newContext(); const pr = repo.request;
+  const homeHtml = await (await pr.get(BASE + '/')).text();
+  ok(homeHtml.includes('Validate competence. Verify credentials.') && homeHtml.includes('U.S.-Based Professional Credentialing &amp; Verification Organization'), 'home shows the brand line and descriptor');
+  ok(!/Leading Institute of Verification|Accreditation Organization|Accredited Provider/.test(homeHtml), 'home carries no obsolete identity wording');
+  ok(/<link rel="canonical" href="[^"]+\/">/.test(homeHtml) && homeHtml.includes('og:url'), 'canonical and Open Graph URLs come from the configured base URL');
+  const legacy = await pr.get(BASE + '/accreditation', { maxRedirects: 0 });
+  ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
+  const partnersHtml = await (await pr.get(BASE + '/partners')).text();
+  ok(partnersHtml.includes('Authorized Education Partner') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
+  const pSlug = (partnersHtml.match(/href="\/partners\/([a-z0-9-]+)"/) || [])[1];
+  ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
+  ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
+  const credHtml = await (await pr.get(BASE + '/credentials')).text();
+  ok(credHtml.includes('Training Completion Credential') && credHtml.includes('Professional Qualification') && credHtml.includes('HSE Governance'), 'credentials page explains record types and the HSE Governance family');
+  const hse = await (await pr.get(BASE + '/credentials/hse-governance')).text();
+  ok(hse.includes('From HSE operations to HSE governance.') && hse.includes('in development'), 'HSE Governance page is marked as in development');
+  for (const sec of ['/research', '/guides', '/standards']) ok((await pr.get(BASE + sec)).status() === 200, `${sec} section renders`);
+  const sm = await (await pr.get(BASE + '/sitemap.xml')).text();
+  ok(sm.includes('/credentials/hse-governance') && sm.includes(`/partners/${pSlug}`) && !sm.includes('/accreditation<'), 'sitemap lists the new public URLs');
+  await repo.close();
+  }
 
   console.log('Provider login + CSV issuance');
   await page.goto(BASE + '/login');
@@ -161,7 +185,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await ap.fill('input[name=password]', 'Applicant-Pass-2026');
   await ap.check('input[name=agree]');
   await ap.click('button:has-text("Submit application")');
-  ok(ap.url().endsWith('/portal') && await see(ap, 'text=Accreditation status'), 'applicant lands in portal with pending banner');
+  ok(ap.url().endsWith('/portal') && await see(ap, 'text=Authorization status'), 'applicant lands in portal with pending banner');
   await ap.goto(BASE + '/portal/issue/review');
   await ap.goto(BASE + '/portal/issue');
   ok(await see(ap, 'text=pending'), 'pending platform sees status');
@@ -182,7 +206,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await row.locator('button:has-text("Approve")').click();
   ok(await see(adm, `text=Gulf Safety Academy ${stamp} is now active`), 'super admin approved platform');
   await ap.goto(BASE + '/portal');
-  ok(!(await ap.isVisible('text=Accreditation status')), 'applicant now active');
+  ok(!(await ap.isVisible('text=Authorization status')), 'applicant now active');
 
   console.log('Import: templates, English-only, ID privacy, Excel, link validation');
   const tpl = await page.request.get(BASE + '/portal/issue/template.csv');
@@ -271,7 +295,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   await adm.goto(agrUrl);
   ok(await see(adm, 'td:has-text("Applicant Admin")'), 'acceptance is recorded with the typed name');
   await adm.goto(`${BASE}/admin/platforms/${partnerId}`);
-  await adm.click('button:has-text("Act as provider")');
+  await adm.click('button:has-text("Act as partner")');
   ok(await see(adm, 'text=Issuance') && !adm.url().includes('/agreement'), 'LIV staff acting for a partner are not blocked by the agreement gate');
   await adm.goto(BASE + '/admin');
 
@@ -332,7 +356,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const anonReq = (await browser.newContext()).request;
   const money = (c) => `$${(c / 100).toFixed(2)}`;
   await adm.goto(BASE + '/admin/billing/catalog');
-  ok(await see(adm, 'text=Annual accreditation fee') && await see(adm, 'text=Certificate issuance beyond the included allowance'), 'price catalog is seeded with the fee schedule');
+  ok(await see(adm, 'text=Annual partner authorization fee') && await see(adm, 'text=Certificate issuance beyond the included allowance'), 'price catalog is seeded with the fee schedule');
   const adminChangeId = psql("SELECT pr.id FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE p.code = 'ACC_ADMIN_CHANGE'");
   await adm.fill(`form[action$="/catalog/prices/${adminChangeId}"] input[name=amount]`, '175.00');
   await adm.click(`form[action$="/catalog/prices/${adminChangeId}"] button`);
@@ -445,7 +469,7 @@ const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.r
   const invCsv = await adm.request.get(BASE + '/admin/billing/export/invoices.csv');
   ok(invCsv.status() === 200 && /csv/.test(invCsv.headers()['content-type']) && (await invCsv.text()).includes(invNo), 'invoices export as CSV for the accountant');
   const feesPage = await anonReq.get(BASE + '/fees');
-  if (process.env.PUBLIC_FEES === 'true') ok(feesPage.status() === 200 && (await feesPage.text()).includes('Annual accreditation fee'), 'public fee schedule shows the catalog');
+  if (process.env.PUBLIC_FEES === 'true') ok(feesPage.status() === 200 && (await feesPage.text()).includes('Annual partner authorization fee'), 'public fee schedule shows the catalog');
   else ok(feesPage.status() === 404, 'public fee schedule stays hidden until approved');
 
   console.log('Knowledge hub');

@@ -29,7 +29,7 @@
   <main class="main">
     <% if (user.role === 'platform_admin' && user.accreditation_status !== 'active') { %>
       <div class="alert <%= user.accreditation_status === 'suspended' ? 'error' : 'warn' %>">
-        Accreditation status: <strong><%= user.accreditation_status %></strong>.
+        Authorization status: <strong><%= user.accreditation_status %></strong>.
         <%= user.accreditation_status === 'pending' ? 'Certificate issuance unlocks once LIV approves your application.' : 'Issuance is disabled. Contact LIV support.' %>
       </div>
     <% } %>

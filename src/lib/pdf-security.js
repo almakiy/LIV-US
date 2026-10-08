@@ -155,7 +155,7 @@ function drawFrontLayers(doc, { W, H, area, color, seed, data, config, design, l
   if (c.legalNote && legal) {
     doc.save();
     doc.font('Sans').fontSize(5.8).fillColor('#6B7280');
-    doc.text(`${cfg.legalEntity} is a private accreditation organization based in the United States and is not a government agency. Authenticity of this document can be verified at ${String(data.verify_url).split('?')[0]}. Unauthorized alteration, copying or falsification is unlawful.`,
+    doc.text(`${cfg.legalEntity} is a private professional credentialing and verification organization based in the United States and is not a government agency. Authenticity of this document can be verified at ${String(data.verify_url).split('?')[0]}. Unauthorized alteration, copying or falsification is unlawful.`,
       legal.x, legal.y, { width: legal.w, align: 'center', lineGap: 1.2 });
     doc.restore();
   } else if (c.verifyStrip && design === 'classic') {

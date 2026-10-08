@@ -49,7 +49,7 @@ test('all themes are US Letter landscape; QR badge, iris colors and legal note a
 test('accreditation statement is one short official line and never names the partner', () => {
   const note = accreditationNote({ company_name: 'Gulf Safety Training Center LLC' }, { partnerName: true });
   assert.ok(!note.includes('Gulf Safety'));
-  assert.match(note, /^Issued by LIV on the basis of the completion report of an accredited education partner\.$/);
+  assert.match(note, /^Issued by LIV on the basis of the completion report of an Authorized Education Partner\.$/);
 });
 
 test('security strip: deterministic per fingerprint, different across certificates', () => {

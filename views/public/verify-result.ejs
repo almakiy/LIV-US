@@ -2,11 +2,11 @@
 <%
 const R = out.result;
 const banner = {
-  valid: ['✓', 'VALID', 'This certificate is authentic and currently valid.'],
-  revoked: ['✕', 'REVOKED', 'This certificate has been revoked by the issuer and is no longer valid.'],
-  tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this certificate.'],
-  not_found: ['?', 'NOT FOUND', 'No certificate matches these details. Check the ID and try again.'],
-  invalid_format: ['?', 'NOT FOUND', 'That Certificate ID is not in a valid format.'],
+  valid: ['✓', 'VALID', 'This credential is authentic and currently valid.'],
+  revoked: ['✕', 'REVOKED', 'This credential has been revoked and is no longer valid.'],
+  tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this credential.'],
+  not_found: ['?', 'NOT FOUND', 'No credential matches these details. Check the ID and try again.'],
+  invalid_format: ['?', 'NOT FOUND', 'That Credential ID is not in a valid format.'],
 }[R];
 %>
 <div class="container verify-wrap">
@@ -18,13 +18,14 @@ const banner = {
   <% if (c && R !== 'tampered') { %>
   <div class="card details">
     <dl>
-      <dt>Certificate holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
+      <dt>Record type</dt><dd>Training Completion Credential <span class="muted small">(records completion of training; not a professional qualification or certification)</span></dd>
+      <dt>Credential holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
       <dt>Course</dt><dd><%= c.course_name %></dd>
       <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
       <dt>Issue date</dt><dd><%= longDate(c.issue_date) %></dd>
-      <dt>Certificate ID</dt><dd class="mono"><%= c.cert_number %></dd>
-      <dt>Issued by</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
-        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Provider <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">Accredited</span><% } %></div></dd>
+      <dt>Credential ID</dt><dd class="mono"><%= c.cert_number %></dd>
+      <dt>Education partner</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
+        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">Authorized Education Partner</span><% } %></div></dd>
       <% if (R === 'revoked') { %><dt>Revoked on</dt><dd><%= longDate(new Date(c.revoked_at)) %></dd><% } %>
     </dl>
     <div class="actions">

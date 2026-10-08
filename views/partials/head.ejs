@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title><%= title %> · <%= brand %> | <%= brandLong %></title>
-<meta name="description" content="<%= (typeof description !== 'undefined' && description) ? description : brand + ' (' + brandLong + ') is a private US accreditation organization for training providers, with online certificate verification.' %>">
+<% const metaDesc = (typeof description !== 'undefined' && description) ? description : brand + ' (' + brandLong + ') is a U.S.-based private professional credentialing and verification organization. ' + brandLine; %>
+<meta name="description" content="<%= metaDesc %>">
+<link rel="canonical" href="<%= canonical %>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= brand %> — <%= brandLong %>">
+<meta property="og:title" content="<%= title %> · <%= brand %>">
+<meta property="og:description" content="<%= metaDesc %>">
+<meta property="og:url" content="<%= canonical %>">
+<link rel="alternate" type="application/rss+xml" title="<%= brand %> Knowledge" href="<%= baseUrl %>/rss.xml">
 <link rel="icon" type="image/svg+xml" href="/static/brand/favicon.svg">
 <link rel="icon" type="image/png" href="/static/brand/favicon.png">
 <meta name="theme-color" content="#0B1F3A">
@@ -12,13 +20,14 @@
 <script src="/static/app.js" defer></script>
 </head>
 <body>
-<div class="utility"><div class="container"><span>Accreditation &amp; Credential Verification · United States</span><a href="/verify">Verify a Certificate</a></div></div>
+<div class="utility"><div class="container"><span><%= brandDescriptor %></span><a href="/verify">Verify a Credential</a></div></div>
 <header class="topbar">
   <div class="container">
     <a class="brand" href="/" aria-label="<%= brand %> — <%= brandLong %>, home"><img src="/static/brand/liv-seal-reverse.svg" alt="" width="52" height="52"><span class="wm"><%= brand %><small><%= brandLong %></small></span></a>
     <nav class="nav">
       <a href="/verify" class="<%= path.startsWith('/verify') ? 'on' : '' %>">Verify</a>
-      <a href="/accreditation" class="<%= path === '/accreditation' ? 'on' : '' %>">Accreditation</a>
+      <a href="/credentials" class="<%= path.startsWith('/credentials') ? 'on' : '' %>">Credentials</a>
+      <a href="/partners" class="<%= path.startsWith('/partners') ? 'on' : '' %>">Partners</a>
       <a href="/knowledge" class="<%= path.startsWith('/knowledge') ? 'on' : '' %>">Knowledge</a>
       <a href="/about" class="<%= path === '/about' ? 'on' : '' %>">About</a>
       <a href="/contact" class="<%= path === '/contact' ? 'on' : '' %>">Contact</a>
@@ -26,7 +35,7 @@
         <a href="<%= user.realRole === 'super_admin' ? '/admin' : '/portal' %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') ? 'on' : '' %>"><%= user.realRole === 'super_admin' ? 'Admin' : 'Portal' %></a>
         <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Log out</button></form>
       <% } else { %>
-        <% if (publicApply) { %><a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Provider login</a><% } %>
+        <% if (publicApply) { %><a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Partner Portal</a><% } %>
       <% } %>
     </nav>
   </div>

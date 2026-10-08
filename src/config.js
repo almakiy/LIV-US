@@ -9,7 +9,9 @@ const isProd = process.env.NODE_ENV === 'production';
 module.exports = {
   isProd,
   port: parseInt(process.env.PORT || '3000', 10),
-  baseUrl: (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, ''),
+  // Public base URL used for canonical links, sitemap, RSS, Open Graph, QR codes and verification links.
+  // PUBLIC_BASE_URL wins; BASE_URL is kept for existing deployments. Production target: https://livcredentials.org
+  baseUrl: (process.env.PUBLIC_BASE_URL || process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, ''),
   sessionSecret: must('SESSION_SECRET', isProd ? undefined : 'dev-session-secret-change-me'),
   certHmacSecret: must('CERT_HMAC_SECRET', isProd ? undefined : 'dev-hmac-secret-change-me'),
   // Public provider application + provider login are hidden until the application gateway ships (roadmap Phase 2).
@@ -28,7 +30,12 @@ module.exports = {
   billingEmail: process.env.BILLING_EMAIL || '',
   bankDetails: (process.env.BILLING_BANK_DETAILS || '').replace(/\\n/g, '\n'),
   brand: process.env.BRAND_NAME || 'LIV',
-  brandLong: process.env.BRAND_LONG_NAME || 'Leading Institute of Verification',
+  brandLong: process.env.BRAND_LONG_NAME || 'Leadership Institute of Validation',
+  brandArabic: 'معهد القيادة للتحقق من الكفاءة المهنية', // institutional rendering only; the public site stays English
+  brandDescriptor: 'U.S.-Based Professional Credentialing & Verification Organization',
+  brandLine: 'Validate competence. Verify credentials.',
+  sealTop: 'LEADERSHIP INSTITUTE OF VALIDATION',
+  sealBottom: 'PROFESSIONAL CREDENTIALS',
   legalEntity: process.env.LEGAL_ENTITY || 'LIV LLC',
   storageDir: path.resolve(process.env.STORAGE_DIR || path.join(__dirname, '..', 'storage')),
 };

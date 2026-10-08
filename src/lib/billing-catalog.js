@@ -8,13 +8,13 @@ const flat = (cents) => [{ plan: null, min_qty: 1, cents }];
 const byPlan = (s, p, e) => [{ plan: 'starter', min_qty: 1, cents: s }, { plan: 'professional', min_qty: 1, cents: p }, { plan: 'enterprise', min_qty: 1, cents: e }];
 
 const CATALOG = [
-  P('ACC_APPLICATION', 'Accreditation application and assessment', 'accreditation', 'one_time', byPlan(50000, 100000, 200000), { description: 'Documentary review of trainers, curricula and methods, and the decision. Non-refundable once review starts.', sort: 10 }),
-  P('ACC_ANNUAL', 'Annual accreditation fee', 'accreditation', 'annual', byPlan(90000, 240000, 600000), { description: 'Paid in advance. Includes one surveillance review, register listing, partner profile, use of the partner mark, portal and API, and the certificate allowance. Enterprise is quoted.', sort: 20 }),
+  P('ACC_APPLICATION', 'Partner application and review', 'accreditation', 'one_time', byPlan(50000, 100000, 200000), { description: 'Documentary review of trainers, curricula and methods, and the decision. Non-refundable once review starts.', sort: 10 }),
+  P('ACC_ANNUAL', 'Annual partner authorization fee', 'accreditation', 'annual', byPlan(90000, 240000, 600000), { description: 'Paid in advance. Includes one surveillance review, register listing, partner profile, use of the partner mark, portal and API, and the certificate allowance. Enterprise is quoted.', sort: 20 }),
   P('ACC_SCOPE_COURSE', 'Scope extension: additional course reviewed', 'accreditation', 'per_course', flat(25000), { sort: 30 }),
   P('ACC_SPECIAL_REVIEW', 'Special review (per review day, remote)', 'accreditation', 'per_review_day', flat(45000), { sort: 40 }),
   P('ACC_ONSITE_DAY', 'On-site review (per day; travel at cost)', 'accreditation', 'per_review_day', flat(75000), { sort: 50 }),
   P('ACC_REINSTATE', 'Reinstatement after suspension', 'accreditation', 'one_time', flat(50000), { sort: 60 }),
-  P('ACC_APPEAL', 'Appeal of an accreditation decision (refunded if upheld)', 'accreditation', 'one_time', flat(30000), { sort: 70 }),
+  P('ACC_APPEAL', 'Appeal of an authorization decision (refunded if upheld)', 'accreditation', 'one_time', flat(30000), { sort: 70 }),
   P('ACC_ADMIN_CHANGE', 'Change of legal name or ownership', 'accreditation', 'one_time', flat(15000), { sort: 80 }),
   P('CERT_ISSUE', 'Certificate issuance beyond the included allowance', 'certificate', 'per_certificate',
     [{ plan: null, min_qty: 1, cents: 400 }, { plan: null, min_qty: 1001, cents: 300 }, { plan: null, min_qty: 5001, cents: 200 }], { description: 'Graduated per plan year: certificates 1-1,000 beyond the allowance at $4.00, 1,001-5,000 at $3.00, above 5,000 at $2.00.', sort: 110 }),
@@ -40,4 +40,11 @@ const CATALOG = [
 ];
 
 const DISCOUNT_CATEGORIES = { founding_partner: 'Founding partner', non_profit: 'Non-profit, academic or government unit', multi_year: 'Multi-year prepayment', referral: 'Referral credit', other: 'Other (record the reason)' };
-module.exports = { PLANS, PLAN_DEFAULTS, CATALOG, DISCOUNT_CATEGORIES };
+// Names used before the repositioning (Oct 2026). Rows still carrying them are renamed once; edited names are left alone.
+const LEGACY_NAMES = {
+  ACC_APPLICATION: 'Accreditation application and assessment',
+  ACC_ANNUAL: 'Annual accreditation fee',
+  ACC_APPEAL: 'Appeal of an accreditation decision (refunded if upheld)',
+};
+
+module.exports = { PLANS, PLAN_DEFAULTS, CATALOG, DISCOUNT_CATEGORIES, LEGACY_NAMES };

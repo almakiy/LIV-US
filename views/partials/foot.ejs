@@ -2,15 +2,15 @@
   <div class="container footer-grid">
     <div>
       <div class="brand brand-dark"><img src="/static/brand/liv-seal-color.svg" alt="" width="48" height="48"><span class="wm"><%= brand %><small><%= brandLong %></small></span></div>
-      <p class="small muted mt"><%= brand %> — <%= brandLong %>. Accreditation of education partners and verification of the certificates issued on the basis of their completion reports.</p>
+      <p class="small muted mt"><%= brand %> — <%= brandLong %> — is a U.S.-based private professional credentialing and verification organization headquartered in Virginia, United States. <%= brandLine %></p>
     </div>
-    <div><h4>Verification</h4><a href="/verify">Verify a certificate</a><a href="/verify">Scan a QR code</a></div>
-    <div><h4>Accreditation</h4><a href="/accreditation">Accreditation program</a><% if (publicApply) { %><a href="/apply">Apply for accreditation</a><a href="/login">Provider login</a><% } else { %><a href="/contact">Request information</a><a href="/login">Staff login</a><% } %></div>
-    <div><h4><%= brand %></h4><a href="/knowledge">Knowledge Hub</a><a href="/about">About</a><a href="/contact">Contact &amp; support</a></div>
+    <div><h4>Verification</h4><a href="/verify">Verify a credential</a><a href="/verify">Scan a QR code</a><a href="/credentials">Credential types</a></div>
+    <div><h4>Education partners</h4><a href="/partners">Education Partner Program</a><% if (publicApply) { %><a href="/apply">Apply to become a partner</a><a href="/login">Partner Portal</a><% } else { %><a href="/contact">Request information</a><a href="/login">Staff login</a><% } %></div>
+    <div><h4><%= brand %></h4><a href="/knowledge">Knowledge</a><a href="/research">Research</a><a href="/guides">Guides</a><a href="/standards">Standards explained</a><a href="/about">About</a><a href="/contact">Contact &amp; support</a></div>
   </div>
   <div class="container footer-legal">
     <span>© <%= new Date().getFullYear() %> <%= legalEntity %>. All rights reserved. <%= brand %>, <%= brandLong %> and the <%= brand %> seal are trade names and marks of <%= legalEntity %>.</span>
-    <span><%= brand %> is a private accreditation organization and is not a U.S. government agency.</span>
+    <span><%= brand %> is a private organization. It is not a government agency and does not claim government, federal, ISO or other external accreditation or recognition.</span>
   </div>
 </footer>
 </body>

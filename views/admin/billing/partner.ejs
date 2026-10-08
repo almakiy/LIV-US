@@ -18,7 +18,7 @@
     <dl class="details"><dt>Issued</dt><dd><%= usage.issued %></dd><dt>Included</dt><dd><%= usage.included %></dd><dt>Beyond the allowance, already billed</dt><dd><%= usage.billedBeyond %></dd>
       <dt>Unbilled now</dt><dd><strong><%= usage.quantity %></strong> certificates = <strong><%= money(usage.amount_cents) %></strong></dd></dl>
     <h3 class="mt">Service hold</h3>
-    <p class="small muted">A hold stops new certificates being issued (portal and API) for unpaid invoices. It never changes the accreditation decision. Verification of existing certificates always continues.</p>
+    <p class="small muted">A hold stops new certificates being issued (portal and API) for unpaid invoices. It never changes the authorization decision. Verification of existing certificates always continues.</p>
     <form method="post" action="/admin/billing/partners/<%= p.id %>/hold" data-confirm="<%= p.service_hold ? 'Lift the service hold?' : 'Put this partner on service hold?' %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= p.service_hold ? '' : 'danger' %> sm"><%= p.service_hold ? 'Lift service hold' : 'Put on service hold' %></button></form>
   </div>
 </div>

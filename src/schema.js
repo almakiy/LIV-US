@@ -222,6 +222,9 @@ ALTER TABLE platforms ADD COLUMN IF NOT EXISTS tax_rate_bps INT NOT NULL DEFAULT
 ALTER TABLE platforms ADD COLUMN IF NOT EXISTS tax_label VARCHAR(20) NOT NULL DEFAULT 'VAT';
 ALTER TABLE platforms ADD COLUMN IF NOT EXISTS service_hold BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE platforms ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(80);
+-- Public register URL /partners/{public_slug}: derived from the name plus a short id so it is unique and needs no backfill.
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_slug TEXT GENERATED ALWAYS AS (trim(both '-' from regexp_replace(lower(company_name), '[^a-z0-9]+', '-', 'g')) || '-' || substr(id::text, 1, 6)) STORED;
+CREATE INDEX IF NOT EXISTS idx_platforms_public_slug ON platforms(public_slug);
 
 CREATE TABLE IF NOT EXISTS billing_products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

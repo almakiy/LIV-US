@@ -3,41 +3,42 @@
   <div class="container hero-grid">
     <div>
       <span class="eyebrow"><%= brandLong %></span>
-      <h1>Verify training credentials in seconds.</h1>
-      <p><%= brand %> accredits education partners, reviewing their trainers, curricula and training methods and auditing them periodically. Anyone can confirm online that a certificate is authentic and has not been revoked.</p>
+      <h1><%= brandLine %></h1>
+      <p><%= brand %> is a U.S.-based private professional credentialing and verification organization. We define credential schemes, authorize education partners to deliver within an approved scope, and keep the authoritative record that anyone can check online.</p>
       <form class="hero-search" action="/verify" method="get">
-        <input name="id" placeholder="Enter Certificate ID, e.g. LIV-2026-7KQ4M9XZ" aria-label="Certificate ID" autocomplete="off" required>
-        <button class="btn gold lg">Verify Certificate</button>
+        <input name="id" placeholder="Enter Credential ID, e.g. LIV-2026-7KQ4M9XZ" aria-label="Credential ID" autocomplete="off" required>
+        <button class="btn gold lg">Verify Credential</button>
       </form>
-      <div class="actions"><a class="btn ghost" href="/accreditation">Become an Accredited Provider →</a></div>
-      <div class="trust"><span>Tamper-evident records</span><span>Instant QR verification</span><span>Real-time revocation</span><span>Periodic partner audits</span></div>
+      <div class="actions"><a class="btn ghost" href="/credentials">Explore credentials →</a> <a class="btn ghost" href="/partners">Become an Authorized Education Partner →</a></div>
+      <div class="trust"><span>Tamper-evident records</span><span>Instant QR verification</span><span>Real-time revocation</span><span>Partner surveillance</span></div>
     </div>
     <div class="hero-seal"><img src="/static/brand/liv-seal-reverse.svg" alt="<%= brand %> seal" width="340" height="340"></div>
   </div>
 </section>
 <section class="band">
   <div class="container band-grid">
-    <div><strong>Reviewed</strong><span>Education partners are reviewed against <%= brand %> criteria and audited periodically.</span></div>
-    <div><strong>Verifiable</strong><span>Every certificate carries a unique ID and a cryptographically signed QR code.</span></div>
-    <div><strong>Transparent</strong><span>Revocation and partner status are shown on every verification.</span></div>
+    <div><strong>Defined</strong><span><%= brand %> owns its credential schemes: competency frameworks, assessment requirements and credential rules.</span></div>
+    <div><strong>Verifiable</strong><span>Every credential carries a unique ID and a cryptographically signed QR code.</span></div>
+    <div><strong>Transparent</strong><span>Revocation and partner authorization status are shown on every verification.</span></div>
   </div>
 </section>
 <section class="section white">
   <div class="container">
-    <h2 class="center">How <%= brand %> accreditation works</h2>
-    <p class="center muted">From accredited provider to verified credential in three steps.</p>
-    <div class="grid g3 mt">
-      <div class="card"><div class="step-n">1</div><h3>Partner accreditation</h3><p class="muted">Training organizations apply and are reviewed against <%= brand %> criteria for trainer qualifications, curricula and training methods. Accredited partners are audited periodically.</p></div>
-      <div class="card"><div class="step-n">2</div><h3>Completion reports</h3><p class="muted">Accredited partners submit completion reports by CSV, Excel or API. Certificates are issued on the basis of those reports and carry the <%= brand %> seal and a signed QR code.</p></div>
-      <div class="card"><div class="step-n">3</div><h3>Public verification</h3><p class="muted">Employers, clients and regulators scan the QR code or enter the ID to see live status: valid or revoked.</p></div>
+    <h2 class="center">How <%= brand %> credentials work</h2>
+    <p class="center muted">One lifecycle, one authoritative record.</p>
+    <div class="grid g4 mt">
+      <div class="card"><div class="step-n">1</div><h3>Credential scheme</h3><p class="muted small"><%= brand %> defines the competencies, the assessment and the rules for each credential.</p></div>
+      <div class="card"><div class="step-n">2</div><h3>Authorized education</h3><p class="muted small">Authorized Education Partners deliver education within the scope <%= brand %> has approved.</p></div>
+      <div class="card"><div class="step-n">3</div><h3>Assessment and decision</h3><p class="muted small">Where a scheme requires it, the candidate completes the assessment and <%= brand %> records the credential decision.</p></div>
+      <div class="card"><div class="step-n">4</div><h3>Public verification</h3><p class="muted small">Employers scan the QR code or enter the ID to see live status: valid or revoked.</p></div>
     </div>
   </div>
 </section>
 <section class="section">
   <div class="container grid g2">
-    <div class="card"><h3>For employers &amp; HR</h3><p class="muted">Confirm a candidate's or contractor's training in seconds, without phone calls or emails to the training provider.</p><a href="/verify">Verify a certificate →</a></div>
-    <div class="card"><h3>For education partners</h3><p class="muted">Give your graduates credentials that employers can verify in seconds, backed by <%= brand %> accreditation and periodic audits.</p><a href="/accreditation">Explore the accreditation program →</a></div>
+    <div class="card"><h3>For employers &amp; HR</h3><p class="muted">Confirm a candidate's or contractor's credential in seconds, without calls or emails to the education partner.</p><a href="/verify">Verify a credential →</a></div>
+    <div class="card"><h3>For education partners</h3><p class="muted">Deliver education within an authorized scope and give your learners records that employers can verify instantly.</p><a href="/partners">Explore the Education Partner Program →</a></div>
   </div>
 </section>
-<section class="section"><div class="container"><p class="small muted center" style="max-width:820px;margin:0 auto"><%= brand %> accreditation is a private, voluntary program of <%= legalEntity %>. It is not a government approval and does not guarantee the competence or performance of any individual.</p></div></section>
+<section class="section"><div class="container"><p class="small muted center" style="max-width:820px;margin:0 auto"><%= brand %> is a private organization operated by <%= legalEntity %>. Its credentials and partner authorizations are private and voluntary; they are not government approvals and do not guarantee the competence or performance of any individual.</p></div></section>
 <%- include('../partials/foot') %>

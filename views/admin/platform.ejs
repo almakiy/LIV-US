@@ -1,6 +1,6 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1><%= p.company_name %></h1><div><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span> <%- include('_status_buttons', { p }) %>
-  <form method="post" action="/admin/platforms/<%= p.id %>/act-as" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn gold">Act as provider (issue certificates)</button></form></div></div>
+  <form method="post" action="/admin/platforms/<%= p.id %>/act-as" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn gold">Act as partner (issue credentials)</button></form></div></div>
 <div class="grid g2">
   <div class="card details"><dl>
     <dt>Website</dt><dd><%= p.website || '—' %></dd><dt>Country</dt><dd><%= p.country || '—' %></dd>

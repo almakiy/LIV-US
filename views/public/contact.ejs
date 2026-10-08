@@ -1,7 +1,7 @@
 <%- include('../partials/head') %>
 <div class="container" style="max-width:640px;margin:40px auto">
   <h1>Contact &amp; support</h1>
-  <p class="muted">General questions, accreditation enquiries or technical support. We usually reply within one business day.</p>
+  <p class="muted">General questions, education partner enquiries, credential questions or technical support. We usually reply within one business day.</p>
   <% if (sent) { %><div class="alert success">Thank you. Your message has been received.</div><% } %>
   <% if (error) { %><div class="alert error"><%= error %></div><% } %>
   <form class="card" method="post" action="/contact">
@@ -9,7 +9,7 @@
     <div class="row"><div class="field"><label>Name</label><input name="name" value="<%= form.name || '' %>" required></div>
     <div class="field"><label>Email</label><input type="email" name="email" value="<%= form.email || '' %>" required></div></div>
     <div class="field"><label>Topic</label><select name="topic">
-      <% [['general','General inquiry'],['accreditation','Accreditation'],['technical','Technical support'],['verification','Verification issue'],['complaint','Complaint'],['appeal','Appeal of a decision']].forEach(([v,l]) => { %><option value="<%= v %>" <%= form.topic === v ? 'selected' : '' %>><%= l %></option><% }) %>
+      <% [['general','General inquiry'],['accreditation','Education partner program'],['technical','Technical support'],['verification','Verification issue'],['complaint','Complaint'],['appeal','Appeal of a decision']].forEach(([v,l]) => { %><option value="<%= v %>" <%= form.topic === v ? 'selected' : '' %>><%= l %></option><% }) %>
     </select></div>
     <div class="field"><label>Message</label><textarea name="message" rows="6" required><%= form.message || '' %></textarea></div>
     <button class="btn">Send message</button>

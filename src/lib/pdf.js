@@ -45,9 +45,8 @@ function tint(hex, amt) {
 
 function drawSeal(doc, cx, cy) {
   const d = 104;
+  // The seal alone: individual credentials carry no "accredited by" wording (the seal's own text names LIV).
   doc.image(SEAL, cx - d / 2, cy - d / 2, { width: d });
-  doc.fillColor('#0B1F3A').font('Sans-Bold').fontSize(6.5)
-    .text(`ACCREDITED BY ${cfg.brand}`, cx - 70, cy + d / 2 + 6, { width: 140, align: 'center', characterSpacing: 1 });
 }
 
 function logoOrName(doc, platform, x, y, maxW, maxH, color) {
@@ -62,7 +61,7 @@ function logoOrName(doc, platform, x, y, maxW, maxH, color) {
 }
 
 /** One short, official statement of LIV's role, as printed on certificates (keep in sync with the website copy). */
-const accreditationNote = () => `Issued by ${cfg.brand} on the basis of the completion report of an accredited education partner.`;
+const accreditationNote = () => `Issued by ${cfg.brand} on the basis of the completion report of an Authorized Education Partner.`; // legacy function name, see docs/LEGACY-NAMING.md
 
 // ---- Themes: each draws the certificate content; security layers are added around it by renderCertificate.
 // ctx = { doc, data, platform, template, color, qr, name }
@@ -109,7 +108,7 @@ function drawClassic({ doc, data, platform, template, color, qr, name, config })
   doc.rect(18, 18, W - 36, H - 36).lineWidth(3).strokeColor(color).stroke();
   doc.rect(28, 28, W - 56, H - 56).lineWidth(1).strokeColor('#B08D4C').stroke();
   logoOrName(doc, platform, W / 2 - 100, 48, 200, 56, color);
-  doc.fillColor(color).font('Display').fontSize(34).text('Certificate of Completion', 0, 130, { width: W, align: 'center', characterSpacing: 0.5 });
+  doc.fillColor(color).font('Display').fontSize(34).text('Certificate of Training Completion', 0, 130, { width: W, align: 'center', characterSpacing: 0.5 });
   doc.fillColor('#4B5563').font('Serif-Italic').fontSize(14).text('This is to certify that', 0, 196, { width: W, align: 'center' });
   doc.fillColor('#111827').font('Serif-Bold').fontSize(32).text(name, 80, 222, { width: W - 160, align: 'center' });
   const ly = doc.y + 4;
@@ -149,7 +148,7 @@ function drawExecutive({ doc, data, platform, template, color, qr, name, config 
   doc.image(SEAL, 58, 46, { width: 46 });
   doc.fillColor(color).font('Display').fontSize(22).text(cfg.brand, 112, 50, { lineBreak: false });
   doc.fillColor(gold).font('Sans-Bold').fontSize(5.8).text(cfg.brandLong.toUpperCase(), 112, 76, { characterSpacing: 1.2, lineBreak: false });
-  doc.fillColor('#6B7280').font('Sans').fontSize(5.6).text('ACCREDITATION ORGANIZATION · VIRGINIA, UNITED STATES OF AMERICA', 112, 85, { characterSpacing: 0.7, lineBreak: false });
+  doc.fillColor('#6B7280').font('Sans').fontSize(5.6).text('PROFESSIONAL CREDENTIALING & VERIFICATION · VIRGINIA, UNITED STATES OF AMERICA', 112, 85, { characterSpacing: 0.7, lineBreak: false });
   doc.fillColor('#8A93A3').font('Sans').fontSize(6.6).text('CERTIFICATE NO.', 0, 50, { width: W - 60, align: 'right', characterSpacing: 1, lineBreak: false });
   doc.fillColor('#111827').font('Sans-Bold').fontSize(12.5).text(data.cert_number, 0, 60, { width: W - 60, align: 'right', lineBreak: false });
   doc.fillColor('#6B7280').font('Sans').fontSize(7.8).text(`Issued ${longDate(data.issue_date)}`, 0, 77, { width: W - 60, align: 'right', lineBreak: false });
@@ -157,7 +156,7 @@ function drawExecutive({ doc, data, platform, template, color, qr, name, config 
 
   // Title
   doc.fillColor(color).font('Display').fontSize(27).text('CERTIFICATE', 0, 112, { width: W, align: 'center', characterSpacing: 2.4, lineBreak: false });
-  doc.fillColor(gold).font('Sans-Bold').fontSize(8.5).text('OF COMPLETION', 0, 146, { width: W, align: 'center', characterSpacing: 3.4, lineBreak: false });
+  doc.fillColor(gold).font('Sans-Bold').fontSize(8.5).text('OF TRAINING COMPLETION', 0, 146, { width: W, align: 'center', characterSpacing: 3.4, lineBreak: false });
   doc.moveTo(W / 2 - 70, 170).lineTo(W / 2 - 8, 170).moveTo(W / 2 + 8, 170).lineTo(W / 2 + 70, 170).lineWidth(0.6).strokeColor(gold).stroke();
   doc.polygon([W / 2, 166], [W / 2 + 4, 170], [W / 2, 174], [W / 2 - 4, 170]).fill(gold);
 
@@ -211,7 +210,7 @@ async function renderCertificate(data, platform, template) {
   const theme = THEMES[design];
   const [pw, ph] = theme.size;
   const doc = new PDFDocument({ size: [pw, ph], margin: 0, info: {
-    Title: `Certificate ${data.cert_number}`, Author: platform.company_name, Subject: data.course_name, Creator: `${cfg.brand} (${cfg.brandLong}) Certification Platform`,
+    Title: `Certificate ${data.cert_number}`, Author: cfg.legalEntity, Subject: data.course_name, Creator: `${cfg.brand} (${cfg.brandLong}) Credential Platform`,
   } });
   registerFonts(doc);
   const chunks = [];

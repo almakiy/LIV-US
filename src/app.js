@@ -43,6 +43,9 @@ app.use(async (req, res, next) => {
     res.locals.brand = cfg.brand;
     res.locals.brandLong = cfg.brandLong;
     res.locals.legalEntity = cfg.legalEntity;
+    res.locals.brandDescriptor = cfg.brandDescriptor;
+    res.locals.brandLine = cfg.brandLine;
+    res.locals.canonical = cfg.baseUrl + req.path;
     res.locals.usDate = (d) => (/^\d{4}-\d{2}-\d{2}/.test(String(d instanceof Date ? d.toISOString() : d)) ? usDate(d) : d);
     res.locals.usDateTime = usDateTime;
     res.locals.baseUrl = cfg.baseUrl;

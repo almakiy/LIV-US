@@ -14,9 +14,29 @@ const { createCase } = require('../lib/qms-store');
 const r = express.Router();
 const verifyLimiter = limiter(1, 30);
 
-r.get('/', (req, res) => res.render('public/home', { title: 'Official Certificate Verification & Accreditation' }));
+r.get('/', (req, res) => res.render('public/home', { title: 'Professional Credentials & Verification' }));
 r.get('/about', (req, res) => res.render('public/about', { title: 'About Us' }));
-r.get('/accreditation', (req, res) => res.render('public/accreditation', { title: 'Accreditation' }));
+
+// Education Partner Program and public register of Authorized Education Partners. /accreditation is the legacy URL.
+r.get('/accreditation', (req, res) => res.redirect(301, '/partners'));
+r.get('/partners', wrap(async (req, res) => {
+  const { rows: partners } = await q(`SELECT company_name, country, public_slug AS slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL ORDER BY company_name`);
+  res.render('public/partners', { title: 'Education Partner Program', description: 'Become an Authorized Education Partner and see the public register of partners.', partners });
+}));
+r.get('/partners/:slug', wrap(async (req, res, next) => {
+  const { rows: [p] } = await q(`SELECT company_name, country, website FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  if (!p) return next();
+  const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
+  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Education Partner of ${cfg.brand}.`, p: { ...p, website } });
+}));
+
+// Credential types and credential families.
+const { SCHEMES, schemeBySlug } = require('../lib/schemes');
+r.get('/credentials', (req, res) => res.render('public/credentials', { title: 'Credentials', description: `Types of ${cfg.brand} records and credential families.`, schemes: SCHEMES }));
+r.get('/credentials/:slug', (req, res, next) => {
+  const s = schemeBySlug(req.params.slug); if (!s) return next();
+  res.render('public/credential-scheme', { title: s.name, description: s.tagline, s });
+});
 
 // Public fee schedule, shown only after the owner approves the fees (PUBLIC_FEES=true).
 r.get('/fees', wrap(async (req, res, next) => {
@@ -24,13 +44,13 @@ r.get('/fees', wrap(async (req, res, next) => {
   const { rows: products } = await q(`SELECT * FROM billing_products WHERE active ORDER BY sort`);
   const { rows: prices } = await q(`SELECT pr.*, p.code FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE (pr.valid_to IS NULL OR pr.valid_to >= CURRENT_DATE) AND pr.valid_from <= CURRENT_DATE ORDER BY pr.min_qty`);
   const { PLANS, PLAN_DEFAULTS } = require('../lib/billing-catalog');
-  res.render('public/fees', { title: 'Fees', description: 'Published fees for accredited education partners, certificates and verification.', products, prices, money: require('../lib/billing').money, PLANS, PLAN_DEFAULTS });
+  res.render('public/fees', { title: 'Fees', description: 'Published fees for Authorized Education Partners, credentials and verification.', products, prices, money: require('../lib/billing').money, PLANS, PLAN_DEFAULTS });
 }));
 
 r.get('/verify', verifyLimiter, (req, res) => {
   const id = String(req.query.id || '').trim().toUpperCase();
-  if (!id) return res.render('public/verify-search', { title: 'Verify a Certificate', error: null, id: '', last_name: '' });
-  if (!CERT_RE.test(id)) return res.status(400).render('public/verify-search', { title: 'Verify a Certificate', error: 'That does not look like a valid Certificate ID. Format: LIV-2026-XXXXXXXX', id, last_name: req.query.last_name || '' });
+  if (!id) return res.render('public/verify-search', { title: 'Verify a Credential', error: null, id: '', last_name: '' });
+  if (!CERT_RE.test(id)) return res.status(400).render('public/verify-search', { title: 'Verify a Credential', error: 'That does not look like a valid Credential ID. Format: LIV-2026-XXXXXXXX', id, last_name: req.query.last_name || '' });
   const ln = String(req.query.last_name || '').trim();
   res.redirect(`/verify/${id}${ln ? '?last_name=' + encodeURIComponent(ln) : ''}`);
 });
@@ -50,7 +70,7 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
   const status = out.result === 'not_found' || out.result === 'invalid_format' ? 404 : 200;
   res.status(status).render('public/verify-result', {
     // Only echo a token the visitor already holds (from the QR code) and that verified; never derive it here.
-    title: 'Certificate Verification', out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
+    title: 'Credential Verification', out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
     shareUrl: c ? `${cfg.baseUrl}/verify/${c.cert_number}` : '',
   });
 }));
@@ -65,7 +85,7 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   res.download(abs, `${c.cert_number}.pdf`);
 }));
 
-r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply for Accreditation', form: {}, error: null }));
+r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Education Partner', form: {}, error: null }));
 r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), limiter(15, 10), wrap(async (req, res) => {
   const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'password', 'agree'].map((k) => [k, String(req.body[k] || '').trim()]));
   f.email = f.email.toLowerCase();
@@ -73,12 +93,12 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   if (!f.company_name || !f.full_name || !f.email || !f.password) error = 'Please fill in all required fields.';
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) error = 'Please enter a valid email.';
   else if (f.password.length < 10) error = 'Password must be at least 10 characters.';
-  else if (!f.agree) error = 'You must accept the accreditation terms.';
+  else if (!f.agree) error = 'You must accept the Education Partner Program terms.';
   if (!error) {
     const { rows } = await q('SELECT 1 FROM users WHERE email = $1', [f.email]);
     if (rows.length) error = 'An account with this email already exists. Please log in.';
   }
-  if (error) return res.status(400).render('public/apply', { title: 'Apply for Accreditation', form: { ...f, password: '' }, error });
+  if (error) return res.status(400).render('public/apply', { title: 'Apply to become an Authorized Education Partner', form: { ...f, password: '' }, error });
   const hash = await bcrypt.hash(f.password, 12);
   const user = await tx(async (c) => {
     const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email) VALUES ($1,$2,$3,$4) RETURNING id`,
@@ -92,7 +112,7 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   req.session.regenerate((err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Please log in.' });
     req.session.userId = user.id;
-    flash(req, 'success', 'Application received. Our team will review your accreditation shortly — you can set up your profile and templates meanwhile.');
+    flash(req, 'success', 'Application received. Our team will review your application shortly — you can set up your profile and templates meanwhile.');
     res.redirect('/portal');
   });
 }));

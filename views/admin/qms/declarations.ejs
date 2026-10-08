@@ -5,7 +5,7 @@
 <form method="post" action="/admin/qms/declarations" class="card">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <h3>Your declaration for <%= year %></h3>
-  <p class="small muted">Declare any financial, personal or professional interest that could affect impartiality in accreditation, curriculum, examination or credential decisions. A declaration cannot be altered once recorded.</p>
+  <p class="small muted">Declare any financial, personal or professional interest that could affect impartiality in partner authorization, curriculum, examination or credential decisions. A declaration cannot be altered once recorded.</p>
   <div class="field"><label><input type="radio" name="has_conflict" value="no" checked> I have no conflict of interest to declare</label><br><label><input type="radio" name="has_conflict" value="yes"> I have interests to declare</label></div>
   <div class="field"><label>Details (required if you declare an interest)</label><textarea name="details" rows="3"></textarea></div>
   <button class="btn">Record declaration</button>

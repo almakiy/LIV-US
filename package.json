@@ -12,7 +12,8 @@
     "test:unit": "node --test tests/unit/*.test.js",
     "engine:review-file": "node engines/cli.js review-file",
     "engine:review-queue": "node engines/cli.js review-queue",
-    "engine:usage": "node engines/cli.js usage"
+    "engine:usage": "node engines/cli.js usage",
+    "brand": "node scripts/brand-seal.js && node scripts/brand-png.js"
   },
   "dependencies": {
     "archiver": "^7.0.1",

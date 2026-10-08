@@ -3,7 +3,7 @@
 <%- include('_nav') %>
 <p class="small muted">Every active partner needs a current review. Record initial, periodic and special reviews with findings, an outcome and the next due date.</p>
 <div class="table-wrap"><table>
-  <tr><th>Partner</th><th>Accreditation</th><th>Last review</th><th>Outcome</th><th>Next due</th></tr>
+  <tr><th>Partner</th><th>Authorization</th><th>Last review</th><th>Outcome</th><th>Next due</th></tr>
   <% rows.forEach(p => { %><tr><td><a href="/admin/qms/partners/<%= p.id %>"><%= p.company_name %></a></td><td><span class="badge b-<%= p.accreditation_status %>"><%= p.accreditation_status %></span></td>
     <td><%= p.last_review ? usDate(p.last_review) : '—' %></td><td><%= p.outcome ? OUTCOMES[p.outcome] : '—' %></td>
     <td><%= p.next_due ? usDate(p.next_due) : '—' %><% if (p.due) { %> <span class="badge b-suspended">due</span><% } %></td></tr><% }) %>

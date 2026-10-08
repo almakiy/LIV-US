@@ -81,7 +81,7 @@ r.post('/partners/:id/plan', idParam, wrap(async (req, res) => {
 r.post('/partners/:id/hold', idParam, wrap(async (req, res) => {
   const { rows: [p] } = await q('UPDATE platforms SET service_hold = NOT service_hold WHERE id = $1 RETURNING company_name, service_hold', [req.params.id]);
   if (p) await audit({ user: req.user, platformId: req.params.id, action: p.service_hold ? 'billing.hold.on' : 'billing.hold.off', target: p.company_name });
-  go(req, res, `/admin/billing/partners/${req.params.id}`, 'success', p && p.service_hold ? 'Service hold on: new certificates cannot be issued. Accreditation status is unchanged.' : 'Service hold lifted.');
+  go(req, res, `/admin/billing/partners/${req.params.id}`, 'success', p && p.service_hold ? 'Service hold on: new certificates cannot be issued. Authorization status is unchanged.' : 'Service hold lifted.');
 }));
 r.post('/partners/:id/discounts', idParam, wrap(async (req, res) => {
   const percent = req.body.kind === 'percent'; const val = Number(req.body.value);

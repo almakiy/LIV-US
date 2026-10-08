@@ -1,4 +1,4 @@
-# LIV — Leading Institute of Verification
+# LIV — Leadership Institute of Validation
 
 The accreditation and certificate-verification platform of **LIV**, operated by LIV LLC (United States).
 
@@ -32,8 +32,9 @@ docker compose exec app node scripts/seed.js
 ```
 
 ## Brand
-- **Name:** LIV, short for **Leading Institute of Verification**. Set with `BRAND_NAME`, `BRAND_LONG_NAME` and `LEGAL_ENTITY`.
-- **Seal and logos:** `public/brand/` (SVG) and `assets/brand/` (PNG for certificates). All text in the marks is converted to vector paths, so they need no fonts installed.
+- **Name:** LIV, short for **Leadership Institute of Validation** (Arabic institutional rendering: معهد القيادة للتحقق من الكفاءة المهنية). Descriptor: U.S.-Based Professional Credentialing & Verification Organization. Brand line: *Validate competence. Verify credentials.* Set with `BRAND_NAME`, `BRAND_LONG_NAME` and `LEGAL_ENTITY`; the descriptor, brand line and seal text are in `src/config.js`.
+- **Public domain:** set `PUBLIC_BASE_URL` (production target `https://livcredentials.org`); it drives canonical links, sitemap, RSS, Open Graph, QR codes and verification links.
+- **Seal and logos:** `public/brand/` (SVG) and `assets/brand/` (PNG for certificates). All text in the marks is converted to vector paths, so they need no fonts installed. Regenerate the seal ring text, logo name lines and PNGs from the config with `npm run brand` (see `docs/REPOSITIONING.md`).
 - **Colors:** Navy `#0B1F3A`, Gold `#B08D4C`, Light Gold `#D4B97A`, Ivory `#F7F6F2`.
 - **Type:**
   - Libre Baskerville for headings and certificates

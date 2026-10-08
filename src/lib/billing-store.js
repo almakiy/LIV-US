@@ -1,11 +1,14 @@
 // Billing persistence: catalog seed, usage, invoices (draft, issue, pay, void). See docs/BILLING.md.
 const { q, tx } = require('../db');
 const billing = require('./billing');
-const { CATALOG } = require('./billing-catalog');
+const { CATALOG, LEGACY_NAMES } = require('./billing-catalog');
 
 async function seedCatalog() {
   const { rows: [{ n }] } = await q('SELECT count(*)::int AS n FROM billing_products');
-  if (n) return false;
+  if (n) {
+    for (const [code, old] of Object.entries(LEGACY_NAMES)) await q('UPDATE billing_products SET name = $1 WHERE code = $2 AND name = $3', [CATALOG.find((p) => p.code === code).name, code, old]);
+    return false;
+  }
   await tx(async (c) => {
     for (const p of CATALOG) {
       const { rows: [row] } = await c.query(`INSERT INTO billing_products (code, name, description, category, unit, phase, active, sort) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,

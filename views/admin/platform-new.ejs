@@ -1,16 +1,16 @@
 <%- include('../partials/app-start') %>
-<div class="page-head"><h1>New training provider</h1></div>
+<div class="page-head"><h1>New education partner</h1></div>
 <form method="post" action="/admin/platforms/new" class="card" style="max-width:640px">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <% if (error) { %><div class="alert error"><%= error %></div><% } %>
   <div class="field"><label>Organization name *</label><input type="text" name="company_name" required value="<%= form.company_name || '' %>"></div>
   <div class="row"><div class="field"><label>Website</label><input type="text" name="website" value="<%= form.website || '' %>"></div>
   <div class="field"><label>Country</label><input type="text" name="country" value="<%= form.country || '' %>"></div></div>
-  <h3>Provider administrator</h3>
+  <h3>Partner administrator</h3>
   <div class="field"><label>Full name *</label><input type="text" name="full_name" required value="<%= form.full_name || '' %>"></div>
   <div class="field"><label>Email *</label><input type="email" name="email" required value="<%= form.email || '' %>"></div>
   <div class="field"><label>Temporary password * (10+ characters)</label><input type="password" name="password" required minlength="10" autocomplete="new-password"></div>
-  <p class="small muted">The provider is created as <strong>active</strong>, with a default Classic template. You can issue certificates for it with “Act as provider”.</p>
-  <button class="btn">Create provider</button>
+  <p class="small muted">The partner is created as <strong>active</strong>, with a default Classic template. You can issue certificates for it with “Act as partner”.</p>
+  <button class="btn">Create partner</button>
 </form>
 <%- include('../partials/app-end') %>

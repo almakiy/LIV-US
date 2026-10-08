@@ -57,7 +57,7 @@ function renderInvoice(inv, lines, payments) {
   doc.font('Helvetica-Bold').fontSize(8).fillColor(GREY).text('PAYMENT', L, y);
   doc.font('Helvetica').fontSize(9).fillColor('#111827').text(cfg.bankDetails ? `Bank transfer (the payer bears bank charges). Please quote ${inv.number || 'the invoice number'}.\n${cfg.bankDetails}` : `Please contact ${cfg.billingEmail || 'LIV billing'} for payment details and quote ${inv.number || 'the invoice number'}.`, L, y + 12, { width: 320 });
   if (inv.notes) doc.font('Helvetica').fontSize(8.5).fillColor(GREY).text(inv.notes, 380, y + 12, { width: R - 380 });
-  doc.fontSize(7.5).fillColor(GREY).text(`${cfg.legalEntity} is a private accreditation organization based in the United States and is not a government agency. Fees are exclusive of taxes unless shown. Payment terms are set in the partner agreement.`, L, 735, { width: R - L, align: 'center' });
+  doc.fontSize(7.5).fillColor(GREY).text(`${cfg.legalEntity} is a private professional credentialing and verification organization based in the United States and is not a government agency. Fees are exclusive of taxes unless shown. Payment terms are set in the partner agreement.`, L, 735, { width: R - L, align: 'center' });
   if (inv.status === 'paid') { doc.save().rotate(-20, { origin: [300, 400] }).fontSize(70).fillColor('#16A34A').fillOpacity(0.14).font('Helvetica-Bold').text('PAID', 190, 360).restore(); }
   if (inv.status === 'void') { doc.save().rotate(-20, { origin: [300, 400] }).fontSize(70).fillColor('#B91C1C').fillOpacity(0.14).font('Helvetica-Bold').text('VOID', 190, 360).restore(); }
   if (isOverdue(inv)) doc.fontSize(9).fillColor('#B91C1C').font('Helvetica-Bold').text('OVERDUE', L, 118 - 12);

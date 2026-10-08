@@ -1,0 +1,13 @@
+<%- include('../partials/head') %>
+<section class="section"><div class="container" style="max-width:820px">
+  <p class="small"><a href="/partners">Education Partner Program</a> · Register</p>
+  <div class="page-head"><h1><%= p.company_name %></h1><span class="badge b-active">Authorized Education Partner</span></div>
+  <div class="card details"><dl>
+    <dt>Status</dt><dd>Authorized</dd>
+    <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
+    <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a></dd><% } %>
+    <dt>Authorized scope</dt><dd class="muted">Published scope listings are being prepared. Contact <%= brand %> to confirm whether a specific course is within this partner's authorized scope.</dd>
+  </dl></div>
+  <p class="small muted mt">Status reflects <%= brand %> records at the time of viewing. Authorization is a private, voluntary program of <%= legalEntity %> and is not a government approval.</p>
+</div></section>
+<%- include('../partials/foot') %>

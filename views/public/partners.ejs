@@ -1,0 +1,30 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 64px"><div class="container">
+  <span class="eyebrow"><%= brand %> Education Partner Program</span>
+  <h1>Become an Authorized Education Partner</h1>
+  <p>Authorized Education Partners deliver education within a scope approved by <%= brand %>. <%= brand %> owns the credential schemes, sets the assessment requirements and keeps the authoritative record that employers can verify.</p>
+  <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Apply to become a partner</a><% } else { %><a class="btn gold lg" href="/contact">Request Information</a><% } %><a class="btn ghost lg" href="/credentials">Credential types</a></div>
+</div></section>
+<section class="section white"><div class="container">
+  <h2>What authorization means</h2>
+  <div class="grid g3 mt">
+    <div class="card"><h3>Authorized scope</h3><p class="muted">Each partner is authorized for defined courses or curricula. Delivery outside that scope is not covered.</p></div>
+    <div class="card"><h3>One verification record</h3><p class="muted">Records carry the <%= brand %> seal and a signed QR code linking to a live status page.</p></div>
+    <div class="card"><h3>Built for scale</h3><p class="muted">Report completions by CSV or Excel, or integrate your learning platform through the REST API.</p></div>
+  </div>
+  <h2 class="mt" style="margin-top:48px">The process</h2>
+  <div class="grid g4 mt">
+    <div class="card"><div class="step-n">1</div><h3>Apply</h3><p class="muted small">Submit your organization profile and the scope you wish to deliver.</p></div>
+    <div class="card"><div class="step-n">2</div><h3>Review</h3><p class="muted small">We review your trainers' qualifications and competence, your curricula and your training methods.</p></div>
+    <div class="card"><div class="step-n">3</div><h3>Authorization</h3><p class="muted small">On approval, your authorized scope is recorded and reporting is enabled in the Partner Portal.</p></div>
+    <div class="card"><div class="step-n">4</div><h3>Surveillance</h3><p class="muted small">Periodic reviews keep your authorization active. Authorization can be suspended or withdrawn.</p></div>
+  </div>
+  <h2 style="margin-top:48px">Authorized Education Partners</h2>
+  <% if (partners.length) { %><div class="table-wrap"><table><tr><th>Partner</th><th>Country</th><th>Status</th></tr>
+  <% partners.forEach(p => { %><tr><td><a href="/partners/<%= p.slug %>"><%= p.company_name %></a></td><td><%= p.country || '' %></td><td><span class="badge b-active">Authorized</span></td></tr><% }) %></table></div>
+  <% } else { %><p class="muted">The register will list partners once they are authorized.</p><% } %>
+  <h2 style="margin-top:48px">References</h2>
+  <p><%= brand %> review criteria reference recognized frameworks where relevant to a course, including ISO 45001, ISO 14001, ISO 9001, ANSI/ASSP Z490.1 and US OSHA training requirements.</p>
+  <div class="alert info small"><strong>Important:</strong> Partner authorization is a private, voluntary program operated by <%= legalEntity %>. <%= brand %> is not a government agency or a regulatory authority and does not claim ISO or any other external accreditation or recognition. Referencing a framework does not mean endorsement, certification or approval by ISO, ANSI, ASSP, OSHA, PMI, CQI, IRCA, NEBOSH, IOSH or any other body, and authorization by <%= brand %> does not make a course approved by them. Authorization reflects that a partner met <%= brand %> criteria at the time of review; it is not a government license.</div>
+</div></section>
+<%- include('../partials/foot') %>

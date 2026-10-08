@@ -9,9 +9,11 @@ const r = express.Router();
 const PER = 9;
 const esc = (s) => String(s ?? '').replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 
-r.get('/knowledge', wrap(async (req, res) => {
+// Section URLs for content kinds: /research, /guides, /standards show the knowledge listing filtered to that kind.
+const SECTIONS = { '/research': 'research', '/guides': 'guide', '/standards': 'standards' };
+r.get(['/knowledge', ...Object.keys(SECTIONS)], wrap(async (req, res) => {
   const category = CATEGORIES[req.query.category] ? req.query.category : '';
-  const kind = KINDS[req.query.kind] ? req.query.kind : '';
+  const kind = SECTIONS[req.path] || (KINDS[req.query.kind] ? req.query.kind : '');
   const search = String(req.query.q || '').trim().slice(0, 80);
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const where = ["status = 'published'"]; const params = [];
@@ -21,7 +23,7 @@ r.get('/knowledge', wrap(async (req, res) => {
   const w = where.join(' AND ');
   const { rows: [{ n }] } = await q(`SELECT count(*)::int AS n FROM articles WHERE ${w}`, params);
   const { rows } = await q(`SELECT slug, title, summary, category, kind, author_name, published_at, tags FROM articles WHERE ${w} ORDER BY published_at DESC LIMIT ${PER} OFFSET ${(page - 1) * PER}`, params);
-  res.render('public/knowledge', { title: 'Knowledge Hub', description: 'Articles, research and guides on quality management, health & safety and project management.', rows, n, page, pages: Math.max(1, Math.ceil(n / PER)), category, kind, search, CATEGORIES, KINDS });
+  res.render('public/knowledge', { title: SECTIONS[req.path] ? KINDS[kind] : 'Knowledge Hub', section: SECTIONS[req.path] ? req.path : '', description: 'Articles, research and guides on quality management, health & safety and project management.', rows, n, page, pages: Math.max(1, Math.ceil(n / PER)), category, kind, search, CATEGORIES, KINDS });
 }));
 
 r.get('/knowledge/:slug', wrap(async (req, res, next) => {
@@ -34,12 +36,14 @@ r.get('/knowledge/:slug', wrap(async (req, res, next) => {
 r.get('/rss.xml', wrap(async (req, res) => {
   const { rows } = await q(`SELECT slug, title, summary, published_at FROM articles WHERE status='published' ORDER BY published_at DESC LIMIT 20`);
   const items = rows.map((a) => `<item><title>${esc(a.title)}</title><link>${cfg.baseUrl}/knowledge/${esc(a.slug)}</link><guid>${cfg.baseUrl}/knowledge/${esc(a.slug)}</guid><pubDate>${new Date(a.published_at).toUTCString()}</pubDate><description>${esc(a.summary)}</description></item>`).join('');
-  res.type('application/rss+xml').send(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${esc(cfg.brand)} Knowledge Hub</title><link>${cfg.baseUrl}/knowledge</link><description>Quality, safety and project management knowledge from ${esc(cfg.brandLong)}.</description>${items}</channel></rss>`);
+  res.type('application/rss+xml').send(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${esc(cfg.brand)} Knowledge Hub</title><link>${cfg.baseUrl}/knowledge</link><description>Research, guides and standards explained by ${esc(cfg.brandLong)}.</description>${items}</channel></rss>`);
 }));
 
 r.get('/sitemap.xml', wrap(async (req, res) => {
   const { rows } = await q(`SELECT slug, updated_at FROM articles WHERE status='published' ORDER BY published_at DESC`);
-  const fixed = ['/', '/verify', '/accreditation', '/about', '/contact', '/knowledge'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);
+  const { SCHEMES } = require('../lib/schemes');
+  const { rows: partners } = await q(`SELECT public_slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL`);
+  const fixed = ['/', '/verify', '/credentials', ...SCHEMES.map((s) => `/credentials/${s.slug}`), '/partners', ...partners.map((p) => `/partners/${esc(p.public_slug)}`), '/knowledge', '/research', '/guides', '/standards', '/about', '/contact'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);
   const arts = rows.map((a) => `<url><loc>${cfg.baseUrl}/knowledge/${esc(a.slug)}</loc><lastmod>${new Date(a.updated_at).toISOString().slice(0, 10)}</lastmod></url>`);
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...fixed, ...arts].join('')}</urlset>`);
 }));

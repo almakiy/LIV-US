@@ -1,6 +1,6 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1>Billing</h1><% if (platform.service_hold) { %><span class="badge b-suspended">service hold</span><% } %></div>
-<% if (platform.service_hold) { %><div class="alert error">Issuing new certificates is paused for unpaid invoices. Your accreditation status is unchanged and certificates already issued stay verifiable. Please settle the invoices below or contact <%= cfg.billingEmail || 'LIV billing' %>.</div><% } %>
+<% if (platform.service_hold) { %><div class="alert error">Issuing new certificates is paused for unpaid invoices. Your authorization status is unchanged and certificates already issued stay verifiable. Please settle the invoices below or contact <%= cfg.billingEmail || 'LIV billing' %>.</div><% } %>
 <div class="grid g2">
   <div class="card details"><h3>Your plan</h3><dl>
     <dt>Plan</dt><dd><%= platform.plan ? platform.plan.charAt(0).toUpperCase() + platform.plan.slice(1) : 'Not assigned yet' %></dd>

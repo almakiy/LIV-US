@@ -13,11 +13,11 @@ const requireSuper = (req, res, next) => {
 };
 const requireActivePlatform = (req, res, next) => {
   if (req.user?.accreditation_status !== 'active') {
-    req.session.flash = { type: 'error', text: 'Issuance is available only when your accreditation status is Active.' };
+    req.session.flash = { type: 'error', text: 'Issuance is available only when your authorization status is Active.' };
     return res.redirect('/portal');
   }
   if (req.user?.service_hold) {
-    req.session.flash = { type: 'error', text: 'Issuance is paused while your account is on service hold for unpaid invoices. Your accreditation status is unchanged. Contact LIV billing.' };
+    req.session.flash = { type: 'error', text: 'Issuance is paused while your account is on service hold for unpaid invoices. Your authorization status is unchanged. Contact LIV billing.' };
     return res.redirect('/portal/billing');
   }
   next();
