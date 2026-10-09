@@ -51,6 +51,8 @@ function loadLibrary(dir = DIR) {
       const it = parseItem(fs.readFileSync(path.join(dir, f), 'utf8'), String(f));
       const { errors: e } = validateDraft({ ...it, ai_assisted: true });
       if (!/^[a-z0-9-]{3,100}$/.test(it.slug || '')) e.push('slug must be lowercase letters, digits and hyphens');
+      if ((it.title || '').length > 200) e.push('title is longer than 200 characters');
+      if ((it.summary || '').length > 300) e.push('summary is longer than 300 characters');
       if (e.length) errors.push(`${f}: ${e.join('; ')}`); else items.push(it);
     } catch (err) { errors.push(err.message); }
   }

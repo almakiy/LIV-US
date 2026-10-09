@@ -8,62 +8,245 @@
     "research": "Peer-reviewed publishers and scholarly indexes (DOI landing pages). Evidence, not requirements."
   },
   "publishers": {
-    "iso.org": { "tier": "standards", "name": "International Organization for Standardization" },
-    "iec.ch": { "tier": "standards", "name": "International Electrotechnical Commission" },
-    "saso.gov.sa": { "tier": "standards", "name": "Saudi Standards, Metrology and Quality Organization" },
-    "oecd.org": { "tier": "intergovernmental", "name": "OECD" },
-    "ilo.org": { "tier": "intergovernmental", "name": "International Labour Organization" },
-    "normlex.ilo.org": { "tier": "intergovernmental", "name": "ILO NORMLEX" },
-    "ifc.org": { "tier": "intergovernmental", "name": "International Finance Corporation (World Bank Group)" },
-    "worldbank.org": { "tier": "intergovernmental", "name": "World Bank" },
-    "openknowledge.worldbank.org": { "tier": "intergovernmental", "name": "World Bank Open Knowledge Repository" },
-    "who.int": { "tier": "intergovernmental", "name": "World Health Organization" },
-    "unglobalcompact.org": { "tier": "intergovernmental", "name": "UN Global Compact" },
-    "osha.europa.eu": { "tier": "intergovernmental", "name": "European Agency for Safety and Health at Work" },
-    "coso.org": { "tier": "professional", "name": "Committee of Sponsoring Organizations of the Treadway Commission" },
-    "theiia.org": { "tier": "professional", "name": "The Institute of Internal Auditors" },
-    "iod.com": { "tier": "professional", "name": "Institute of Directors (UK)" },
-    "hawkamah.org": { "tier": "professional", "name": "Hawkamah Institute for Corporate Governance" },
-    "frc.org.uk": { "tier": "official", "name": "Financial Reporting Council (UK)" },
-    "hse.gov.uk": { "tier": "official", "name": "Health and Safety Executive (UK)" },
-    "legislation.gov.uk": { "tier": "official", "name": "UK legislation" },
-    "osha.gov": { "tier": "official", "name": "Occupational Safety and Health Administration (U.S.)" },
-    "cdc.gov": { "tier": "official", "name": "NIOSH / CDC (U.S.)" },
-    "sec.gov": { "tier": "official", "name": "U.S. Securities and Exchange Commission" },
-    "cma.org.sa": { "tier": "official", "name": "Capital Market Authority (Saudi Arabia)" },
-    "mc.gov.sa": { "tier": "official", "name": "Ministry of Commerce (Saudi Arabia)" },
-    "laws.boe.gov.sa": { "tier": "official", "name": "Bureau of Experts at the Council of Ministers (Saudi Arabia)" },
-    "hrsd.gov.sa": { "tier": "official", "name": "Ministry of Human Resources and Social Development (Saudi Arabia)" },
-    "sama.gov.sa": { "tier": "official", "name": "Saudi Central Bank" },
-    "sdaia.gov.sa": { "tier": "official", "name": "Saudi Data and AI Authority" },
-    "sca.gov.ae": { "tier": "official", "name": "Securities and Commodities Authority (UAE)" },
-    "uaelegislation.gov.ae": { "tier": "official", "name": "UAE Legislation portal" },
-    "moec.gov.ae": { "tier": "official", "name": "Ministry of Economy (UAE)" },
-    "mohre.gov.ae": { "tier": "official", "name": "Ministry of Human Resources and Emiratisation (UAE)" },
-    "u.ae": { "tier": "official", "name": "UAE Government portal" },
-    "qfma.org.qa": { "tier": "official", "name": "Qatar Financial Markets Authority" },
-    "almeezan.qa": { "tier": "official", "name": "Al Meezan, Qatar Legal Portal" },
-    "cma.gov.om": { "tier": "official", "name": "Financial Services Authority / Capital Market Authority (Oman)" },
-    "fsa.gov.om": { "tier": "official", "name": "Financial Services Authority (Oman)" },
-    "qanoon.om": { "tier": "official", "name": "Oman legislation (published texts)" },
-    "moic.gov.bh": { "tier": "official", "name": "Ministry of Industry and Commerce (Bahrain)" },
-    "cbb.gov.bh": { "tier": "official", "name": "Central Bank of Bahrain" },
-    "cbben.thomsonreuters.com": { "tier": "official", "name": "Central Bank of Bahrain rulebook" },
-    "cma.gov.kw": { "tier": "official", "name": "Capital Markets Authority (Kuwait)" },
-    "doi.org": { "tier": "research", "name": "DOI resolver" },
-    "mdpi.com": { "tier": "research", "name": "MDPI" },
-    "springer.com": { "tier": "research", "name": "Springer" },
-    "springeropen.com": { "tier": "research", "name": "SpringerOpen" },
-    "link.springer.com": { "tier": "research", "name": "SpringerLink" },
-    "sciencedirect.com": { "tier": "research", "name": "Elsevier ScienceDirect" },
-    "emerald.com": { "tier": "research", "name": "Emerald" },
-    "tandfonline.com": { "tier": "research", "name": "Taylor & Francis" },
-    "onlinelibrary.wiley.com": { "tier": "research", "name": "Wiley" },
-    "frontiersin.org": { "tier": "research", "name": "Frontiers" },
-    "journals.plos.org": { "tier": "research", "name": "PLOS" },
-    "ncbi.nlm.nih.gov": { "tier": "research", "name": "PubMed Central" },
-    "pmc.ncbi.nlm.nih.gov": { "tier": "research", "name": "PubMed Central" },
-    "sagepub.com": { "tier": "research", "name": "SAGE" },
-    "journals.sagepub.com": { "tier": "research", "name": "SAGE Journals" }
+    "iso.org": {
+      "tier": "standards",
+      "name": "International Organization for Standardization"
+    },
+    "iec.ch": {
+      "tier": "standards",
+      "name": "International Electrotechnical Commission"
+    },
+    "saso.gov.sa": {
+      "tier": "standards",
+      "name": "Saudi Standards, Metrology and Quality Organization"
+    },
+    "oecd.org": {
+      "tier": "intergovernmental",
+      "name": "OECD"
+    },
+    "ilo.org": {
+      "tier": "intergovernmental",
+      "name": "International Labour Organization"
+    },
+    "normlex.ilo.org": {
+      "tier": "intergovernmental",
+      "name": "ILO NORMLEX"
+    },
+    "ifc.org": {
+      "tier": "intergovernmental",
+      "name": "International Finance Corporation (World Bank Group)"
+    },
+    "worldbank.org": {
+      "tier": "intergovernmental",
+      "name": "World Bank"
+    },
+    "openknowledge.worldbank.org": {
+      "tier": "intergovernmental",
+      "name": "World Bank Open Knowledge Repository"
+    },
+    "who.int": {
+      "tier": "intergovernmental",
+      "name": "World Health Organization"
+    },
+    "unglobalcompact.org": {
+      "tier": "intergovernmental",
+      "name": "UN Global Compact"
+    },
+    "osha.europa.eu": {
+      "tier": "intergovernmental",
+      "name": "European Agency for Safety and Health at Work"
+    },
+    "coso.org": {
+      "tier": "professional",
+      "name": "Committee of Sponsoring Organizations of the Treadway Commission"
+    },
+    "theiia.org": {
+      "tier": "professional",
+      "name": "The Institute of Internal Auditors"
+    },
+    "iod.com": {
+      "tier": "professional",
+      "name": "Institute of Directors (UK)"
+    },
+    "hawkamah.org": {
+      "tier": "professional",
+      "name": "Hawkamah Institute for Corporate Governance"
+    },
+    "frc.org.uk": {
+      "tier": "official",
+      "name": "Financial Reporting Council (UK)"
+    },
+    "hse.gov.uk": {
+      "tier": "official",
+      "name": "Health and Safety Executive (UK)"
+    },
+    "legislation.gov.uk": {
+      "tier": "official",
+      "name": "UK legislation"
+    },
+    "osha.gov": {
+      "tier": "official",
+      "name": "Occupational Safety and Health Administration (U.S.)"
+    },
+    "cdc.gov": {
+      "tier": "official",
+      "name": "NIOSH / CDC (U.S.)"
+    },
+    "sec.gov": {
+      "tier": "official",
+      "name": "U.S. Securities and Exchange Commission"
+    },
+    "cma.org.sa": {
+      "tier": "official",
+      "name": "Capital Market Authority (Saudi Arabia)"
+    },
+    "mc.gov.sa": {
+      "tier": "official",
+      "name": "Ministry of Commerce (Saudi Arabia)"
+    },
+    "laws.boe.gov.sa": {
+      "tier": "official",
+      "name": "Bureau of Experts at the Council of Ministers (Saudi Arabia)"
+    },
+    "hrsd.gov.sa": {
+      "tier": "official",
+      "name": "Ministry of Human Resources and Social Development (Saudi Arabia)"
+    },
+    "sama.gov.sa": {
+      "tier": "official",
+      "name": "Saudi Central Bank"
+    },
+    "sdaia.gov.sa": {
+      "tier": "official",
+      "name": "Saudi Data and AI Authority"
+    },
+    "sca.gov.ae": {
+      "tier": "official",
+      "name": "Securities and Commodities Authority (UAE)"
+    },
+    "uaelegislation.gov.ae": {
+      "tier": "official",
+      "name": "UAE Legislation portal"
+    },
+    "moec.gov.ae": {
+      "tier": "official",
+      "name": "Ministry of Economy (UAE)"
+    },
+    "mohre.gov.ae": {
+      "tier": "official",
+      "name": "Ministry of Human Resources and Emiratisation (UAE)"
+    },
+    "u.ae": {
+      "tier": "official",
+      "name": "UAE Government portal"
+    },
+    "qfma.org.qa": {
+      "tier": "official",
+      "name": "Qatar Financial Markets Authority"
+    },
+    "almeezan.qa": {
+      "tier": "official",
+      "name": "Al Meezan, Qatar Legal Portal"
+    },
+    "cma.gov.om": {
+      "tier": "official",
+      "name": "Financial Services Authority / Capital Market Authority (Oman)"
+    },
+    "fsa.gov.om": {
+      "tier": "official",
+      "name": "Financial Services Authority (Oman)"
+    },
+    "qanoon.om": {
+      "tier": "official",
+      "name": "Oman legislation (published texts)"
+    },
+    "moic.gov.bh": {
+      "tier": "official",
+      "name": "Ministry of Industry and Commerce (Bahrain)"
+    },
+    "cbb.gov.bh": {
+      "tier": "official",
+      "name": "Central Bank of Bahrain"
+    },
+    "cbben.thomsonreuters.com": {
+      "tier": "official",
+      "name": "Central Bank of Bahrain rulebook"
+    },
+    "cma.gov.kw": {
+      "tier": "official",
+      "name": "Capital Markets Authority (Kuwait)"
+    },
+    "doi.org": {
+      "tier": "research",
+      "name": "DOI resolver"
+    },
+    "mdpi.com": {
+      "tier": "research",
+      "name": "MDPI"
+    },
+    "springer.com": {
+      "tier": "research",
+      "name": "Springer"
+    },
+    "springeropen.com": {
+      "tier": "research",
+      "name": "SpringerOpen"
+    },
+    "link.springer.com": {
+      "tier": "research",
+      "name": "SpringerLink"
+    },
+    "sciencedirect.com": {
+      "tier": "research",
+      "name": "Elsevier ScienceDirect"
+    },
+    "emerald.com": {
+      "tier": "research",
+      "name": "Emerald"
+    },
+    "tandfonline.com": {
+      "tier": "research",
+      "name": "Taylor & Francis"
+    },
+    "onlinelibrary.wiley.com": {
+      "tier": "research",
+      "name": "Wiley"
+    },
+    "frontiersin.org": {
+      "tier": "research",
+      "name": "Frontiers"
+    },
+    "journals.plos.org": {
+      "tier": "research",
+      "name": "PLOS"
+    },
+    "ncbi.nlm.nih.gov": {
+      "tier": "research",
+      "name": "PubMed Central"
+    },
+    "pmc.ncbi.nlm.nih.gov": {
+      "tier": "research",
+      "name": "PubMed Central"
+    },
+    "sagepub.com": {
+      "tier": "research",
+      "name": "SAGE"
+    },
+    "journals.sagepub.com": {
+      "tier": "research",
+      "name": "SAGE Journals"
+    },
+    "lrfoundation.org.uk": {
+      "tier": "research",
+      "name": "Lloyd's Register Foundation (Global Safety Evidence Centre)"
+    },
+    "gov.uk": {
+      "tier": "official",
+      "name": "UK Government (GOV.UK)"
+    },
+    "op.europa.eu": {
+      "tier": "intergovernmental",
+      "name": "Publications Office of the European Union"
+    }
   }
 }

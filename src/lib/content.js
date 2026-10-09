@@ -90,10 +90,10 @@ function validateDraft(b) {
   return { errors, value };
 }
 
-/** Keeps stored evidence excerpts when an editor re-saves the sources list (the admin form only shows title | url | publisher). */
+/** Keeps stored evidence excerpts and access dates when an editor re-saves the sources list (the admin form only shows title | url | publisher). */
 function mergeExcerpts(newSources, oldSources) {
   const byUrl = new Map((Array.isArray(oldSources) ? oldSources : []).map((s) => [s.url, s]));
-  return newSources.map((s) => { const o = byUrl.get(s.url); return o && o.excerpt ? { ...s, excerpt: o.excerpt, accessed: o.accessed } : s; });
+  return newSources.map((s) => { const o = byUrl.get(s.url); return o ? { ...s, ...(o.excerpt ? { excerpt: o.excerpt } : {}), ...(o.accessed ? { accessed: o.accessed } : {}) } : s; });
 }
 
 module.exports = { mergeExcerpts, CATEGORIES, KINDS, slugify, renderMarkdown, readingMinutes, parseTags, parseSourcesText, sourcesToText, parseStandards, validateDraft, isHttpUrl };

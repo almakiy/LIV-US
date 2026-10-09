@@ -57,3 +57,10 @@ test('every library item is valid, unique and passes the Reviewer without blocki
     assert.ok(it.next_review_at, `${it.file}: next review date`);
   }
 });
+
+test('re-saving sources in the editor keeps their access dates and excerpts', () => {
+  const { mergeExcerpts } = require('../../src/lib/content');
+  const old = [{ title: 'A', url: 'https://www.iso.org/a', accessed: '2026-10-09' }, { title: 'B', url: 'https://www.oecd.org/b', excerpt: 'quote', accessed: '2026-10-01' }];
+  assert.deepStrictEqual(mergeExcerpts([{ title: 'A2', url: 'https://www.iso.org/a', publisher: 'ISO' }, { title: 'B', url: 'https://www.oecd.org/b', publisher: '' }, { title: 'C', url: 'https://www.ilo.org/c', publisher: '' }], old),
+    [{ title: 'A2', url: 'https://www.iso.org/a', publisher: 'ISO', accessed: '2026-10-09' }, { title: 'B', url: 'https://www.oecd.org/b', publisher: '', excerpt: 'quote', accessed: '2026-10-01' }, { title: 'C', url: 'https://www.ilo.org/c', publisher: '' }]);
+});
