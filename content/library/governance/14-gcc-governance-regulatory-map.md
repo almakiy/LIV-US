@@ -29,6 +29,10 @@ sources:
 - Data protection laws | https://u.ae/en/about-the-uae/digital-uae/data/data-protection-laws | UAE Government portal | 2026-10-09
 - About Hawkamah | https://www.hawkamah.org/en/about-us | Hawkamah Institute for Corporate Governance | 2026-10-09
 - The Council of Ministers approves the Kingdom's accession to ILO Convention No. 187 (March 26, 2024) | https://www.hrsd.gov.sa/en/media-center/news/270320241 | Ministry of Human Resources and Social Development (Saudi Arabia) | 2026-10-09
+- Governance Guide for Public Joint-Stock Companies, Decision No. (3/Chairman) of 2020, consolidated text with amendments | https://www.uaecma.gov.ae/en/regulations/regulations-listing?id=198 | Capital Market Authority (UAE) | 2026-10-09
+- Federal Decree-Law No. (32) of 2021 on Commercial Companies (English translation hosted by the Ministry) | https://www.moet.gov.ae/documents/20121/376326/Commercial+Companies.pdf/12d14f53-1a3e-47b4-8e70-fac3f672c403 | Ministry of Economy and Tourism (UAE) | 2026-10-09
+- Federal Decree-Law No. 37 of 2022 Concerning Family Companies (English) | https://www.moet.gov.ae/documents/20121/0/family+company+english+version+examined+and+correcetd.pdf/5639a956-fe15-6de2-a04e-c8f8ecb6c2bf | Ministry of Economy and Tourism (UAE) | 2026-10-09
+- New CMA Law (Federal Decree-Laws No. 32 and No. 33 of 2025) | https://www.uaecma.gov.ae/en/new-cma-law | Capital Market Authority (UAE) | 2026-10-09
 ---
 Each GCC state has its own company law and, for listed companies, its own governance code issued by the capital market regulator. This map gives the official instruments, whom they apply to and their headline requirements. It is a starting point for reading the official texts, not a substitute for them.
 
@@ -55,16 +59,30 @@ The CMA's English text states that Arabic is the official language of the regula
 
 ## United Arab Emirates
 
-**Commercial Companies Law.** Federal Decree-Law No. 32 of 2021 and the related ministerial decisions are published by the Ministry of Economy and Tourism [6]. It applies to commercial companies, with separate regimes for free zones that have their own company laws.
+**Regulator.** Federal Decree-Law No. (32) of 2025 replaced the Securities and Commodities Authority with the **Capital Market Authority** as its legal successor, from January 1, 2026. Earlier decisions of the Authority remain in force unless they conflict with the new law [21].
 
-**Private joint stock companies.** Ministerial Decision No. 137/2024 sets governance rules for private joint stock companies [7]. Among them, at least one-third of the board must be independent members, with a majority of non-executive members [7].
+**Commercial Companies Law.** Federal Decree-Law No. (32) of 2021, in force since January 2, 2022, applies to commercial companies, with separate regimes for free zones that have their own company laws [6][19]. For joint stock companies, it sets several board rules [19]:
 
-**Public joint stock companies.** The Governance Guide for Public Joint-Stock Companies was approved by Decision No. (3/Chairman) of 2020 of the regulator's board. The regulator was formerly the Securities and Commodities Authority and now operates as the Capital Market Authority [8]. According to the regulator's 2025 circular on annual general assemblies [9]:
+- A board of three to eleven members, with terms of up to three years (Article 143).
+- A director with a conflicting interest must notify the board, have it recorded in the minutes and not vote (Article 150).
+- Related party transactions up to 5% of capital need board approval, and above 5% general assembly approval after a valuation (Article 152).
+- A joint stock company may not lend to its directors or their close relatives, except for financial institutions supervised by the Central Bank (Article 153).
 
-- Board elections must result in independent members forming at least a majority of the board [9].
-- Decision No. (24/Chairman) of 2025, effective August 30, 2025, added an Article 7 bis. It allows one person to combine the roles of chair and chief executive only if all three conditions are met: the articles of association permit it, at least three-quarters of board members and all standing committee members are independent, and the general assembly approves it by special resolution [9].
+The Ministry also lists the 2025 amending Decree-Law No. (20) of 2025 [6].
 
-**Data protection.** Federal Decree-Law No. 45 of 2021 on the protection of personal data is listed on the UAE Government portal [15].
+**Private joint stock companies.** Ministerial Decision No. 137/2024 requires at least one-third of the board to be independent members, with a majority of non-executive members [7].
+
+**Public joint stock companies.** The Governance Guide approved by Decision No. (3/Chairman) of 2020 is published by the Authority, on its corporate governance page, as a consolidated text with its amendments of 2021, 2022, 2024 and 2025 [8][18]. Among its requirements [18]:
+
+- At least one-third of board members are independent, and the majority are non-executive (Article 9, clause 5).
+- At least one woman sits on the board, and this is disclosed in the annual governance report (Article 9, clause 3).
+- The chair may not hold any other executive position. Since Decision No. (24/Chairman) of 2025, effective August 30, 2025, the chair may also be the company manager only if all of these conditions are met: the articles permit it, at least three-quarters of the board and every member of the standing committees are independent, the general assembly approves by special resolution, and a governance committee oversees the arrangement (Articles 7 and 7 bis).
+
+The Authority's 2025 circular on annual general assemblies summarizes these rules for the meeting season [9].
+
+**Family companies.** Federal Decree-Law No. 37 of 2022 on Family Companies provides for an optional family charter (Article 6) and family governance bodies such as a family assembly, family council and family office (Article 18). The company's memorandum of association prevails over the charter [20].
+
+**Data protection.** Federal Decree-Law No. 45 of 2021 on the protection of personal data has been in force since January 2, 2022 [15].
 
 ## Qatar
 
@@ -91,7 +109,7 @@ Hawkamah, the Institute for Corporate Governance in Dubai, works on corporate an
 These points could not yet be confirmed against an official text and are deliberately left out of the map above:
 
 - Saudi Arabia: the Ministry of Commerce's implementing regulation for unlisted companies, and any current guidance for family companies.
-- UAE: the consolidated text of the public joint stock companies guide after all amendments, and federal OSH resolutions.
+- UAE: the text of Ministerial Resolution No. 44 of 2022 on occupational health and safety (the Ministry's site could not be reached) and whether it has been replaced; whether the executive regulations of the data protection law have been issued; and how the Guide's board nationality clause (Article 6) relates to the Commercial Companies Law.
 - Qatar: the official gazette dates of the Commercial Companies Law and its 2021 amendment.
 - Bahrain: the amendment history of the code.
 - Kuwait: amendments to Companies Law No. 1 of 2016 after 2017.
