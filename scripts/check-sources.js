@@ -10,6 +10,17 @@
 //   ok | protected (the site's bot protection refused an automated reader: open it in a browser) |
 //   unreachable (no connection from this network, e.g. a regional block) | broken (404/410: fix it).
 //   npm run check:sources                exit code 1 if a link is broken or a DOI disagrees with Crossref
+// Some official servers send an incomplete TLS chain. Run once more with the missing public intermediates added to the
+// trust store (scripts/data/ca-intermediates.pem), keeping any CA file already configured. Verification stays on.
+if (require.main === module && !process.env.LIV_CA_READY) {
+  const fs = require('fs'); const os = require('os'); const path = require('path');
+  const extra = path.join(os.tmpdir(), `liv-ca-${process.pid}.pem`);
+  const prior = process.env.NODE_EXTRA_CA_CERTS && fs.existsSync(process.env.NODE_EXTRA_CA_CERTS) ? fs.readFileSync(process.env.NODE_EXTRA_CA_CERTS, 'utf8') : '';
+  fs.writeFileSync(extra, `${prior}\n${fs.readFileSync(path.join(__dirname, 'data', 'ca-intermediates.pem'), 'utf8')}`);
+  const r = require('child_process').spawnSync(process.execPath, process.argv.slice(1), { stdio: 'inherit', env: { ...process.env, NODE_EXTRA_CA_CERTS: extra, LIV_CA_READY: '1' } });
+  fs.rmSync(extra, { force: true });
+  process.exit(r.status === null ? 1 : r.status);
+}
 const { loadLibrary } = require('../src/lib/library');
 const { lines, STAGES } = require('./check-standards');
 
