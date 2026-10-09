@@ -271,6 +271,22 @@
     "kdipa.gov.kw": {
       "tier": "professional",
       "name": "Kuwait Direct Investment Promotion Authority (hosts unofficial English translations of laws)"
+    },
+    "ia.gov.sa": {
+      "tier": "official",
+      "name": "Insurance Authority (Saudi Arabia)"
+    },
+    "mjla.gov.om": {
+      "tier": "official",
+      "name": "Ministry of Justice and Legal Affairs (Oman; Official Gazette)"
+    },
+    "lloc.gov.bh": {
+      "tier": "official",
+      "name": "Legislation and Legal Opinion Commission (Bahrain)"
+    },
+    "moj.gov.kw": {
+      "tier": "official",
+      "name": "Ministry of Justice (Kuwait)"
     }
   },
   "doi_prefixes": {

@@ -42,7 +42,7 @@ Some official sites (www.iso.org, www.oecd.org, ILO NORMLEX, several journal sit
 
 `check:sources` classifies every link as ok, protected (open it in a browser), unreachable from this network, or broken. It fails only on a broken link or a DOI or ISO record that disagrees with the library. The checks need network access, so they run on demand, not in CI. Run them before loading new library items and at each review date.
 
-Results on October 9, 2026: 54 sources, 51 verified automatically, 3 protected (two ILO NORMLEX convention pages and the Bahrain Ministry of Industry and Commerce page): confirm in a browser. `check:standards` found four registry editions out of date and corrected them: ISO/IEC 17024:2026 (third edition, March 31, 2026), ISO 9000:2026, ISO 19011:2026 and ISO 21001:2025.
+Results on October 9, 2026: every library source was reached through an official route (ISO Open Data, Crossref, DataCite, OpenAlex, or the official host itself, including the ILO authentic convention texts, Bahrain LLOC, the Oman Official Gazette and the Saudi Ministry of Commerce). Official texts retrieved for review are kept outside the repository; points that no official text confirms are listed under "Points still being verified" in the GCC map. `check:standards` found four registry editions out of date and corrected them: ISO/IEC 17024:2026 (third edition, March 31, 2026), ISO 9000:2026, ISO 19011:2026 and ISO 21001:2025.
 
 ## Loading the library
 In **Admin → Knowledge hub content**, the "Editorial library" panel shows how many items are not on the site yet. **Load library drafts** adds those items as drafts, each with an automated review report.

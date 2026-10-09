@@ -13,8 +13,8 @@ standards: ISO 45001:2018, ISO 45003:2021
 next_review: 2027-04-09
 sources:
 - A safe and healthy working environment as a fundamental principle and right at work | https://www.ilo.org/topics-and-sectors/safety-and-health-work/safe-and-healthy-working-environment-fundamental-principle-and-right-work | ILO | 2026-10-09
-- Occupational Safety and Health Convention, 1981 (No. 155) | https://normlex.ilo.org/dyn/nrmlx_en/f?p=NORMLEXPUB:12100:0::NO::P12100_ILO_CODE:C155 | ILO NORMLEX | 2026-10-09
-- Promotional Framework for Occupational Safety and Health Convention, 2006 (No. 187) | https://normlex.ilo.org/dyn/nrmlx_en/f?p=NORMLEXPUB:12100:0::NO::P12100_ILO_CODE:C187 | ILO NORMLEX | 2026-10-09
+- Occupational Safety and Health Convention, 1981 (No. 155), authentic text in the Record of Proceedings of the 67th International Labour Conference | https://webapps.ilo.org/public/libdoc/ilo/P/09616/09616%281981-67%29.pdf | ILO | 2026-10-09
+- The fundamental conventions on occupational safety and health: an overview of Conventions No. 155 and No. 187 (2023) | https://www.ilo.org/sites/default/files/wcmsp5/groups/public/@ed_protect/@protrav/@safework/documents/publication/wcms_874743.pdf | ILO | 2026-10-09
 - Guidelines on occupational safety and health management systems, ILO-OSH 2001 | https://www.ilo.org/publications/guidelines-occupational-safety-and-health-management-systems-ilo-osh-2001 | ILO | 2026-10-09
 - ISO 45001:2018 Occupational health and safety management systems - Requirements with guidance for use | https://www.iso.org/standard/63787.html | International Organization for Standardization | 2026-10-09
 - ISO 45003:2021 Psychological health and safety at work - Guidelines for managing psychosocial risks | https://www.iso.org/standard/64283.html | International Organization for Standardization | 2026-10-09
