@@ -19,7 +19,7 @@ sources:
 - ISO 45001:2018 Occupational health and safety management systems - Requirements with guidance for use | https://www.iso.org/standard/63787.html | International Organization for Standardization | 2026-10-09
 - ISO 45003:2021 Psychological health and safety at work - Guidelines for managing psychosocial risks | https://www.iso.org/standard/64283.html | International Organization for Standardization | 2026-10-09
 - Leading health and safety at work: essential principles | https://www.hse.gov.uk/leadership/essentialprinciples.htm | Health and Safety Executive | 2026-10-09
-- Singh et al. (2026), The role of leadership and governance in occupational safety and health: a rapid evidence assessment | https://doi.org/10.60743/zrs9-x549 | Lloyd's Register Foundation and RAND Europe | 2026-10-09
+- Singh et al. (2026), The role of leadership and governance in occupational safety and health: a rapid evidence assessment | https://doi.org/10.60743/zrs9-x549 | Lloyd's Register Foundation and RAND Europe (CC BY-SA 4.0) | 2026-10-09
 ---
 When a serious accident happens, the investigation rarely stops at the person who was hurt or the supervisor on shift. It asks what the leaders knew, what they decided, what they funded and what they checked. HSE governance is the part of governance that answers those questions *before* anyone is hurt.
 

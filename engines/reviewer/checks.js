@@ -95,6 +95,9 @@ function structure(a, today = new Date()) {
 const hostOf = (u) => { try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ''); } catch (_) { return ''; } };
 function publisherOf(url, register) {
   const pubs = (register && register.publishers) || {}; let host = hostOf(url);
+  const doi = host === 'doi.org' && /^https?:\/\/(?:dx\.)?doi\.org\/(10\.\d+)\//i.exec(url);
+  const reg = doi && register.doi_prefixes && register.doi_prefixes[doi[1]];
+  if (reg) return { domain: `doi.org/${doi[1]}`, ...reg };
   while (host) { if (pubs[host]) return { domain: host, ...pubs[host] }; const i = host.indexOf('.'); host = i < 0 ? '' : host.slice(i + 1); }
   return null;
 }

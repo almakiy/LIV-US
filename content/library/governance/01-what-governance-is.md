@@ -13,7 +13,7 @@ standards: ISO 37000:2021, ISO 37004:2023, ISO 37005:2024
 next_review: 2027-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 - ISO 37004:2023 Governance of organizations - Governance maturity model - Guidance | https://www.iso.org/standard/65037.html | International Organization for Standardization | 2026-10-09
 - ISO 37005:2024 Governance of organizations - Developing indicators for effective governance | https://www.iso.org/standard/65038.html | International Organization for Standardization | 2026-10-09
 - UK Corporate Governance Code 2024 | https://www.frc.org.uk/library/standards-codes-policy/corporate-governance/uk-corporate-governance-code/ | Financial Reporting Council | 2026-10-09

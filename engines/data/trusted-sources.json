@@ -122,7 +122,7 @@
     },
     "sca.gov.ae": {
       "tier": "official",
-      "name": "Securities and Commodities Authority (UAE)"
+      "name": "Securities and Commodities Authority (UAE; now the Capital Market Authority, uaecma.gov.ae)"
     },
     "uaelegislation.gov.ae": {
       "tier": "official",
@@ -150,15 +150,15 @@
     },
     "cma.gov.om": {
       "tier": "official",
-      "name": "Financial Services Authority / Capital Market Authority (Oman)"
+      "name": "Capital Market Authority (Oman; replaced by the Financial Services Authority in 2024)"
     },
     "fsa.gov.om": {
       "tier": "official",
       "name": "Financial Services Authority (Oman)"
     },
     "qanoon.om": {
-      "tier": "official",
-      "name": "Oman legislation (published texts)"
+      "tier": "professional",
+      "name": "Qanoon.om (unofficial reproduction of Omani legislation: cite the official gazette for binding text)"
     },
     "moic.gov.bh": {
       "tier": "official",
@@ -245,6 +245,45 @@
       "name": "UK Government (GOV.UK)"
     },
     "op.europa.eu": {
+      "tier": "intergovernmental",
+      "name": "Publications Office of the European Union"
+    },
+    "cma.gov.sa": {
+      "tier": "official",
+      "name": "Capital Market Authority (Saudi Arabia)"
+    },
+    "uqn.gov.sa": {
+      "tier": "official",
+      "name": "Umm Al-Qura official gazette (Saudi Arabia)"
+    },
+    "uaecma.gov.ae": {
+      "tier": "official",
+      "name": "Capital Market Authority (UAE; formerly the Securities and Commodities Authority)"
+    },
+    "moet.gov.ae": {
+      "tier": "official",
+      "name": "Ministry of Economy and Tourism (UAE)"
+    },
+    "dmt.gov.ae": {
+      "tier": "official",
+      "name": "Department of Municipalities and Transport (Abu Dhabi)"
+    },
+    "kdipa.gov.kw": {
+      "tier": "professional",
+      "name": "Kuwait Direct Investment Promotion Authority (hosts unofficial English translations of laws)"
+    }
+  },
+  "doi_prefixes": {
+    "_note": "DOI links (doi.org/<prefix>/...) take the tier of the registrant when it is listed here; other DOIs count as research.",
+    "10.1787": {
+      "tier": "intergovernmental",
+      "name": "OECD Publishing"
+    },
+    "10.1596": {
+      "tier": "intergovernmental",
+      "name": "World Bank"
+    },
+    "10.2802": {
       "tier": "intergovernmental",
       "name": "Publications Office of the European Union"
     }

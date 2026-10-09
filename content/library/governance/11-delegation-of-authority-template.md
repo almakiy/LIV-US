@@ -14,7 +14,7 @@ next_review: 2027-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - Internal Control - Integrated Framework (2013) | https://www.coso.org/guidance-on-ic | Committee of Sponsoring Organizations of the Treadway Commission | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 ---
 A delegation of authority (DoA) puts the accountability principle of ISO 37000:2021 into daily practice [1]. It shows, decision by decision, who may act on the organization's behalf and within what limits. It also supports the "control activities" component of internal control described by COSO [2]. Copy this template, replace the bracketed items and delete the rows you do not need.
 

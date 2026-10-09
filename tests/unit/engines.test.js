@@ -57,7 +57,7 @@ test('standards: unknown, missing edition, edition mismatch, unlisted', () => {
   assert.ok(ids(mk('See ISO 45001 for details.', ['ISO 45001:2018'])).includes('standards.no-edition'));
   assert.ok(ids(mk('See ISO 45001:2008.', ['ISO 45001:2008'])).includes('standards.edition'));
   assert.ok(ids(mk('See ISO 45001:2018.')).includes('standards.unlisted'));
-  assert.deepStrictEqual(ids(mk('See ISO/IEC 17024:2012 and ISO 17024:2012.', ['ISO/IEC 17024:2012'])).filter((x) => x !== 'standards.unlisted'), []);
+  assert.deepStrictEqual(ids(mk('See ISO/IEC 17024:2026 and ISO 17024:2026.', ['ISO/IEC 17024:2026'])).filter((x) => x !== 'standards.unlisted'), []);
 });
 
 test('similarity: word-for-word copying of a source blocks', () => {

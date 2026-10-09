@@ -16,7 +16,7 @@ sources:
 - ISO 31000:2018 Risk management - Guidelines | https://www.iso.org/standard/65694.html | International Organization for Standardization | 2026-10-09
 - ISO 37301:2021 Compliance management systems - Requirements with guidance for use | https://www.iso.org/standard/75080.html | International Organization for Standardization | 2026-10-09
 - The IIA's Three Lines Model: An update of the Three Lines of Defense (2020) | https://www.theiia.org/globalassets/documents/resources/the-iias-three-lines-model-an-update-of-the-three-lines-of-defense-july-2020/three-lines-model-updated-english.pdf | The Institute of Internal Auditors | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 ---
 These definitions are written in plain language by LIV Editorial. They are not the official definitions of the standards cited. Where a term comes from a standard, the standard's own wording prevails. The main references are ISO 37000:2021 [1], ISO 31000:2018 [2], ISO 37301:2021 [3], the IIA Three Lines Model [4] and the G20/OECD Principles [5].
 

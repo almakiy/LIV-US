@@ -13,7 +13,7 @@ standards: ISO 37000:2021, ISO 31000:2018
 next_review: 2027-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 - Internal Control - Integrated Framework (2013) | https://www.coso.org/guidance-on-ic | Committee of Sponsoring Organizations of the Treadway Commission | 2026-10-09
 - The IIA's Three Lines Model: An update of the Three Lines of Defense (2020) | https://www.theiia.org/globalassets/documents/resources/the-iias-three-lines-model-an-update-of-the-three-lines-of-defense-july-2020/three-lines-model-updated-english.pdf | The Institute of Internal Auditors | 2026-10-09
 - ISO 31000:2018 Risk management - Guidelines | https://www.iso.org/standard/65694.html | International Organization for Standardization | 2026-10-09

@@ -14,7 +14,7 @@ next_review: 2027-10-09
 sources:
 - ISO 37301:2021 Compliance management systems - Requirements with guidance for use | https://www.iso.org/standard/75080.html | International Organization for Standardization | 2026-10-09
 - ISO 37301:2021/Amd 1:2024 Climate action changes | https://www.iso.org/standard/88422.html | International Organization for Standardization | 2026-10-09
-- ISO 37001:2025 Anti-bribery management systems - Requirements with guidance for use | https://www.iso.org/standard/37001 | International Organization for Standardization | 2026-10-09
+- ISO 37001:2025 Anti-bribery management systems - Requirements with guidance for use | https://www.iso.org/standard/85816.html | International Organization for Standardization | 2026-10-09
 - ISO 37002:2021 Whistleblowing management systems - Guidelines | https://www.iso.org/standard/65035.html | International Organization for Standardization | 2026-10-09
 - ISO/TS 37008:2023 Internal investigations of organizations - Guidance | https://www.iso.org/standard/74094.html | International Organization for Standardization | 2026-10-09
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09

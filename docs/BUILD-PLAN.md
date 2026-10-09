@@ -197,7 +197,7 @@ Tasks: exam catalog, blueprints and competency domains; item bank and item versi
 **Depends on:** Phases 3–4. **Owner inputs:** D-8.x, counsel on trademark use.
 
 ### Phase 9 — Printing, attestation and recognition
-Print-ready output and order flow (RM Phase 5); notarization and apostille service (GS §12.2); software support for the recognition track (ISO 9001 or ISO 21001 for LIV's management system, CPD recognition, IACET, certificate-program accreditation under ASTM E2659 (to be confirmed), and ISO/IEC 17024 after an operating record) (RR). Site wording changes only after a grant, in the words the granting body allows. Size M, with long non-software lead times.
+Print-ready output and order flow (RM Phase 5); notarization and apostille service (GS §12.2); software support for the recognition track (ISO 9001 or ISO 21001 for LIV's management system, CPD recognition, IACET, certificate-program accreditation under ASTM E2659 (to be confirmed), and ISO/IEC 17024 after an operating record; note the third edition, ISO/IEC 17024:2026, published March 31, 2026 per ISO Open Data: any gap analysis must use it) (RR). Site wording changes only after a grant, in the words the granting body allows. Size M, with long non-software lead times.
 
 ### Track K — Knowledge engines and Saudi regulatory database (parallel)
 Can start any time after Phase 1, as soon as the model key, monthly budget and named reviewers exist. It does not block, and is not blocked by, the credential phases.

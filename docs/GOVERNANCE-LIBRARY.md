@@ -1,6 +1,6 @@
 # Governance editorial library
 
-Status (October 9, 2026): first collection prepared in `content/library/governance/`. It is loaded into the site as **drafts only**. Nothing is public until a named reviewer publishes each item.
+Status (October 9, 2026): first collection prepared in `content/library/governance/` (14 items) and `content/library/research/` (9 research digests). It is loaded into the site as **drafts only**. Nothing is public until a named reviewer publishes each item.
 
 ## Purpose
 The library sets out what governance is, how to write it down and how to lead it. It covers organizations of every size, from a single shop to a listed company. It comes first, before any training or credential, so that later courses and assessments rest on a body of knowledge that is already published and cited. This also follows the brief's priority order: Knowledge Hub before credential engines.
@@ -27,6 +27,22 @@ The library makes no claim about LIV's own status. It says nothing about accredi
 - The Reviewer engine applies rules 1 to 3 automatically on every draft: from the library, from the Content API, or written in the editor.
 - The Producer engine (Track K.1, not built) must write only from an evidence pack built from registered publishers. The library's sources are the starting evidence base for governance topics.
 - The Scout engine (K.2, not built) watches the official sources listed here for amendments and new editions, and raises a signal. It never edits a published text.
+
+## Verifying sources when a website refuses automated readers
+Some official sites (www.iso.org, www.oecd.org, ILO NORMLEX, several journal sites) are behind bot protection and refuse automated readers. Some Gulf government sites cannot be reached from servers outside the region. A refusal is not a broken link. Each kind of source has another authoritative route:
+
+| Source | Route used | Command |
+|---|---|---|
+| ISO standards (title, edition, date, status, amendments, revisions in progress) | **ISO Open Data**: the full ISO catalog that ISO publishes as a download (`iso_deliverables_metadata.jsonl`) | `npm run check:standards` (add `-- --write` to update `engines/data/standards-registry.json`) |
+| ISO catalog links in the library | The page id (`/standard/<id>.html`) is looked up in ISO Open Data, and the source title must start with ISO's reference for that id | `npm run check:sources` |
+| Journal articles and reports with a DOI (title, publisher, license) | **Crossref** (the publisher's own deposit), then **DataCite** (reports and datasets), then **OpenAlex** when a publisher deposits only its site policy | `npm run check:sources` |
+| OECD publications | Cited by DOI (`doi.org/10.1787/...`) and checked in Crossref; the register maps the 10.1787 prefix to OECD (intergovernmental) | `npm run check:sources` |
+| Gulf regulators | The regulators' own PDF texts where they load (Saudi CMA, HRSD, SAMA rulebook, UAE Capital Market Authority, UAE Ministry of Economy and Tourism, QFMA, Kuwait CMA, SDAIA) | `npm run check:sources` |
+| Anything still "protected" or "unreachable" | A person opens it in a browser, ideally from the region, and confirms it during review. Official PDFs may be saved under `content/evidence/` (not published) for the reviewer. | n/a |
+
+`check:sources` classifies every link as ok, protected (open it in a browser), unreachable from this network, or broken. It fails only on a broken link or a DOI or ISO record that disagrees with the library. The checks need network access, so they run on demand, not in CI. Run them before loading new library items and at each review date.
+
+Results on October 9, 2026: 54 sources, 51 verified automatically, 3 protected (two ILO NORMLEX convention pages and the Bahrain Ministry of Industry and Commerce page): confirm in a browser. `check:standards` found four registry editions out of date and corrected them: ISO/IEC 17024:2026 (third edition, March 31, 2026), ISO 9000:2026, ISO 19011:2026 and ISO 21001:2025.
 
 ## Loading the library
 In **Admin → Knowledge hub content**, the "Editorial library" panel shows how many items are not on the site yet. **Load library drafts** adds those items as drafts, each with an automated review report.
@@ -60,3 +76,4 @@ Markdown body citing sources as [1], [2] in the order listed.
 | Date | Change | By |
 |---|---|---|
 | 2026-10-09 | Register created: standards bodies, intergovernmental organizations, GCC regulators and legislation portals, UK and U.S. regulators, professional bodies, open-access publishers. | Engineering (for editorial review) |
+| 2026-10-09 | Added cma.gov.sa, uqn.gov.sa, uaecma.gov.ae (the UAE regulator's new name), moet.gov.ae, dmt.gov.ae, lrfoundation.org.uk, gov.uk, op.europa.eu, and DOI prefixes for OECD, World Bank and the EU Publications Office. qanoon.om and kdipa.gov.kw are listed as professional (unofficial reproductions), so they cannot support a legal requirement on their own. | Engineering (for editorial review) |

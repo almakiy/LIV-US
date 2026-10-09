@@ -15,7 +15,7 @@ sources:
 - Chebbi, K. and Ammer, M.A. (2022). Board Composition and ESG Disclosure in Saudi Arabia: The Moderating Role of Corporate Governance Reforms. Sustainability, 14(19), 12173 | https://doi.org/10.3390/su141912173 | MDPI (CC BY 4.0) | 2026-10-09
 - Bchennaty, B. and Khan, M.N. (2026). Corporate Governance Reform and Organisational Accountability in Saudi Arabia: The Roles of Board Practices and Ownership Concentration. Journal of Risk and Financial Management, 19(10), 783 | https://doi.org/10.3390/jrfm19100783 | MDPI (CC BY 4.0) | 2026-10-09
 - Al-Faryan, M.A.S. and Alokla, J. (2023). Do Publicly Listed Insurance Firms in Saudi Arabia Have Strong Corporate Governance? Economies, 11(1), 21 | https://doi.org/10.3390/economies11010021 | MDPI (CC BY 4.0) | 2026-10-09
-- Corporate Governance Regulations | https://cma.org.sa/en/RulesRegulations/Regulations/Pages/default.aspx | Capital Market Authority (Saudi Arabia) | 2026-10-09
+- Corporate Governance Regulations (English translation of the official Arabic text) | https://cma.org.sa/en/RulesRegulations/Regulations/Documents/CorporateGovernanceRegulations1.pdf | Capital Market Authority (Saudi Arabia) | 2026-10-09
 ---
 Board independence is one of the main tools of governance codes, including the Corporate Governance Regulations issued by Saudi Arabia's Capital Market Authority [4]. This digest reads three open-access studies side by side, because each on its own gives only part of the picture.
 

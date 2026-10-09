@@ -23,7 +23,7 @@
       <textarea name="sources_text" rows="4" style="font-family:ui-monospace,Menlo,monospace"><%= sourcesText %></textarea>
       <div class="hint">Cite primary sources (regulators, standards bodies, peer-reviewed research). Lines without a valid http(s) link are ignored.</div></div>
     <div class="row">
-      <div class="field"><label>Standards referenced <span class="muted small">(comma separated, with edition)</span></label><input type="text" name="standards" value="<%= (a.standards || []).join(', ') %>" placeholder="ISO 45001:2018, ISO 19011:2018"></div>
+      <div class="field"><label>Standards referenced <span class="muted small">(comma separated, with edition)</span></label><input type="text" name="standards" value="<%= (a.standards || []).join(', ') %>" placeholder="ISO 45001:2018, ISO 19011:2026"></div>
       <div class="field"><label>Jurisdiction <span class="muted small">(where the content applies, e.g. Saudi Arabia, GCC, International)</span></label><input type="text" name="jurisdiction" maxlength="80" value="<%= a.jurisdiction || '' %>"></div>
       <div class="field"><label>Next review due</label><input type="date" name="next_review_at" value="<%= a.next_review_at ? String(a.next_review_at.toISOString ? a.next_review_at.toISOString().slice(0, 10) : a.next_review_at).slice(0, 10) : '' %>"></div>
     </div>

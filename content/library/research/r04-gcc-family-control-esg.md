@@ -13,7 +13,7 @@ standards: ISO 37000:2021
 next_review: 2027-10-09
 sources:
 - Nimer, K., Abughazaleh, N., Tahat, Y. and Hossain, M. (2025). Family Business, ESG, and Firm Age in the GCC Corporations: Building on the Socioemotional Wealth (SEW) Model. Journal of Risk and Financial Management, 18(5), 241 | https://doi.org/10.3390/jrfm18050241 | MDPI (CC BY 4.0) | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 ---
 **Study:** Nimer, Abughazaleh, Tahat and Hossain (2025), *Family Business, ESG, and Firm Age in the GCC Corporations: Building on the Socioemotional Wealth (SEW) Model*, Journal of Risk and Financial Management 18(5), 241 [1].
 

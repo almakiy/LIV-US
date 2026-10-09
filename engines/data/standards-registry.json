@@ -1,157 +1,373 @@
 {
-  "_note": "Starter registry for the Reviewer's standards check. Editions change (for example ISO 9001 is under revision). The editors must verify every entry against the publisher before relying on it; verified_on stays null until a person has done so. The Reviewer only flags mismatches for a human to check; it never asserts which edition is current.",
+  "_note": "Standards registry for the Reviewer. Editions, dates and status come from ISO Open Data (npm run check:standards -- --write). The catalog states editions and dates, not what a clause requires: editors still read the publisher page before relying on content. The Reviewer only flags mismatches for a human to check.",
   "standards": {
     "ISO 10002": {
-      "title": "Customer satisfaction: guidelines for complaints handling",
+      "title": "Quality management: Customer satisfaction: Guidelines for complaints handling in organizations",
       "current": "2018",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 3,
+      "published": "2018-07-16",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 71580,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 10015": {
-      "title": "Guidelines for competence management and people development",
+      "title": "Quality management: Guidelines for competence management and people development",
       "current": "2019",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2019-12-17",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 69459,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 13485": {
-      "title": "Medical devices: quality management systems",
+      "title": "Medical devices: Quality management systems: Requirements for regulatory purposes",
       "current": "2016",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 3,
+      "published": "2016-02-25",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 59752,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 14001": {
-      "title": "Environmental management systems: requirements with guidance for use",
+      "title": "Environmental management systems: Requirements with guidance for use",
       "current": "2026",
-      "verified_on": null,
-      "note": "2026 edition published April 2026; replaces the 2015 edition."
+      "verified_on": "2026-10-09",
+      "edition": 4,
+      "published": "2026-04-15",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 92300,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO/IEC 17011": {
-      "title": "Requirements for accreditation bodies",
+      "title": "Conformity assessment: Requirements for accreditation bodies accrediting conformity assessment bodies",
       "current": "2017",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2017-11-29",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 67198,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO/IEC 17021-1": {
-      "title": "Requirements for bodies providing audit and certification of management systems",
+      "title": "Conformity assessment: Requirements for bodies providing audit and certification of management systems: Part 1: Requirements",
       "current": "2015",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2015-06-08",
+      "status": "under periodic review",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 61651,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO/IEC 17024": {
-      "title": "Requirements for bodies certifying persons",
-      "current": "2012",
-      "verified_on": null
+      "title": "Conformity assessment: General requirements for bodies operating certification of persons",
+      "current": "2026",
+      "verified_on": "2026-10-09",
+      "edition": 3,
+      "published": "2026-03-31",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 86291,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO/IEC 17025": {
-      "title": "Competence of testing and calibration laboratories",
+      "title": "General requirements for the competence of testing and calibration laboratories",
       "current": "2017",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 3,
+      "published": "2017-11-29",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 66912,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 19011": {
       "title": "Guidelines for auditing management systems",
-      "current": "2018",
-      "verified_on": null
+      "current": "2026",
+      "verified_on": "2026-10-09",
+      "edition": 4,
+      "published": "2026-05-27",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 88984,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 21001": {
-      "title": "Educational organizations: management systems",
-      "current": "2018",
-      "verified_on": null
+      "title": "Educational organizations: Management systems for educational organizations: Requirements with guidance for use",
+      "current": "2025",
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2025-07-07",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 86809,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 21500": {
-      "title": "Project, programme and portfolio management: context and concepts",
+      "title": "Project, programme and portfolio management: Context and concepts",
       "current": "2021",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2021-03-16",
+      "status": "to be revised",
+      "amendments": [],
+      "in_development": [
+        "ISO/CD 21500 (edition 3, stage 30.00)"
+      ],
+      "iso_id": 75704,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 21502": {
-      "title": "Project management: guidance",
+      "title": "Project, programme and portfolio management: Guidance on project management",
       "current": "2020",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2020-12-22",
+      "status": "to be revised",
+      "amendments": [],
+      "in_development": [
+        "ISO/CD 21502 (edition 2, stage 30.00)"
+      ],
+      "iso_id": 74947,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 22000": {
-      "title": "Food safety management systems",
+      "title": "Food safety management systems: Requirements for any organization in the food chain",
       "current": "2018",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2018-06-18",
+      "status": "to be revised",
+      "amendments": [
+        "ISO 22000:2018/Amd 1:2024"
+      ],
+      "in_development": [
+        "ISO/DIS 22000 (edition 3, stage 40.60)"
+      ],
+      "iso_id": 65464,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 26000": {
       "title": "Guidance on social responsibility",
       "current": "2010",
-      "verified_on": null,
-      "note": "Confirmed (reviewed) 2025."
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2010-10-28",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 42546,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 27001": {
-      "title": "Information security management systems",
+      "title": "Information security, cybersecurity and privacy protection: Information security management systems: Requirements",
       "current": "2022",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 3,
+      "published": "2022-10-25",
+      "status": "published",
+      "amendments": [
+        "ISO/IEC 27001:2022/Amd 1:2024"
+      ],
+      "in_development": [],
+      "iso_id": 82875,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 29993": {
-      "title": "Learning services outside formal education: service requirements",
+      "title": "Learning services outside formal education: Service requirements",
       "current": "2017",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2017-08-09",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 70357,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 30414": {
-      "title": "Human resource management: human capital reporting and disclosure",
+      "title": "Human resource management: Requirements and recommendations for human capital reporting and disclosure",
       "current": "2025",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2025-08-25",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 86106,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 31000": {
-      "title": "Risk management: guidelines",
+      "title": "Risk management: Guidelines",
       "current": "2018",
-      "verified_on": null,
-      "note": "Third edition in progress (committee draft stage in 2026)."
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2018-02-14",
+      "status": "to be revised",
+      "amendments": [],
+      "in_development": [
+        "ISO/CD 31000 (edition 3, stage 30.60)"
+      ],
+      "iso_id": 65694,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37000": {
-      "title": "Governance of organizations: guidance",
+      "title": "Governance of organizations: Guidance",
       "current": "2021",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2021-09-14",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 65036,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37001": {
-      "title": "Anti-bribery management systems: requirements with guidance for use",
+      "title": "Anti-bribery management systems: Requirements with guidance for use",
       "current": "2025",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2025-02-28",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 85816,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37002": {
-      "title": "Whistleblowing management systems: guidelines",
+      "title": "Whistleblowing management systems: Guidelines",
       "current": "2021",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2021-07-27",
+      "status": "confirmed",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 65035,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37004": {
-      "title": "Governance of organizations: governance maturity model, guidance",
+      "title": "Governance of organizations: Governance maturity model: Guidance",
       "current": "2023",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2023-11-03",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 65037,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37005": {
-      "title": "Governance of organizations: developing indicators for effective governance",
+      "title": "Governance of organizations: Developing indicators for effective governance",
       "current": "2024",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2024-07-31",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 65038,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 37301": {
-      "title": "Compliance management systems",
+      "title": "Compliance management systems: Requirements with guidance for use",
       "current": "2021",
-      "verified_on": null,
-      "note": "Amendment 1:2024 (climate action)."
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2021-04-13",
+      "status": "confirmed",
+      "amendments": [
+        "ISO 37301:2021/Amd 1:2024"
+      ],
+      "in_development": [],
+      "iso_id": 75080,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 45001": {
-      "title": "Occupational health and safety management systems",
+      "title": "Occupational health and safety management systems: Requirements with guidance for use",
       "current": "2018",
-      "verified_on": null,
-      "note": "Amendment 1:2024 (climate action). A second edition (ISO/DIS 45001) is in progress; expected 2027."
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2018-03-12",
+      "status": "to be revised",
+      "amendments": [
+        "ISO 45001:2018/Amd 1:2024"
+      ],
+      "in_development": [
+        "ISO/DIS 45001 (edition 2, stage 40.60)"
+      ],
+      "iso_id": 63787,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 45003": {
-      "title": "Psychological health and safety at work",
+      "title": "Occupational health and safety management: Psychological health and safety at work: Guidelines for managing psychosocial risks",
       "current": "2021",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 1,
+      "published": "2021-06-08",
+      "status": "under periodic review",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 64283,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 50001": {
-      "title": "Energy management systems",
+      "title": "Energy management systems: Requirements with guidance for use",
       "current": "2018",
-      "verified_on": null
+      "verified_on": "2026-10-09",
+      "edition": 2,
+      "published": "2018-08-20",
+      "status": "confirmed",
+      "amendments": [
+        "ISO 50001:2018/Amd 1:2024"
+      ],
+      "in_development": [],
+      "iso_id": 69426,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 9000": {
-      "title": "Quality management systems: fundamentals and vocabulary",
-      "current": "2015",
-      "verified_on": null
+      "title": "Quality management: Fundamentals and vocabulary",
+      "current": "2026",
+      "verified_on": "2026-10-09",
+      "edition": 5,
+      "published": "2026-05-27",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 88465,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     },
     "ISO 9001": {
-      "title": "Quality management systems: requirements",
+      "title": "Quality management systems: Requirements",
       "current": "2026",
-      "verified_on": null,
-      "note": "2026 edition published September 2026 (ISO news, 16 September 2026); replaces the 2015 edition. Check the IAF transition dates before citing them."
+      "verified_on": "2026-10-09",
+      "edition": 6,
+      "published": "2026-09-16",
+      "status": "published",
+      "amendments": [],
+      "in_development": [],
+      "iso_id": 88464,
+      "verified_source": "ISO Open Data (iso_deliverables_metadata)"
     }
-  },
-  "_updated": "2026-10-09: governance family (ISO 37000, 37001:2025, 37002, 37004, 37005), ISO 30414:2025, ISO 9001:2026 and ISO 14001:2026 added from the publisher's catalog pages via search; verified_on stays null until an editor opens each page."
+  }
 }

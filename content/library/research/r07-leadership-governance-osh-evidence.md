@@ -12,7 +12,7 @@ tags: research digest, osh governance, board oversight, senior leadership, just 
 standards: ISO 45001:2018
 next_review: 2027-10-09
 sources:
-- Singh, B., Maistrello, G., Kadar, E., Xu, L., Richard-Sheridan, M., Pilbeam, C. and Fahy, N. (2026). The role of leadership and governance in occupational safety and health: a rapid evidence assessment for international standard development | https://doi.org/10.60743/zrs9-x549 | Lloyd's Register Foundation and RAND Europe | 2026-10-09
+- Singh, B., Maistrello, G., Kadar, E., Xu, L., Richard-Sheridan, M., Pilbeam, C. and Fahy, N. (2026). The role of leadership and governance in occupational safety and health: a rapid evidence assessment for international standard development | https://doi.org/10.60743/zrs9-x549 | Lloyd's Register Foundation and RAND Europe (CC BY-SA 4.0) | 2026-10-09
 - ISO 45001:2018 Occupational health and safety management systems - Requirements with guidance for use | https://www.iso.org/standard/63787.html | International Organization for Standardization | 2026-10-09
 - Leading health and safety at work: essential principles | https://www.hse.gov.uk/leadership/essentialprinciples.htm | Health and Safety Executive | 2026-10-09
 ---
@@ -55,4 +55,4 @@ The review also found the following [1]:
 
 ## License and citation
 
-The report's imprint page states a Creative Commons Attribution-ShareAlike 4.0 license. Its page footers state "All rights reserved". Because of this conflict, LIV publishes only this digest in its own words and does not reproduce the report's text or figures. Read the full report through the DOI link [1].
+The report's DOI registration record (DataCite) and its imprint page state a Creative Commons Attribution-ShareAlike 4.0 license (CC BY-SA 4.0). Its page footers also say "All rights reserved". Because of that inconsistency, LIV publishes only this digest in its own words and does not reproduce the report's text or figures. Read the full report through the DOI link [1].

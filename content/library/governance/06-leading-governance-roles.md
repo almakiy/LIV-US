@@ -13,7 +13,7 @@ standards: ISO 37000:2021
 next_review: 2027-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 - UK Corporate Governance Code 2024 | https://www.frc.org.uk/library/standards-codes-policy/corporate-governance/uk-corporate-governance-code/ | Financial Reporting Council | 2026-10-09
 - Bchennaty and Khan (2026), Corporate Governance Reform and Organisational Accountability in Saudi Arabia, Journal of Risk and Financial Management 19(10), 783 | https://doi.org/10.3390/jrfm19100783 | MDPI (CC BY 4.0) | 2026-10-09
 - Handley and Molloy (2022), SME corporate governance: a literature review of informal mechanisms for governance, Meditari Accountancy Research 30(7), 310-333 | https://doi.org/10.1108/MEDAR-06-2021-1321 | Emerald (CC BY 4.0) | 2026-10-09

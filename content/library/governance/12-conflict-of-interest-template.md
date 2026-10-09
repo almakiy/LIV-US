@@ -12,8 +12,8 @@ tags: conflict of interest, related parties, gifts, register, template, integrit
 standards: ISO 37001:2025, ISO 37000:2021
 next_review: 2027-10-09
 sources:
-- G20/OECD Principles of Corporate Governance 2023 | https://www.oecd.org/en/publications/g20-oecd-principles-of-corporate-governance-2023_ed750b30-en/full-report.html | OECD Publishing | 2026-10-09
-- ISO 37001:2025 Anti-bribery management systems - Requirements with guidance for use | https://www.iso.org/standard/37001 | International Organization for Standardization | 2026-10-09
+- G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
+- ISO 37001:2025 Anti-bribery management systems - Requirements with guidance for use | https://www.iso.org/standard/85816.html | International Organization for Standardization | 2026-10-09
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 ---
 A conflict of interest exists when a personal, family or financial interest could influence, or could appear to influence, a decision someone takes for the organization. Conflicts are normal, especially in family businesses and small communities. What harms an organization is a conflict that is **hidden** or **not managed**. The G20/OECD Principles expect related party transactions to be handled so that conflicts are properly managed and the company and its shareholders are protected [1]. Anti-bribery management under ISO 37001:2025 also addresses gifts, hospitality and conflicts as routes to improper influence [2]. Both support the accountability expected of governing bodies under ISO 37000:2021 [3].

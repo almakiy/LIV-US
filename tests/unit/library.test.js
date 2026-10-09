@@ -43,6 +43,8 @@ test('the source check warns on unregistered publishers and on legal claims with
   assert.deepStrictEqual(checks.sources({ ...legal, sources: [{ title: 'x', url: 'https://www.oecd.org/a' }] }, reg).map((f) => f.id), ['sources.no-official']);
   assert.deepStrictEqual(checks.sources({ ...legal, sources: [{ title: 'x', url: 'https://cma.org.sa/en/RulesRegulations/a' }] }, reg), []);
   assert.strictEqual(checks.publisherOf('https://www.laws.boe.gov.sa/x', reg).tier, 'official');
+  assert.strictEqual(checks.publisherOf('https://doi.org/10.1787/ed750b30-en', reg).tier, 'intergovernmental');
+  assert.strictEqual(checks.publisherOf('https://doi.org/10.3390/su10010246', reg).tier, 'research');
 });
 
 test('every library item is valid, unique and passes the Reviewer without blocking findings', async () => {
@@ -63,4 +65,18 @@ test('re-saving sources in the editor keeps their access dates and excerpts', ()
   const old = [{ title: 'A', url: 'https://www.iso.org/a', accessed: '2026-10-09' }, { title: 'B', url: 'https://www.oecd.org/b', excerpt: 'quote', accessed: '2026-10-01' }];
   assert.deepStrictEqual(mergeExcerpts([{ title: 'A2', url: 'https://www.iso.org/a', publisher: 'ISO' }, { title: 'B', url: 'https://www.oecd.org/b', publisher: '' }, { title: 'C', url: 'https://www.ilo.org/c', publisher: '' }], old),
     [{ title: 'A2', url: 'https://www.iso.org/a', publisher: 'ISO', accessed: '2026-10-09' }, { title: 'B', url: 'https://www.oecd.org/b', publisher: '', excerpt: 'quote', accessed: '2026-10-01' }, { title: 'C', url: 'https://www.ilo.org/c', publisher: '' }]);
+});
+
+test('the ISO catalog check reads references and picks the current edition, amendments and drafts', () => {
+  const { parseRef, summarize } = require('../../scripts/check-standards');
+  assert.deepStrictEqual(parseRef('ISO/IEC 17024:2026'), { key: 'ISO/IEC 17024', series: '', year: '2026', supplement: '' });
+  assert.strictEqual(parseRef('ISO 45001:2018/Amd 1:2024').supplement, '/Amd 1:2024');
+  assert.strictEqual(parseRef('ISO/DIS 45001').series, 'DIS');
+  const row = (reference, publicationDate, currentStage, extra = {}) => ({ id: 1, reference, publicationDate, currentStage, edition: 1, title: { en: 'T' }, supplementType: null, ...extra });
+  const s = summarize([row('ISO 45001:2018', '2018-03-12', 9092), row('ISO 45001:2018/Amd 1:2024', '2024-02-23', 6060, { supplementType: 'Amd' }), row('ISO/DIS 45001', null, 4060, { edition: 2 }), row('ISO 18001:2007', '2007-01-01', 9599)]);
+  assert.strictEqual(s.current, '2018');
+  assert.strictEqual(s.status, 'to be revised');
+  assert.deepStrictEqual(s.amendments, ['ISO 45001:2018/Amd 1:2024']);
+  assert.strictEqual(s.in_development[0], 'ISO/DIS 45001 (edition 2, stage 40.60)');
+  assert.strictEqual(summarize([row('ISO 1:2000', '2000-01-01', 9599)]), null);
 });
