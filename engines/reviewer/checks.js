@@ -90,4 +90,24 @@ function structure(a, today = new Date()) {
   return out;
 }
 
-module.exports = { identity, citations, standards, similarity, structure, parseStandardRefs, paragraphs, stripCites, wordsOf };
+// Source trust: every source should come from a publisher in the register (engines/data/trusted-sources.json), and a text that
+// states a legal or mandatory requirement needs at least one official source (the law or the regulator), never only a summary of it.
+const hostOf = (u) => { try { return new URL(u).hostname.toLowerCase().replace(/^www\./, ''); } catch (_) { return ''; } };
+function publisherOf(url, register) {
+  const pubs = (register && register.publishers) || {}; let host = hostOf(url);
+  while (host) { if (pubs[host]) return { domain: host, ...pubs[host] }; const i = host.indexOf('.'); host = i < 0 ? '' : host.slice(i + 1); }
+  return null;
+}
+const MANDATE = /\b(?:required by law|legally required|legal (?:duty|obligation|requirement)|mandatory|the (?:law|regulations?|code) (?:requires|require|sets|obliges)|is an offen[cs]e)\b/i;
+function sources(a, register) {
+  const out = []; const list = Array.isArray(a.sources) ? a.sources : [];
+  if (!register || !register.publishers) return out;
+  const tiers = list.map((s) => publisherOf(s.url, register));
+  tiers.forEach((t, i) => { if (!t) out.push(flag('warn', 'sources', 'sources.unlisted-publisher', `Source ${i + 1} (${hostOf(list[i].url) || 'no host'}) is not from a publisher in the trusted-source register. Use the primary publisher, or have an editor add it to the register with a reason.`)); });
+  const text = stripCites(`${a.summary || ''}\n${a.body_md || ''}`); const m = MANDATE.exec(text);
+  if (m && !tiers.some((t) => t && t.tier === 'official')) out.push(flag('warn', 'sources', 'sources.no-official', 'The text states a legal or mandatory requirement but cites no official source (the law or the regulator). Cite the official text, or describe it as good practice.', snippet(text, m.index)));
+  if (a.kind === 'standards' && list.length && !tiers.some((t) => t && (t.tier === 'standards' || t.tier === 'official'))) out.push(flag('warn', 'sources', 'sources.no-standards-body', 'A standards explainer should cite the standards body\'s own page for the title and edition.'));
+  return out;
+}
+
+module.exports = { identity, citations, standards, sources, publisherOf, similarity, structure, parseStandardRefs, paragraphs, stripCites, wordsOf };

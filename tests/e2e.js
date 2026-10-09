@@ -600,6 +600,21 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   await adm.click('button:has-text("Delete article")');
   await see(adm, 'text=Article deleted');
 
+  console.log('Editorial library');
+  if (require('../src/lib/library').loadLibrary().items.length) {
+    const { items: libItems } = require('../src/lib/library').loadLibrary();
+    const libTotal = libItems.length; const libSlug = libItems[0].slug;
+    await adm.goto(BASE + '/admin/content');
+    ok(await see(adm, 'text=Editorial library') && await see(adm, `text=${libTotal} item(s) in the library`), 'content admin shows the editorial library');
+    await adm.click('button:has-text("library draft(s)")');
+    ok(await see(adm, 'text=library draft(s) added'), 'library items load');
+    ok(psql(`SELECT count(*) FROM articles WHERE origin = 'library' AND status = 'draft'`) === String(libTotal), 'every library item is loaded as a draft, none published');
+    ok(psql(`SELECT count(DISTINCT r.article_id) FROM review_reports r JOIN articles a ON a.id = r.article_id WHERE a.origin = 'library'`) === String(libTotal), 'each library draft carries an automated review report');
+    ok((await anon.goto(`${BASE}/knowledge/${libSlug}`)).status() === 404, 'library drafts are not public');
+    ok(!(await adm.$('button:has-text("library draft(s)")')), 'loading again is not offered once everything is on the site');
+    psql(`DELETE FROM articles WHERE origin = 'library'`);
+  }
+
   console.log('Quality records');
   await adm.goto(BASE + '/admin/qms');
   ok(await see(adm, 'text=Compliance and quality records') && await see(adm, 'text=Audit log integrity'), 'compliance dashboard renders');

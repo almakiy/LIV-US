@@ -168,7 +168,14 @@ const editForm = async (res, a, error) => {
 
 r.get('/content', wrap(async (req, res) => {
   const { rows } = await q(`SELECT id, slug, title, category, kind, status, published_at, updated_at, origin, ai_assisted, reviewed_by, next_review_at, (next_review_at IS NOT NULL AND next_review_at < CURRENT_DATE) AS stale FROM articles ORDER BY updated_at DESC LIMIT 200`);
-  res.render('admin/content', { title: 'Knowledge hub content', rows, CATEGORIES, KINDS });
+  const lib = await require('../lib/library').pending();
+  res.render('admin/content', { title: 'Knowledge hub content', rows, CATEGORIES, KINDS, lib: { total: lib.items.length, missing: lib.missing.length, errors: lib.errors } });
+}));
+// Editorial library (content/library): loads the items not yet on the site as drafts, each with an automated review report. Never publishes.
+r.post('/content/library', wrap(async (req, res) => {
+  const n = await require('../lib/library').importLibrary(req.user);
+  flash(req, 'success', n ? `${n} library draft(s) added. Each one needs a named reviewer before it can be published.` : 'Every library item is already on the site.');
+  res.redirect('/admin/content');
 }));
 r.get('/content/new', wrap((req, res) => editForm(res, { title: '', slug: '', summary: '', body_md: '', category: 'quality', kind: 'article', author_name: req.user.full_name, tags: [], status: 'draft', reviewed_by: '', sources: [], standards: [], ai_assisted: false, version: 1 })));
 r.post('/content/preview', wrap(async (req, res) => {
