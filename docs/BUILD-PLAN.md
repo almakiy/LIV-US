@@ -227,6 +227,20 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 | M.3 | Local acceptance guides as reviewed Knowledge Hub content. | GS §12 | — |
 | M.4 | Arabic editions of the governance library after M.1, translated and reviewed by a qualified Arabic legal and governance reviewer (not machine-published); legal texts quoted from the official Arabic. | owner | M |
 
+### Track P — Governance publications and digital products (later, by owner choice)
+Design: `PUBLICATIONS-PLAN.md` (owner suggestion, October 9). Starts after K.8 (expert review), M.1 and M.4 (Arabic), Phase 2 (email) and counsel's license terms (Track O).
+
+| # | Task | Source | Size |
+|---|---|---|---|
+| P.1 | Publication records: publications, editions, files (write-once, SHA-256), series codes `LIV-GOV-<type>-<nnn>`; previous editions stay verifiable as superseded. | PUB §9 | M |
+| P.2 | PDF pipeline: library items assembled into an HTML layout and printed with headless Chromium; Arabic RTL and English LTR files; cover, copyright and license page, document control, contents, references in ISO 690 elements, review statement, disclaimer, how to cite; XMP metadata; PDF/A-2u and PDF/UA validation. | PUB §5, §9 | L |
+| P.3 | Free series first: the yearly publications catalog, briefs, glossary, health check (fillable) and research digest; public download pages. | PUB §3, §10 | M |
+| P.4 | Publication verification page `/verify/publication/<document ID>` with QR on every PDF: genuine, current or superseded edition, latest review date, licensee name for paid copies. | PUB §5 | S |
+| P.5 | Paid products: handbooks, toolkits (PDF with editable XLSX/DOCX templates) and workshop packs (PPTX); product pages with the fixed structure and FAQ; Stripe Checkout through the billing module. | PUB §3, §7 | L |
+| P.6 | Rights protection for paid copies: licensee and order in the footer and metadata, signed time-limited download links, download log; no accessibility-breaking DRM. | PUB §6 | M |
+| P.7 | Organization licenses (users or sites) and the semi-annual GCC regulatory map subscription with a change log per edition. | PUB §3, §4 | M |
+| P.8 | Release checklist enforced in the admin before an edition can be published (both languages). | PUB §11 | S |
+
 ### Track O — Owner and specialists (non-software, long lead times)
 - **Counsel:** privacy notice and terms (U.S., Saudi PDPL, UAE PDPL, GDPR where relevant), partner agreement, email footers, exam consent and data handling, trademark use of external credentials, review of disclaimers.
 - **Registrations:** Virginia assumed-name filing for "Leadership Institute of Validation" and "LIV" (the earlier checklist names the earlier long name), USPTO clearance for the new name, the domain.
@@ -236,6 +250,7 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 - **Recognition:** ISO 9001 consultant, CPD body enquiries.
 - **Research:** the Saudi regulatory project, official sources only. **Distribution:** LIV LinkedIn company page.
 - **Content reviewers (K.8):** a governance specialist, licensed lawyer(s) in Saudi Arabia and the UAE (then the other GCC states), an HSE specialist; written terms, conflict of interest declarations, and the right to be named on published items. Decide the fee and turnaround.
+- **Publications (Track P):** license terms for free and paid publications (recommended free-series license CC BY-NC-ND 4.0, to confirm), notice-and-takedown procedure, U.S. copyright registration, ISBNs for handbooks and the catalog, a DOI agency for research volumes later, prices (USD with indicative SAR).
 - **Content claims:** the library never states or implies that LIV, its guides or its credentials are accredited, approved or endorsed. Wording: "prepared with reference to the standards and sources cited, reviewed by [name, specialty]".
 
 ### Dependencies at a glance
@@ -244,7 +259,7 @@ Phase 0 → Phase 1 ─┬→ Phase 2 → Phase 4 ─┬→ Phase 5 → Phase 6 
                    └→ Phase 3 ───────────┤
                                          └→ Phase 8 (needs Phases 3 and 4)
 Phase 9: printing on demand at any time; recognition after an operating record (Phase 5 onward).
-Track K and Track M: any time after Phase 1. Track O: starts now.
+Track K and Track M: any time after Phase 1. Track O: starts now. Track P: after K.8, M.1/M.4 and Phase 2.
 ```
 
 ## 5. Decisions needed from the owner (with recommendations)
