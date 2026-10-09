@@ -29,7 +29,7 @@ app.use('/api', express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 app.use(session({
-  store: new PgSession({ pool, tableName: 'sessions', createTableIfMissing: true }),
+  store: new PgSession({ pool, schemaName: process.env.PG_SCHEMA || 'public', tableName: 'sessions', createTableIfMissing: true }),
   name: 'liv.sid',
   secret: cfg.sessionSecret,
   resave: false,
