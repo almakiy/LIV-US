@@ -1,6 +1,6 @@
 # LIV — Build plan in phases (for owner review)
 
-Status (October 9, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. **Track K: the governance editorial library, source verification and the content quality layer are built (K.5 to K.7); expert review (K.8) is next.** Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
+Status (October 9, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. **Track K: the governance editorial library, source verification and the content quality layer are built (K.5 to K.7); expert review (K.8) is next.** Strategy on jurisdiction, own standards, language and regional focus: `STRATEGY-JURISDICTION-LANGUAGE.md` (decisions D-S.1 to D-S.5). Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
 
 This plan merges every open item from: the A–T brief (October 8; it was sent twice with identical text and is already applied, see §2), `ROADMAP.md`, `PARTNER-GATEWAY.md` (still to build), `EXAM-SYSTEM.md` (E1–E5), `CREDENTIAL-MODEL.md`, `RECOGNITION-ROADMAP.md`, `GLOBAL-STRATEGY.md`, `FUTURE-CREDENTIAL-ARCHITECTURE.md`, `HSE-GOVERNANCE-SCHEME-ROADMAP.md`, `LEGACY-NAMING.md`, the pre-launch checklist and Phase 2 backlog in `LIV-Phase1-Architecture.md` (§13, §14), and findings from a repository audit (tagged **audit**; these are proposals, not owner decisions).
 
@@ -218,6 +218,9 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 | K.11 | Close the "Points still being verified" in the GCC map from official texts (Saudi 2018 family charter guide, UAE MR 44/2022 and PDPL executive regulations, Kuwait Companies Law amendments after 2017, Oman listed-company code under the FSA). | owner | S |
 | K.12 | Review cycle: re-run `check:standards` and `check:sources` and re-review each item at its next review date (6 months for the GCC map and regulatory items, 12 months for the rest). | GOVERNANCE-LIBRARY | S |
 | K.13 | Uniform reference style for sources, following ISO 690:2021 elements (creator, title, edition or date, publisher, identifier or link, access date). | owner | S |
+| K.14 | U.S. reference frameworks in the library (verified October 9, `STRATEGY-JURISDICTION-LANGUAGE.md` Q2): USSG §8B2.1 and the DOJ ECCP (September 2024) first, then SOX and Dodd-Frank governance provisions, Regulation S-K Items 401/402/406/407/106, NYSE §303A, Delaware §§141, 102(b)(7), 144 (2025), the OSH Act general duty and OSHA Recommended Practices, IRS Form 990 Part VI. Federal texts may be quoted (public domain); exchange rules and the MBCA are summarized only. | owner (Oct 9) | M |
+| K.15 | UK reference frameworks in the library: Companies Act 2006 ss.170–177 and s.414CZA, UK Code 2024 (Provision 29 from January 1, 2026), Wates Principles, Bribery Act s.7 with the MoJ six principles, ECCTA s.199 with the Home Office guidance, HSWA ss.2, 3, 37, MHSWR reg 3, INDG417. Legislation and GOV.UK guidance under the Open Government Licence; FRC and QCA codes summarized only. | owner (Oct 9) | M |
+| K.16 | Present the GCC map and Gulf-law content as **regional application** content on top of the international core (after D-S.1), with the U.S. and UK frameworks as comparative references. | strategy memo | S |
 
 ### Track M — GCC and MENA market features (parallel, by owner choice)
 | # | Task | Source | Size |
@@ -226,6 +229,8 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 | M.2 | Signed digital verification letter (it is not an apostille). | GS §12.2 | S |
 | M.3 | Local acceptance guides as reviewed Knowledge Hub content. | GS §12 | — |
 | M.4 | Arabic editions of the governance library after M.1, translated and reviewed by a qualified Arabic legal and governance reviewer (not machine-published); legal texts quoted from the official Arabic. | owner | M |
+| M.5 | Regions hub (after D-S.5): a "Regions" menu with a MENA and GCC page in English and Arabic (GCC map, country acceptance guides, regional contacts), while the homepage keeps the international identity. Pattern from SHRM /mena, CIPD /ae and the ICA Middle East page. | strategy memo | M |
+| M.6 | Language-of-record line on every Arabic page and edition: the English text is authoritative (after D-S.4). Arabic exams only later, through the ITC test adaptation guidelines (double translation, equivalence evidence, pilot). | strategy memo | S |
 
 ### Track P — Governance publications and digital products (later, by owner choice)
 Design: `PUBLICATIONS-PLAN.md` (owner suggestion, October 9). Starts after K.8 (expert review), M.1 and M.4 (Arabic), Phase 2 (email) and counsel's license terms (Track O).
@@ -240,6 +245,16 @@ Design: `PUBLICATIONS-PLAN.md` (owner suggestion, October 9). Starts after K.8 (
 | P.6 | Rights protection for paid copies: licensee and order in the footer and metadata, signed time-limited download links, download log; no accessibility-breaking DRM. | PUB §6 | M |
 | P.7 | Organization licenses (users or sites) and the semi-annual GCC regulatory map subscription with a change log per edition. | PUB §3, §4 | M |
 | P.8 | Release checklist enforced in the admin before an edition can be published (both languages). | PUB §11 | S |
+
+### Track S — LIV standards and body of knowledge (after D-S.3)
+Design: `STRATEGY-JURISDICTION-LANGUAGE.md` Q3. Non-software work first; software support later.
+
+| # | Task | Source | Size |
+|---|---|---|---|
+| S.1 | Written standards-development procedure: balanced committee (no single interest in the majority), public comment with a written answer to each comment, approval by at least two thirds, procedural appeals, dated editions, review at least every 5 years, independent oversight. | strategy memo | — |
+| S.2 | LIV Governance Body of Knowledge and competence standard from a practice analysis across regions (tasks, competence per task, prerequisites, assessment, recertification), as ISO/IEC 17024:2026 expects of a scheme. | strategy memo | — |
+| S.3 | Public comment page for draft LIV standards (comments, responses, editions) built on the Knowledge Hub and the QMS records. | strategy memo | M |
+| S.4 | Later option: ANSI accreditation as a standards developer. Until it is granted, the texts are "LIV standards" only. | strategy memo | — |
 
 ### Track O — Owner and specialists (non-software, long lead times)
 - **Counsel:** privacy notice and terms (U.S., Saudi PDPL, UAE PDPL, GDPR where relevant), partner agreement, email footers, exam consent and data handling, trademark use of external credentials, review of disclaimers.
@@ -259,7 +274,7 @@ Phase 0 → Phase 1 ─┬→ Phase 2 → Phase 4 ─┬→ Phase 5 → Phase 6 
                    └→ Phase 3 ───────────┤
                                          └→ Phase 8 (needs Phases 3 and 4)
 Phase 9: printing on demand at any time; recognition after an operating record (Phase 5 onward).
-Track K and Track M: any time after Phase 1. Track O: starts now. Track P: after K.8, M.1/M.4 and Phase 2.
+Track K and Track M: any time after Phase 1. Track S: non-software work any time after D-S.3. Track O: starts now. Track P: after K.8, M.1/M.4 and Phase 2.
 ```
 
 ## 5. Decisions needed from the owner (with recommendations)
@@ -285,6 +300,11 @@ Track K and Track M: any time after Phase 1. Track O: starts now. Track P: after
 | D-8.x | External credentials | Which credentials, and the role LIV actually plays for each, confirmed in writing. |
 | D-K | Engines | Model key, monthly budget, named reviewers, approved source list. |
 | D-M | Arabic | Timing of Arabic pages; an Arabic line on credentials (open since October 5). |
+| D-S.1 | Basis of LIV credentials | An international core (standards and principles that apply in any country), with U.S. and UK frameworks as reference models and Gulf law as separate regional application modules, not the base. |
+| D-S.2 | U.S. and UK frameworks | Add them to the library as reference content (K.14, K.15), U.S. first as the home jurisdiction. |
+| D-S.3 | LIV's own standards | Yes: body of knowledge and competence standard first, under the written procedure in S.1; ANSI developer accreditation as a later option. |
+| D-S.4 | Languages | English is the language of record; Arabic is the first service language for pages and publications; Arabic exams later, through the ITC guidelines. |
+| D-S.5 | MENA focus | Show it from day one through a Regions hub (M.5); the homepage and credentials keep the international U.S.-based identity. |
 
 ## 6. Conflicts in older documents and how this plan resolves them
 | # | Older text | Resolution |
