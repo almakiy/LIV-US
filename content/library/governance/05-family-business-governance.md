@@ -11,6 +11,10 @@ order: 5
 tags: family business, family charter, succession, gcc, boards
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Members of business families, family business owners and their advisers
+scope: Family governance institutions, the family charter, the board and succession, with research evidence from the UAE and the GCC. It does not replace legal advice on company or inheritance law.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - IFC Family Business Governance Handbook | https://www.ifc.org/en/insights-reports/2011/ifc-family-business-governance-handbook | International Finance Corporation | 2026-10-09
 - Oudah, Jabeen and Dixon (2018), Determinants Linked to Family Business Sustainability in the UAE: An AHP Approach, Sustainability 10(1), 246 | https://doi.org/10.3390/su10010246 | MDPI (CC BY 4.0) | 2026-10-09

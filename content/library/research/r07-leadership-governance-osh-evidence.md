@@ -11,6 +11,10 @@ order: 7
 tags: research digest, osh governance, board oversight, senior leadership, just culture
 standards: ISO 45001:2018
 next_review: 2027-10-09
+audience: Board members, senior leaders and HSE professionals
+scope: A summary of one rapid evidence assessment (2026) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Singh, B., Maistrello, G., Kadar, E., Xu, L., Richard-Sheridan, M., Pilbeam, C. and Fahy, N. (2026). The role of leadership and governance in occupational safety and health: a rapid evidence assessment for international standard development | https://doi.org/10.60743/zrs9-x549 | Lloyd's Register Foundation and RAND Europe (CC BY-SA 4.0) | 2026-10-09
 - ISO 45001:2018 Occupational health and safety management systems - Requirements with guidance for use | https://www.iso.org/standard/63787.html | International Organization for Standardization | 2026-10-09

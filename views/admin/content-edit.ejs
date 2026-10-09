@@ -48,6 +48,7 @@
     <% if (report.flags.length) { %><table><tr><th>Level</th><th>Check</th><th>Finding</th></tr><% report.flags.forEach(f => { %><tr><td><span class="badge <%= f.severity === 'block' ? 'b-suspended' : 'b-pending' %>"><%= f.severity %></span></td><td class="small"><%= f.check %></td><td class="small"><%= f.message %><%= f.location ? ' (' + f.location + ')' : '' %></td></tr><% }) %></table><% } else { %><p class="small muted">No findings.</p><% } %>
   <% } else { %><p class="small muted">No automated review for version <%= a.version %> yet.</p><% } %>
   <p class="small muted">An automated review narrows what a human must check; it does not replace the named reviewer's sign-off.</p>
+  <p class="small"><a class="btn secondary sm" href="/admin/content/<%= a.id %>/review-pack.xlsx">Download expert review pack (Excel)</a> <span class="muted">Every statement with its cited source, the sources list, a quality checklist and the reviewer's declaration, in English and Arabic, to send to the subject-matter reviewer.</span></p>
   <% if (a.status === 'draft') { %><form method="post" action="/admin/content/<%= a.id %>/request-review" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm"><%= a.review_requested_at ? 'Review requested (waiting for the engine)' : 'Request automated review' %></button></form><% } %>
 </div><% } %>
 <% if (versions && versions.length) { %><h3 class="mt">Version history</h3><div class="table-wrap"><table><tr><th>Version</th><th>By</th><th>Note</th><th>Date</th></tr>

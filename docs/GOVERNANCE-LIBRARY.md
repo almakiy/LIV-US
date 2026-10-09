@@ -28,6 +28,17 @@ The library makes no claim about LIV's own status. It says nothing about accredi
 - The Producer engine (Track K.1, not built) must write only from an evidence pack built from registered publishers. The library's sources are the starting evidence base for governance topics.
 - The Scout engine (K.2, not built) watches the official sources listed here for amendments and new editions, and raises a signal. It never edits a published text.
 
+## Quality assurance before publication
+| Layer | What it checks | Where |
+|---|---|---|
+| Document control | Audience, scope, edition, preparation and next review dates at the top of every item | `audience`, `scope`, `edition`, `prepared` in each file header (required) |
+| Source verification | Publisher tier, edition of each standard, DOI title and license, link status | `npm run check:standards`, `npm run check:sources`, Reviewer `sources` and `standards` checks |
+| Plain language and drafting | Sentences over 35 words, average sentence length over 22 words, paragraphs over 150 words, "shall" in guidance (use must, should, may) | Reviewer `style` check, informed by ISO 24495-1:2023 and the ISO/IEC Directives verbs; advisory, never blocks, no conformity claim |
+| Expert review | Every statement against its source, each source opened and current, a 12-point quality checklist, a signed reviewer declaration with conflicts of interest | Review pack (Excel, English and Arabic): "Download expert review pack" in the editor, the ZIP link in the library panel, or `npm run review-packs` |
+| Publication gate | A named subject-matter reviewer; a recorded reason to override a blocking report | Admin > Knowledge hub content |
+
+The library describes itself only as "prepared with reference to the standards and sources cited" and, once published, "reviewed by" the named reviewer. It never claims accreditation, approval or conformity.
+
 ## Verifying sources when a website refuses automated readers
 Some official sites (www.iso.org, www.oecd.org, ILO NORMLEX, several journal sites) are behind bot protection and refuse automated readers. Some Gulf government sites cannot be reached from servers outside the region. A refusal is not a broken link. Each kind of source has another authoritative route:
 
@@ -65,6 +76,10 @@ order: 1
 tags: governance, iso 37000
 standards: ISO 37000:2021
 next_review: 2027-04-09
+audience: ...           (who the text is for, up to 200 characters)
+scope: ...              (what it covers and what it does not, up to 300 characters)
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Title | https://publisher/page | Publisher | 2026-10-09
 ---

@@ -11,6 +11,10 @@ order: 6
 tags: boards, chair, independent directors, committees, board evaluation, leadership
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Owners, board members, chairs and chief executives
+scope: The roles of owners, the governing body, the chair, independent members, committees and management, with a self-check. National codes set binding rules that differ by country.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09

@@ -11,6 +11,10 @@ order: 3
 tags: research digest, family business, uae, succession, gcc
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Business families, advisers and researchers in the GCC
+scope: A summary of one peer-reviewed study (2018) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Oudah, M., Jabeen, F. and Dixon, C. (2018). Determinants Linked to Family Business Sustainability in the UAE: An AHP Approach. Sustainability, 10(1), 246 | https://doi.org/10.3390/su10010246 | MDPI (CC BY 4.0) | 2026-10-09
 - IFC Family Business Governance Handbook | https://www.ifc.org/en/insights-reports/2011/ifc-family-business-governance-handbook | International Finance Corporation | 2026-10-09

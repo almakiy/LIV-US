@@ -11,6 +11,10 @@ order: 4
 tags: small business, sme, retail, shops, branches, internal control, handbook
 standards: ISO 37000:2021, ISO 31000:2018, ISO 37002:2021
 next_review: 2027-10-09
+audience: Owners and managers of shops, restaurants, workshops and small branch networks
+scope: Practical governance for small businesses: decision rights, cash and stock control, conflicts, obligations, risk, safety, branches, speaking up and review. Legal and licensing requirements vary by country and are not listed.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - Internal Control - Integrated Framework (2013) | https://www.coso.org/guidance-on-ic | Committee of Sponsoring Organizations of the Treadway Commission | 2026-10-09

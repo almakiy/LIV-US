@@ -11,6 +11,10 @@ order: 5
 tags: research digest, saudi arabia, boards, independent directors, disclosure, accountability
 standards: ISO 37000:2021
 next_review: 2027-04-09
+audience: Board members, company secretaries and investors in Saudi Arabia
+scope: A joint summary of three peer-reviewed studies (2022, 2023, 2026) and their practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Chebbi, K. and Ammer, M.A. (2022). Board Composition and ESG Disclosure in Saudi Arabia: The Moderating Role of Corporate Governance Reforms. Sustainability, 14(19), 12173 | https://doi.org/10.3390/su141912173 | MDPI (CC BY 4.0) | 2026-10-09
 - Bchennaty, B. and Khan, M.N. (2026). Corporate Governance Reform and Organisational Accountability in Saudi Arabia: The Roles of Board Practices and Ownership Concentration. Journal of Risk and Financial Management, 19(10), 783 | https://doi.org/10.3390/jrfm19100783 | MDPI (CC BY 4.0) | 2026-10-09

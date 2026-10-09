@@ -11,6 +11,10 @@ order: 9
 tags: hse governance, safety leadership, iso 45001, ilo, board oversight, indicators
 standards: ISO 45001:2018, ISO 45003:2021
 next_review: 2027-04-09
+audience: Owners, board members and senior leaders responsible for health and safety
+scope: Leadership and oversight of health and safety: ILO conventions, ISO 45001 leadership requirements, HSE leadership principles, board actions and indicators. It does not describe any LIV credential or assessment.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - A safe and healthy working environment as a fundamental principle and right at work | https://www.ilo.org/topics-and-sectors/safety-and-health-work/safe-and-healthy-working-environment-fundamental-principle-and-right-work | ILO | 2026-10-09
 - Occupational Safety and Health Convention, 1981 (No. 155), authentic text in the Record of Proceedings of the 67th International Labour Conference | https://webapps.ilo.org/public/libdoc/ilo/P/09616/09616%281981-67%29.pdf | ILO | 2026-10-09

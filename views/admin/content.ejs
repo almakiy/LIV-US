@@ -5,6 +5,7 @@
   <p class="small muted">Prepared articles, guides, handbooks and research digests kept in the repository (content/library), with their sources. Loading adds them as <strong>drafts</strong> with an automated review report; nothing is published until a named reviewer checks each one against its sources and publishes it.</p>
   <p><%= lib.total %> item(s) in the library, <strong><%= lib.missing %></strong> not on the site yet.</p>
   <% if (lib.missing) { %><form method="post" action="/admin/content/library"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn" type="submit">Load <%= lib.missing %> library draft(s)</button></form><% } %>
+  <p class="small"><a href="/admin/content/library/review-packs.zip">Download expert review packs for all library items (ZIP of Excel files)</a></p>
   <% if (lib.errors.length) { %><div class="alert error"><strong>Library files with errors (not loaded):</strong><ul><% lib.errors.forEach(e => { %><li class="small"><%= e %></li><% }) %></ul></div><% } %>
 </div><% } %>
 <div class="table-wrap"><table>

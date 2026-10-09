@@ -11,6 +11,10 @@ order: 7
 tags: compliance, anti-bribery, whistleblowing, speak-up, iso 37301, iso 37001, iso 37002
 standards: ISO 37301:2021, ISO 37001:2025, ISO 37002:2021
 next_review: 2027-10-09
+audience: Compliance officers, managers and board members
+scope: What ISO 37301, ISO 37001, ISO 37002 and ISO/TS 37008 cover and how they fit together, with a starting point for small organizations. Anti-bribery and whistleblower laws are not covered.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37301:2021 Compliance management systems - Requirements with guidance for use | https://www.iso.org/standard/75080.html | International Organization for Standardization | 2026-10-09
 - ISO 37301:2021/Amd 1:2024 Climate action changes | https://www.iso.org/standard/88422.html | International Organization for Standardization | 2026-10-09

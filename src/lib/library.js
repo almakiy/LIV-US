@@ -33,12 +33,26 @@ function parseItem(text, file = '') {
     inSources = kv[1] === 'sources';
     if (!inSources) head[kv[1]] = kv[2].trim();
   }
+  const next = /^\d{4}-\d{2}-\d{2}$/.test(head.next_review || '') ? head.next_review : null;
+  const prepared = /^\d{4}-\d{2}-\d{2}$/.test(head.prepared || '') ? head.prepared : sources.map((x) => x.accessed).filter(Boolean).sort().pop() || null;
+  const control = { audience: head.audience || '', scope: head.scope || '', edition: head.edition || '1.0', prepared };
   return {
     external_id: head.id, slug: head.slug, title: head.title, summary: head.summary, category: head.category, kind: head.kind,
     jurisdiction: head.jurisdiction || '', tags: LIST(head.tags), standards: LIST(head.standards), author_name: head.author || 'LIV Editorial',
-    next_review_at: /^\d{4}-\d{2}-\d{2}$/.test(head.next_review || '') ? head.next_review : null,
-    collection: head.collection || '', order: Number(head.order) || 0, sources, body_md: m[2].trim() + '\n', file,
+    next_review_at: next, control,
+    collection: head.collection || '', order: Number(head.order) || 0, sources, body_md: controlBlock(control, next) + m[2].trim() + '\n', file,
   };
+}
+
+// Document control, as published guidance from standards and intergovernmental bodies carries it: who the text is for,
+// what it covers, which edition it is and when it was prepared and will be reviewed. Dates are spelled out (not
+// YYYY-MM-DD) so the Reviewer's future-date check does not flag the planned review date.
+const longDay = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' });
+function controlBlock(c, next) {
+  if (!c.audience || !c.scope) return '';
+  const cell = (v) => String(v).replace(/\|/g, '/');
+  return ['| Document control | |', '|---|---|', `| Audience | ${cell(c.audience)} |`, `| Scope | ${cell(c.scope)} |`,
+    `| Edition | ${cell(c.edition)}${c.prepared ? `, prepared ${longDay(c.prepared)}` : ''} |`, ...(next ? [`| Next review | ${longDay(next)} |`] : []), '', ''].join('\n');
 }
 
 /** Reads and validates every library file. Returns { items, errors }. */
@@ -53,6 +67,8 @@ function loadLibrary(dir = DIR) {
       if (!/^[a-z0-9-]{3,100}$/.test(it.slug || '')) e.push('slug must be lowercase letters, digits and hyphens');
       if ((it.title || '').length > 200) e.push('title is longer than 200 characters');
       if ((it.summary || '').length > 300) e.push('summary is longer than 300 characters');
+      if (!it.control.audience || it.control.audience.length > 200) e.push('audience is required (up to 200 characters)');
+      if (!it.control.scope || it.control.scope.length > 300) e.push('scope is required (up to 300 characters)');
       if (e.length) errors.push(`${f}: ${e.join('; ')}`); else items.push(it);
     } catch (err) { errors.push(err.message); }
   }
@@ -90,4 +106,4 @@ async function importLibrary(user) {
   return created;
 }
 
-module.exports = { parseItem, loadLibrary, pending, importLibrary, DIR };
+module.exports = { parseItem, loadLibrary, pending, importLibrary, controlBlock, DIR };

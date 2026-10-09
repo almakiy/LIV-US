@@ -11,6 +11,10 @@ order: 4
 tags: research digest, family business, esg, gcc, saudi arabia, listed companies
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Business families, listed company boards, investors and researchers
+scope: A summary of one peer-reviewed study (2025) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Nimer, K., Abughazaleh, N., Tahat, Y. and Hossain, M. (2025). Family Business, ESG, and Firm Age in the GCC Corporations: Building on the Socioemotional Wealth (SEW) Model. Journal of Risk and Financial Management, 18(5), 241 | https://doi.org/10.3390/jrfm18050241 | MDPI (CC BY 4.0) | 2026-10-09
 - G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09

@@ -11,6 +11,10 @@ order: 2
 tags: governance framework, delegation of authority, internal control, three lines, oversight
 standards: ISO 37000:2021, ISO 31000:2018
 next_review: 2027-10-09
+audience: Owners, boards and managers who organize governance work
+scope: A structure of five layers for governance arrangements, with documents and evidence for each, scaled from a single shop to a listed company. It is not a standard or a certification scheme.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09

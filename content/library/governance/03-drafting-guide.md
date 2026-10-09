@@ -11,6 +11,10 @@ order: 3
 tags: governance framework, drafting, charter, delegation of authority, policies
 standards: ISO 37000:2021, ISO 37301:2021, ISO 31000:2018
 next_review: 2027-10-09
+audience: People who draft or update governance documents: owners, company secretaries, managers, advisers
+scope: The steps and drafting rules for a first complete governance framework. National company law and sector rules must be checked separately.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - ISO 37301:2021 Compliance management systems - Requirements with guidance for use | https://www.iso.org/standard/75080.html | International Organization for Standardization | 2026-10-09

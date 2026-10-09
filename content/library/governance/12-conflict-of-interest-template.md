@@ -11,6 +11,10 @@ order: 12
 tags: conflict of interest, related parties, gifts, register, template, integrity
 standards: ISO 37001:2025, ISO 37000:2021
 next_review: 2027-10-09
+audience: Board members, managers and staff who take decisions for the organization
+scope: A declaration form, registers and meeting rules for conflicts of interest, gifts and related party transactions. Legal disclosure rules for listed companies are not covered.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
 - ISO 37001:2025 Anti-bribery management systems - Requirements with guidance for use | https://www.iso.org/standard/85816.html | International Organization for Standardization | 2026-10-09

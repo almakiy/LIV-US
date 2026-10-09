@@ -6,3 +6,4 @@ engines/data/usage.jsonl
 engines/data/KILL
 server.log
 e2e-failure/
+review-packs/

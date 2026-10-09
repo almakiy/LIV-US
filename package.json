@@ -11,6 +11,7 @@
     "purge-demo": "node scripts/purge-demo.js",
     "check:standards": "NODE_USE_ENV_PROXY=1 node scripts/check-standards.js",
     "check:sources": "NODE_USE_ENV_PROXY=1 node scripts/check-sources.js",
+    "review-packs": "node scripts/review-packs.js",
     "test": "node tests/e2e.js",
     "test:unit": "node --test tests/unit/*.test.js",
     "engine:review-file": "node engines/cli.js review-file",

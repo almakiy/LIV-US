@@ -1,6 +1,6 @@
 # LIV — Build plan in phases (for owner review)
 
-Status (October 8, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
+Status (October 9, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. **Track K: the governance editorial library, source verification and the content quality layer are built (K.5 to K.7); expert review (K.8) is next.** Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
 
 This plan merges every open item from: the A–T brief (October 8; it was sent twice with identical text and is already applied, see §2), `ROADMAP.md`, `PARTNER-GATEWAY.md` (still to build), `EXAM-SYSTEM.md` (E1–E5), `CREDENTIAL-MODEL.md`, `RECOGNITION-ROADMAP.md`, `GLOBAL-STRATEGY.md`, `FUTURE-CREDENTIAL-ARCHITECTURE.md`, `HSE-GOVERNANCE-SCHEME-ROADMAP.md`, `LEGACY-NAMING.md`, the pre-launch checklist and Phase 2 backlog in `LIV-Phase1-Architecture.md` (§13, §14), and findings from a repository audit (tagged **audit**; these are proposals, not owner decisions).
 
@@ -209,6 +209,15 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 | K.2 | Scout engine (horizon scanning). | `KNOWLEDGE-ENGINES.md` | M |
 | K.3 | Saudi regulatory requirements database with the fields from S, admin-only until verified; "mandatory" only with an official source, a verified date and a reviewer. | S | M |
 | K.4 | Links from requirements to LIV schemes and partner programs. | S | S |
+| K.5 | **Governance editorial library** (`content/library`, `docs/GOVERNANCE-LIBRARY.md`): 23 items (handbook, guides, framework, templates, glossary, GCC regulatory map, 9 research digests), loaded as drafts with an automated report each. **Built.** | owner request (Oct 9) | M |
+| K.6 | **Source verification through official routes**: ISO Open Data for standards (`npm run check:standards`), Crossref, DataCite and OpenAlex for DOIs and licenses, official hosts with completed TLS chains (`npm run check:sources`); trusted-source register by tier; legal claims need an official source. **Built.** | owner request | S |
+| K.7 | **Content quality layer**: document control block (audience, scope, edition, dates) on every library item; plain-language and drafting check in the Reviewer (informed by ISO 24495-1:2023 and the ISO/IEC Directives verbs, advisory only); expert review pack per item (Excel, English and Arabic: every statement with its source, sources, quality checklist, reviewer declaration) in the editor and as a ZIP for the library (`npm run review-packs`). **Built.** | owner request | S |
+| K.8 | Expert review of the 23 library items using the packs: governance specialist for the foundations and tools; licensed lawyer(s) for the GCC map (Saudi Arabia and the UAE first); HSE specialist for the HSE guide and digests. Each item is published only under the reviewer's name. | owner | — |
+| K.9 | Reader pilot of the small business handbook with 3 to 5 owners of shops or small firms (find, understand, use), and edits from their answers. | owner, ISO 24495-1 | S |
+| K.10 | Model-based claim check (Reviewer `claims:model`) against source excerpts, with a different model from the one that drafted the text. Needs a model key and a monthly budget (`docs/KNOWLEDGE-ENGINES.md`). | Q | S |
+| K.11 | Close the "Points still being verified" in the GCC map from official texts (Saudi 2018 family charter guide, UAE MR 44/2022 and PDPL executive regulations, Kuwait Companies Law amendments after 2017, Oman listed-company code under the FSA). | owner | S |
+| K.12 | Review cycle: re-run `check:standards` and `check:sources` and re-review each item at its next review date (6 months for the GCC map and regulatory items, 12 months for the rest). | GOVERNANCE-LIBRARY | S |
+| K.13 | Uniform reference style for sources, following ISO 690:2021 elements (creator, title, edition or date, publisher, identifier or link, access date). | owner | S |
 
 ### Track M — GCC and MENA market features (parallel, by owner choice)
 | # | Task | Source | Size |
@@ -216,6 +225,7 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 | M.1 | Arabic right-to-left versions of the key public pages. | GS §12.1 | M |
 | M.2 | Signed digital verification letter (it is not an apostille). | GS §12.2 | S |
 | M.3 | Local acceptance guides as reviewed Knowledge Hub content. | GS §12 | — |
+| M.4 | Arabic editions of the governance library after M.1, translated and reviewed by a qualified Arabic legal and governance reviewer (not machine-published); legal texts quoted from the official Arabic. | owner | M |
 
 ### Track O — Owner and specialists (non-software, long lead times)
 - **Counsel:** privacy notice and terms (U.S., Saudi PDPL, UAE PDPL, GDPR where relevant), partner agreement, email footers, exam consent and data handling, trademark use of external credentials, review of disclaimers.
@@ -225,6 +235,8 @@ Can start any time after Phase 1, as soon as the model key, monthly budget and n
 - **Exams:** supervisors, item writers and reviewers who do not train candidates.
 - **Recognition:** ISO 9001 consultant, CPD body enquiries.
 - **Research:** the Saudi regulatory project, official sources only. **Distribution:** LIV LinkedIn company page.
+- **Content reviewers (K.8):** a governance specialist, licensed lawyer(s) in Saudi Arabia and the UAE (then the other GCC states), an HSE specialist; written terms, conflict of interest declarations, and the right to be named on published items. Decide the fee and turnaround.
+- **Content claims:** the library never states or implies that LIV, its guides or its credentials are accredited, approved or endorsed. Wording: "prepared with reference to the standards and sources cited, reviewed by [name, specialty]".
 
 ### Dependencies at a glance
 ```

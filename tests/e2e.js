@@ -612,6 +612,12 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(psql(`SELECT count(DISTINCT r.article_id) FROM review_reports r JOIN articles a ON a.id = r.article_id WHERE a.origin = 'library'`) === String(libTotal), 'each library draft carries an automated review report');
     ok((await anon.goto(`${BASE}/knowledge/${libSlug}`)).status() === 404, 'library drafts are not public');
     ok(!(await adm.$('button:has-text("library draft(s)")')), 'loading again is not offered once everything is on the site');
+    const libId = psql(`SELECT id FROM articles WHERE slug = '${libSlug}'`);
+    const pack = await adm.request.get(`${BASE}/admin/content/${libId}/review-pack.xlsx`);
+    ok(pack.status() === 200 && /spreadsheetml/.test(pack.headers()['content-type']) && (await pack.body()).subarray(0, 2).toString() === 'PK', 'an expert review pack (Excel) downloads for a library draft');
+    const packs = await adm.request.get(`${BASE}/admin/content/library/review-packs.zip`);
+    ok(packs.status() === 200 && /zip/.test(packs.headers()['content-type']), 'review packs for every library item download as one ZIP');
+    ok((await anon.request.get(`${BASE}/admin/content/${libId}/review-pack.xlsx`, { maxRedirects: 0 })).status() === 302, 'review packs need an administrator');
     psql(`DELETE FROM articles WHERE origin = 'library'`);
   }
 

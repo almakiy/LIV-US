@@ -6,7 +6,7 @@ Status (October 5, 2026): the site side and the **Reviewer engine scaffold are b
 |---|---|
 | Content model, human reviewer sign-off, versions, service keys, draft-only Content API | Built and tested |
 | Review scope on the API (queue, full draft, report per version), review panel in the editor, publish gate on a blocking report (with a recorded override reason) | Built and tested |
-| **Reviewer engine** (`engines/`): identity and legal rules, citations, standards registry, similarity, structure, dates and links, claim check (offline lexical method, or a model when configured) | Built and tested; runs offline and free by default |
+| **Reviewer engine** (`engines/`): identity and legal rules, citations, standards registry, trusted-source register, similarity, structure, dates and links, plain-language and drafting (advisory), claim check (offline lexical method, or a model when configured) | Built and tested; runs offline and free by default |
 | Model access with spend guard (monthly cap, usage ledger, kill switch; refuses to run without key, prices and budget) | Built and tested; **not connected to any paid model until you add a key and a budget** |
 | Producer engine (drafting from an evidence pack) | Not built |
 | Scout engine (horizon scanning of primary sources) | Not built |

@@ -11,6 +11,10 @@ order: 9
 tags: research digest, three lines model, internal audit, internal control, oman, gcc
 standards: ISO 31000:2018
 next_review: 2027-10-09
+audience: Internal auditors, risk and compliance staff, audit committee members
+scope: A joint summary of two peer-reviewed studies (2021, 2023) and their practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Tawfik, O.I., Durrah, O. and Aljawhar, K.A. (2023). The Role of the Internal Auditor in Strengthening the Governance of Economic Organizations Using the Three Lines of Defense Model. Journal of Risk and Financial Management, 16(7), 341 | https://doi.org/10.3390/jrfm16070341 | MDPI (CC BY 4.0) | 2026-10-09
 - Bantleon, U., d'Arcy, A., Eulerich, M., Hucke, A., Pedell, B. and Ratzinger-Sakel, N.V.S. (2021). Coordination challenges in implementing the three lines of defense model. International Journal of Auditing, 25(1), 59-74 | https://doi.org/10.1111/ijau.12201 | Wiley (CC BY-NC-ND 4.0) | 2026-10-09

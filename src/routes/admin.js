@@ -182,6 +182,31 @@ r.post('/content/preview', wrap(async (req, res) => {
   const a = { ...readArticleForm(req.body), status: 'draft', published_at: null, reviewed_at: null, version: 1 };
   res.render('public/knowledge-article', { title: a.title || 'Preview', description: a.summary, a, html: renderMarkdown(a.body_md), minutes: readingMinutes(a.body_md), related: [], CATEGORIES, KINDS, preview: true });
 }));
+// Expert review packs (Excel): one per item, or every library item in one ZIP to send to reviewers.
+r.get('/content/library/review-packs.zip', wrap(async (req, res) => {
+  const { buildReviewPack, packName } = require('../lib/review-pack');
+  const { rows } = await q(`SELECT * FROM articles WHERE origin = 'library' ORDER BY slug`);
+  if (!rows.length) { flash(req, 'error', 'Load the library drafts first.'); return res.redirect('/admin/content'); }
+  const zip = require('archiver')('zip', { zlib: { level: 6 } });
+  res.attachment(`liv-library-review-packs-${new Date().toISOString().slice(0, 10)}.zip`);
+  zip.on('error', (e) => res.destroy(e)); zip.pipe(res);
+  for (const a of rows) {
+    const { rows: [rep] } = await q('SELECT * FROM review_reports WHERE article_id = $1 AND version = $2 ORDER BY created_at DESC LIMIT 1', [a.id, a.version]);
+    zip.append(await buildReviewPack(a, rep || null), { name: packName(a) });
+  }
+  await audit({ user: req.user, action: 'content.review_pack.export', target: 'library', metadata: { items: rows.length } });
+  await zip.finalize();
+}));
+r.get('/content/:id/review-pack.xlsx', wrap(async (req, res, next) => {
+  if (!UUID_RE.test(req.params.id)) return next();
+  const { rows: [a] } = await q('SELECT * FROM articles WHERE id = $1', [req.params.id]);
+  if (!a) return next();
+  const { rows: [rep] } = await q('SELECT * FROM review_reports WHERE article_id = $1 AND version = $2 ORDER BY created_at DESC LIMIT 1', [a.id, a.version]);
+  const { buildReviewPack, packName } = require('../lib/review-pack');
+  const buf = await buildReviewPack(a, rep || null);
+  await audit({ user: req.user, action: 'content.review_pack.export', target: a.slug, metadata: { version: a.version } });
+  res.attachment(packName(a)).type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buf);
+}));
 r.get('/content/:id', wrap(async (req, res, next) => {
   if (!UUID_RE.test(req.params.id)) return next();
   const { rows: [a] } = await q('SELECT * FROM articles WHERE id = $1', [req.params.id]);

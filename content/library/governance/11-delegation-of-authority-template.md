@@ -11,6 +11,10 @@ order: 11
 tags: delegation of authority, doa, approval limits, template, decision rights
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Owners, boards, finance managers and general managers
+scope: A starter delegation of authority matrix and the rules that go with it. Check the limits and approvals that the law, the articles and the banks set for your organization.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - Internal Control - Integrated Framework (2013) | https://www.coso.org/guidance-on-ic | Committee of Sponsoring Organizations of the Treadway Commission | 2026-10-09

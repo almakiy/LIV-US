@@ -11,6 +11,10 @@ order: 8
 tags: risk management, internal control, coso, three lines model, internal audit, iso 31000
 standards: ISO 31000:2018
 next_review: 2027-04-09
+audience: Board members, managers, risk and internal audit staff
+scope: How ISO 31000, the COSO frameworks, the IIA Three Lines Model and board oversight duties fit together, with a minimum version for small organizations.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 31000:2018 Risk management - Guidelines | https://www.iso.org/standard/65694.html | International Organization for Standardization | 2026-10-09
 - Internal Control - Integrated Framework (2013) | https://www.coso.org/guidance-on-ic | Committee of Sponsoring Organizations of the Treadway Commission | 2026-10-09

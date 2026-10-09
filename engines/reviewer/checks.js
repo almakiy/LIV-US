@@ -113,4 +113,24 @@ function sources(a, register) {
   return out;
 }
 
-module.exports = { identity, citations, standards, sources, publisherOf, similarity, structure, parseStandardRefs, paragraphs, stripCites, wordsOf };
+// Plain language and drafting, informed by ISO 24495-1:2023 (plain language: readers find, understand and use what they
+// need) and the drafting verbs of the ISO/IEC Directives (must or shall for requirements, should for recommendations,
+// may for permissions). Advisory only: these warnings never block, and they do not claim conformity with either text.
+const plainText = (p) => stripCites(p).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[*_`]/g, '').replace(/^\s*(?:[-*]|\d+\.)\s+/gm, '');
+const sentencesOf = (p) => plainText(p).split(/(?<=[.!?])(?<!\b(?:No|Nos|Art|Arts|Dr|Mr|Ms|vs|e\.g|i\.e|U\.S)\.)\s+(?=[A-Z0-9"(])/).map((x) => x.trim()).filter((x) => wordsOf(x).length >= 3);
+const LONG_SENTENCE = 35; const LONG_PARAGRAPH = 150; const AVERAGE = 22;
+function style(a) {
+  const out = []; const prose = paragraphs(a.body_md).filter(isProse);
+  const sentences = prose.flatMap((p) => p.split(/\n/).flatMap(sentencesOf));
+  const long = sentences.filter((x) => wordsOf(x).length > LONG_SENTENCE);
+  if (long.length) out.push(flag('warn', 'style', 'style.long-sentence', `${long.length} sentence(s) longer than ${LONG_SENTENCE} words. Split them so a reader takes in one idea at a time.`, long[0].slice(0, 90)));
+  const avg = sentences.length ? sentences.reduce((n, x) => n + wordsOf(x).length, 0) / sentences.length : 0;
+  if (sentences.length >= 10 && avg > AVERAGE) out.push(flag('warn', 'style', 'style.average-sentence', `Average sentence length is ${avg.toFixed(1)} words (aim for ${AVERAGE} or fewer).`));
+  const big = prose.filter((p) => !/^\s*(?:[-*]|\d+\.)\s/.test(p) && wordsOf(plainText(p)).length > LONG_PARAGRAPH);
+  if (big.length) out.push(flag('warn', 'style', 'style.long-paragraph', `${big.length} paragraph(s) longer than ${LONG_PARAGRAPH} words. Break them up or use a list.`, plainText(big[0]).slice(0, 90)));
+  const unquoted = String(a.body_md || '').replace(/"[^"\n]*"/g, '');
+  if (!['standards', 'briefing'].includes(a.kind) && /\bshall\b/i.test(unquoted)) out.push(flag('warn', 'style', 'style.shall', 'Guidance uses "must" for a requirement, "should" for a recommendation and "may" for a permission; "shall" reads as a legal requirement.'));
+  return out;
+}
+
+module.exports = { identity, citations, standards, sources, publisherOf, style, sentencesOf, similarity, structure, parseStandardRefs, paragraphs, stripCites, wordsOf };

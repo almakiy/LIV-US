@@ -11,6 +11,10 @@ order: 1
 tags: research digest, sme, small business, advisory boards, agency theory
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: Owners of small businesses, advisers and researchers
+scope: A summary of one peer-reviewed literature review (2022) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Handley, K. and Molloy, C. (2022). SME corporate governance: a literature review of informal mechanisms for governance. Meditari Accountancy Research, 30(7), 310-333 | https://doi.org/10.1108/MEDAR-06-2021-1321 | Emerald Publishing (CC BY 4.0) | 2026-10-09
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09

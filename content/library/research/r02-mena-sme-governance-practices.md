@@ -11,6 +11,10 @@ order: 2
 tags: research digest, sme, mena, esg, world bank, enterprise surveys
 standards: ISO 37000:2021
 next_review: 2027-10-09
+audience: SME owners, lenders, policymakers and researchers
+scope: A summary of one World Bank working paper (2022) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Ferrazzi, M. and Tueske, A. (2022). Small and Medium Enterprises in Emerging Economies: The Achilles' Heel of Corporate ESG Responsibility Practices? World Bank Policy Research Working Paper 10065 | https://openknowledge.worldbank.org/handle/10986/37526 | World Bank (CC BY 3.0 IGO) | 2026-10-09
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09

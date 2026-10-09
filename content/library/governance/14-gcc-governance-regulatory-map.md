@@ -11,6 +11,10 @@ order: 10
 tags: gcc, saudi arabia, uae, qatar, bahrain, kuwait, oman, corporate governance code, regulation
 standards: ISO 37000:2021
 next_review: 2027-04-09
+audience: Board members, company secretaries, compliance staff and advisers in the GCC
+scope: The main official governance instruments for companies in the six GCC states and their headline requirements, as published on the access dates shown. It is not legal advice and does not cover sector regulators in full.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Companies Law (Royal Decree M/132 dated 1/12/1443H) and its Implementing Regulations, official Arabic and English text | https://mc.gov.sa/en/Regulations/pages/details.aspx?lawId=ea0fc797-4127-4667-962d-aec400ee9f72 | Ministry of Commerce (Saudi Arabia) | 2026-10-09
 - Corporate Governance Regulations (English translation of the official Arabic text, amended by Resolution 8-5-2023) | https://cma.org.sa/en/RulesRegulations/Regulations/Documents/CorporateGovernanceRegulations1.pdf | Capital Market Authority (Saudi Arabia) | 2026-10-09
@@ -94,7 +98,11 @@ The Ministry also lists the amending Decree-Law No. (20) of 2025 [13].
 
 - At least one-third of board members are independent, and the majority are non-executive (Article 9, clause 5).
 - At least one woman sits on the board, and this is disclosed in the annual governance report (Article 9, clause 3).
-- The chair may not hold any other executive position. Since Decision No. (24/Chairman) of 2025, effective August 30, 2025, the chair may also be the company manager only if all of these conditions are met: the articles permit it, at least three-quarters of the board and every member of the standing committees are independent, the general assembly approves by special resolution, and a governance committee oversees the arrangement (Articles 7 and 7 bis).
+- The chair may not hold any other executive position. Since Decision No. (24/Chairman) of 2025, effective August 30, 2025, the chair may also be the company manager, but only if all of these conditions are met (Articles 7 and 7 bis):
+  - the articles of association permit it;
+  - at least three-quarters of the board and every member of the standing committees are independent;
+  - the general assembly approves by special resolution;
+  - a governance committee oversees the arrangement.
 
 The Authority's 2025 circular on annual general assemblies summarizes these rules for the meeting season [18].
 
@@ -145,7 +153,9 @@ Hawkamah, the Institute for Corporate Governance in Dubai, works on corporate an
 These points could not yet be confirmed against an official text and are deliberately left out of the map above:
 
 - Saudi Arabia: the full text of the 2018 Guiding Charter for Saudi Family Companies (the Ministry's link no longer resolves).
-- UAE: the text of Ministerial Resolution No. 44 of 2022 on occupational health and safety and whether it has been replaced; whether the executive regulations of the data protection law have been issued; and how the Guide's board nationality clause (Article 6) relates to the Commercial Companies Law.
+- UAE: the text of Ministerial Resolution No. 44 of 2022 on occupational health and safety, and whether it has been replaced.
+- UAE: whether the executive regulations of the data protection law have been issued.
+- UAE: how the Guide's board nationality clause (Article 6) relates to the Commercial Companies Law.
 - Kuwait: amendments to the Companies Law after 2017.
 - Oman: the official text of the governance code for public listed companies, issued by the former Capital Market Authority in 2015, and whether the Financial Services Authority has reissued it.
 

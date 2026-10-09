@@ -11,6 +11,10 @@ order: 6
 tags: research digest, safety leadership, meta-analysis, safety culture, transformational leadership
 standards: ISO 45001:2018
 next_review: 2027-10-09
+audience: Safety leaders, managers, trainers and researchers
+scope: A summary of one meta-analysis (2026) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Li, Z., Tang, J., Yang, X. and Zhang, J. (2026). Impact of leadership styles on safety performance in risky workplaces: a meta-analysis. Frontiers in Psychology, 17, 1848283 | https://doi.org/10.3389/fpsyg.2026.1848283 | Frontiers (CC BY 4.0) | 2026-10-09
 - ISO 45001:2018 Occupational health and safety management systems - Requirements with guidance for use | https://www.iso.org/standard/63787.html | International Organization for Standardization | 2026-10-09

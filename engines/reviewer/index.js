@@ -14,13 +14,13 @@ function summarize(flags) {
 }
 
 async function reviewDraft(article, { llm = null, registry = defaultRegistry(), sourceRegister = defaultSources(), today = new Date() } = {}) {
-  const flags = [...checks.identity(article), ...checks.citations(article), ...checks.standards(article, registry), ...checks.sources(article, sourceRegister), ...checks.similarity(article), ...checks.structure(article, today)];
+  const flags = [...checks.identity(article), ...checks.citations(article), ...checks.standards(article, registry), ...checks.sources(article, sourceRegister), ...checks.similarity(article), ...checks.structure(article, today), ...checks.style(article)];
   const claims = await checkClaims(article, llm);
   flags.push(...claims.flags);
   const s = summarize(flags);
   return {
     engine: 'reviewer', version: article.version, result: s.result, score: s.score, flags,
-    checks_run: ['identity', 'citations', 'standards', 'sources', 'similarity', 'structure', `claims:${claims.method}`],
+    checks_run: ['identity', 'citations', 'standards', 'sources', 'similarity', 'structure', 'style', `claims:${claims.method}`],
     model: { provider: claims.method === 'model' ? llm.name : 'none', name: claims.method === 'model' ? llm.model : claims.method },
   };
 }

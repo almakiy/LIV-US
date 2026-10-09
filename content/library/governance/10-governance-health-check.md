@@ -11,6 +11,10 @@ order: 10
 tags: self-assessment, checklist, governance maturity, boards, small business
 standards: ISO 37000:2021, ISO 37004:2023
 next_review: 2027-10-09
+audience: Owners and governing bodies of any size
+scope: A 30-question self-assessment in six areas with a scoring guide. It is not an audit, a certification or a measure of legal compliance.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - ISO 37004:2023 Governance of organizations - Governance maturity model - Guidance | https://www.iso.org/standard/65037.html | International Organization for Standardization | 2026-10-09

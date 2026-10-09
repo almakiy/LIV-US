@@ -11,6 +11,10 @@ order: 13
 tags: glossary, definitions, governance terms, compliance, risk
 standards: ISO 37000:2021, ISO 31000:2018, ISO 37301:2021
 next_review: 2027-10-09
+audience: Anyone reading the governance collection
+scope: Plain-language definitions of the terms used in this collection. The standards' own definitions prevail.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - ISO 31000:2018 Risk management - Guidelines | https://www.iso.org/standard/65694.html | International Organization for Standardization | 2026-10-09

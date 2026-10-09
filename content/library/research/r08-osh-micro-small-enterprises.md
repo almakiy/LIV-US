@@ -11,11 +11,15 @@ order: 8
 tags: research digest, small business, micro enterprises, osh, eu-osha, shops
 standards: ISO 45001:2018
 next_review: 2027-10-09
+audience: Owners of micro and small businesses, sector associations and HSE advisers
+scope: A summary of one EU-OSHA research report (2018) and its practical meaning.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - Walters, D., Wadsworth, E., Hasle, P., Refslund, B. and Ramioul, M. (2018). Safety and health in micro and small enterprises in the EU: Final report from the 3-year SESAME project | https://osha.europa.eu/en/publications/safety-and-health-micro-and-small-enterprises-eu-final-report-3-year-sesame-project | European Agency for Safety and Health at Work | 2026-10-09
 - Leading health and safety at work: essential principles | https://www.hse.gov.uk/leadership/essentialprinciples.htm | Health and Safety Executive | 2026-10-09
 ---
-**Study:** Walters, Wadsworth, Hasle, Refslund and Ramioul (2018), *Safety and health in micro and small enterprises in the EU: Final report from the 3-year SESAME project*, European Agency for Safety and Health at Work (EU-OSHA) [1].
+**Study:** Walters et al. (2018), *Safety and health in micro and small enterprises in the EU: Final report from the 3-year SESAME project*, published by EU-OSHA [1].
 
 ## The question
 

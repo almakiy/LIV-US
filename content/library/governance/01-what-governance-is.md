@@ -11,6 +11,10 @@ order: 1
 tags: governance, iso 37000, oecd principles, boards, foundations
 standards: ISO 37000:2021, ISO 37004:2023, ISO 37005:2024
 next_review: 2027-10-09
+audience: Owners, board members, managers and advisers new to governance
+scope: The concept of governance of organizations as described in ISO 37000:2021 and the G20/OECD Principles 2023. It does not cover sector-specific or national legal requirements.
+edition: 1.0
+prepared: 2026-10-09
 sources:
 - ISO 37000:2021 Governance of organizations - Guidance | https://www.iso.org/standard/65036.html | International Organization for Standardization | 2026-10-09
 - G20/OECD Principles of Corporate Governance 2023 | https://doi.org/10.1787/ed750b30-en | OECD Publishing | 2026-10-09
