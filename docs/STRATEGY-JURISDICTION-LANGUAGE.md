@@ -1,6 +1,6 @@
 # LIV credential strategy: jurisdiction, own standards, language and regional focus
 
-Status (October 9, 2026): recommendations for owner decision (D-S.1 to D-S.5 in `BUILD-PLAN.md` §5). Nothing here changes the site, a credential or a scheme. The HSE Governance scheme stays IN DEVELOPMENT and this memo does not define it.
+Status: recommendations of October 9, 2026, **approved by the owner on October 10, 2026** (D-S.1 to D-S.5 in `BUILD-PLAN.md` §5). Nothing here changes the site, a credential or a scheme. The HSE Governance scheme stays IN DEVELOPMENT and this memo does not define it.
 
 Evidence: three verification passes on October 9, 2026 read the official texts of U.S. and UK frameworks and the published pages of credentialing bodies. Copies of the pages and PDFs are kept outside the repository for the reviewer. Sites that refused automated readers were not bypassed; points that no official copy confirmed are marked **not verified** below.
 

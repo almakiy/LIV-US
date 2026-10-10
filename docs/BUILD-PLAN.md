@@ -1,6 +1,6 @@
 # LIV — Build plan in phases (for owner review)
 
-Status (October 9, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. **Track K: the governance editorial library, source verification and the content quality layer are built (K.5 to K.7); expert review (K.8) is next.** Strategy on jurisdiction, own standards, language and regional focus: `STRATEGY-JURISDICTION-LANGUAGE.md` (decisions D-S.1 to D-S.5). Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
+Status (October 9, 2026): the owner asked to proceed phase by phase. **Phase 0 code is built** (see its status below); the owner checklist for Phase 0 is open. **Track K: the governance editorial library, source verification and the content quality layer are built (K.5 to K.7); expert review (K.8) is next.** Strategy on jurisdiction, own standards, language and regional focus: `STRATEGY-JURISDICTION-LANGUAGE.md` (decisions D-S.1 to D-S.5, approved October 10). Phase 1 starts after the Phase 0 review. Each phase ends with a review before the next one starts.
 
 This plan merges every open item from: the A–T brief (October 8; it was sent twice with identical text and is already applied, see §2), `ROADMAP.md`, `PARTNER-GATEWAY.md` (still to build), `EXAM-SYSTEM.md` (E1–E5), `CREDENTIAL-MODEL.md`, `RECOGNITION-ROADMAP.md`, `GLOBAL-STRATEGY.md`, `FUTURE-CREDENTIAL-ARCHITECTURE.md`, `HSE-GOVERNANCE-SCHEME-ROADMAP.md`, `LEGACY-NAMING.md`, the pre-launch checklist and Phase 2 backlog in `LIV-Phase1-Architecture.md` (§13, §14), and findings from a repository audit (tagged **audit**; these are proposals, not owner decisions).
 
@@ -299,12 +299,13 @@ Track K and Track M: any time after Phase 1. Track S: non-software work any time
 | D-7.x | Certification and membership | Cycle, CPD units, ethics requirement, membership tiers and prices. |
 | D-8.x | External credentials | Which credentials, and the role LIV actually plays for each, confirmed in writing. |
 | D-K | Engines | Model key, monthly budget, named reviewers, approved source list. |
+| D-C | Wording of the claims statements on public pages (positive statement of what LIV is, instead of denials) | Proposal of October 9 presented; **deferred by the owner on October 10 for a second review.** Public disclaimers stay unchanged until then. |
 | D-M | Arabic | Timing of Arabic pages; an Arabic line on credentials (open since October 5). |
-| D-S.1 | Basis of LIV credentials | An international core (standards and principles that apply in any country), with U.S. and UK frameworks as reference models and Gulf law as separate regional application modules, not the base. |
-| D-S.2 | U.S. and UK frameworks | Add them to the library as reference content (K.14, K.15), U.S. first as the home jurisdiction. |
-| D-S.3 | LIV's own standards | Yes: body of knowledge and competence standard first, under the written procedure in S.1; ANSI developer accreditation as a later option. |
-| D-S.4 | Languages | English is the language of record; Arabic is the first service language for pages and publications; Arabic exams later, through the ITC guidelines. |
-| D-S.5 | MENA focus | Show it from day one through a Regions hub (M.5); the homepage and credentials keep the international U.S.-based identity. |
+| D-S.1 | Basis of LIV credentials | An international core (standards and principles that apply in any country), with U.S. and UK frameworks as reference models and Gulf law as separate regional application modules, not the base. **Approved October 10.** |
+| D-S.2 | U.S. and UK frameworks | Add them to the library as reference content (K.14, K.15), U.S. first as the home jurisdiction. **Approved October 10.** |
+| D-S.3 | LIV's own standards | Yes: body of knowledge and competence standard first, under the written procedure in S.1; ANSI developer accreditation as a later option. **Approved October 10.** |
+| D-S.4 | Languages | English is the language of record; Arabic is the first service language for pages and publications; Arabic exams later, through the ITC guidelines. **Approved October 10.** |
+| D-S.5 | MENA focus | Show it from day one through a Regions hub (M.5); the homepage and credentials keep the international U.S.-based identity. **Approved October 10.** |
 
 ## 6. Conflicts in older documents and how this plan resolves them
 | # | Older text | Resolution |
