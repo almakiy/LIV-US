@@ -1,5 +1,5 @@
 {
-  "_note": "Publishers the Knowledge Hub may rely on, by trust tier. The Reviewer warns when a source comes from a publisher not listed here, and when a text states a legal or mandatory requirement without an official source (law or regulator). Adding a publisher is an editorial decision: record who added it and why in docs/GOVERNANCE-LIBRARY.md. A listed publisher is not a guarantee that a given page is current: editions and amendments are still checked by a person.",
+  "_note": "Publishers the Knowledge Hub may rely on, by trust tier. The Reviewer warns when a source comes from a publisher not listed here, and when a text states a legal or mandatory requirement without an official source (law or regulator). Adding a publisher is an editorial decision: record who added it and why in docs/GOVERNANCE-LIBRARY.md. A listed publisher is not a guarantee that a given page is current: editions and amendments are still checked by a person. Optional fields: reuse = A (public domain or open license allowing adaptation and commercial use), B (open with limits: unaltered, non-commercial or excerpts only), C (free to read, all rights reserved), D (paid or member-only), per docs/REFERENCE-FRAMEWORKS.md; no_ai = true when the publisher's terms forbid text and data mining or AI processing, so engines never receive its text.",
   "tiers": {
     "official": "Legislation and regulators: the authority that issues or enforces the rule. The only tier that can support 'mandatory' or 'required by law'.",
     "standards": "Standards bodies: titles, editions and scope of standards. Paid standards are referenced by clause number and summarized, never copied.",
@@ -10,7 +10,8 @@
   "publishers": {
     "iso.org": {
       "tier": "standards",
-      "name": "International Organization for Standardization"
+      "name": "International Organization for Standardization",
+      "reuse": "D"
     },
     "iec.ch": {
       "tier": "standards",
@@ -22,11 +23,14 @@
     },
     "oecd.org": {
       "tier": "intergovernmental",
-      "name": "OECD"
+      "name": "OECD",
+      "reuse": "B"
     },
     "ilo.org": {
       "tier": "intergovernmental",
-      "name": "International Labour Organization"
+      "name": "International Labour Organization",
+      "reuse": "B",
+      "reuse_note": "Publications from May 3, 2023 are CC BY 4.0 (class A); earlier works allow short excerpts only."
     },
     "normlex.ilo.org": {
       "tier": "intergovernmental",
@@ -34,11 +38,13 @@
     },
     "ifc.org": {
       "tier": "intergovernmental",
-      "name": "International Finance Corporation (World Bank Group)"
+      "name": "International Finance Corporation (World Bank Group)",
+      "reuse": "C"
     },
     "worldbank.org": {
       "tier": "intergovernmental",
-      "name": "World Bank"
+      "name": "World Bank",
+      "reuse": "B"
     },
     "openknowledge.worldbank.org": {
       "tier": "intergovernmental",
@@ -58,11 +64,13 @@
     },
     "coso.org": {
       "tier": "professional",
-      "name": "Committee of Sponsoring Organizations of the Treadway Commission"
+      "name": "Committee of Sponsoring Organizations of the Treadway Commission",
+      "reuse": "D"
     },
     "theiia.org": {
       "tier": "professional",
-      "name": "The Institute of Internal Auditors"
+      "name": "The Institute of Internal Auditors",
+      "reuse": "C"
     },
     "iod.com": {
       "tier": "professional",
@@ -74,19 +82,23 @@
     },
     "frc.org.uk": {
       "tier": "official",
-      "name": "Financial Reporting Council (UK)"
+      "name": "Financial Reporting Council (UK)",
+      "reuse": "C"
     },
     "hse.gov.uk": {
       "tier": "official",
-      "name": "Health and Safety Executive (UK)"
+      "name": "Health and Safety Executive (UK)",
+      "reuse": "A"
     },
     "legislation.gov.uk": {
       "tier": "official",
-      "name": "UK legislation"
+      "name": "UK legislation",
+      "reuse": "A"
     },
     "osha.gov": {
       "tier": "official",
-      "name": "Occupational Safety and Health Administration (U.S.)"
+      "name": "Occupational Safety and Health Administration (U.S.)",
+      "reuse": "A"
     },
     "cdc.gov": {
       "tier": "official",
@@ -242,7 +254,8 @@
     },
     "gov.uk": {
       "tier": "official",
-      "name": "UK Government (GOV.UK)"
+      "name": "UK Government (GOV.UK)",
+      "reuse": "A"
     },
     "op.europa.eu": {
       "tier": "intergovernmental",
@@ -287,6 +300,86 @@
     "moj.gov.kw": {
       "tier": "official",
       "name": "Ministry of Justice (Kuwait)"
+    },
+    "govinfo.gov": {
+      "tier": "official",
+      "name": "U.S. Government Publishing Office (govinfo)",
+      "reuse": "A"
+    },
+    "ecfr.gov": {
+      "tier": "official",
+      "name": "Electronic Code of Federal Regulations (U.S.)",
+      "reuse": "A"
+    },
+    "ussc.gov": {
+      "tier": "official",
+      "name": "U.S. Sentencing Commission",
+      "reuse": "A"
+    },
+    "justice.gov": {
+      "tier": "official",
+      "name": "U.S. Department of Justice",
+      "reuse": "A"
+    },
+    "gao.gov": {
+      "tier": "official",
+      "name": "U.S. Government Accountability Office",
+      "reuse": "A"
+    },
+    "whitehouse.gov": {
+      "tier": "official",
+      "name": "The White House, Office of Management and Budget (U.S.)",
+      "reuse": "A"
+    },
+    "nist.gov": {
+      "tier": "standards",
+      "name": "National Institute of Standards and Technology (U.S.)",
+      "reuse": "A"
+    },
+    "irs.gov": {
+      "tier": "official",
+      "name": "Internal Revenue Service (U.S.)",
+      "reuse": "A"
+    },
+    "eur-lex.europa.eu": {
+      "tier": "official",
+      "name": "EUR-Lex, Official Journal of the European Union",
+      "reuse": "A"
+    },
+    "iccwbo.org": {
+      "tier": "professional",
+      "name": "International Chamber of Commerce",
+      "reuse": "C",
+      "no_ai": true
+    },
+    "globalreporting.org": {
+      "tier": "professional",
+      "name": "Global Reporting Initiative",
+      "reuse": "C",
+      "no_ai": true
+    },
+    "ifrs.org": {
+      "tier": "standards",
+      "name": "IFRS Foundation (ISSB)",
+      "reuse": "C",
+      "no_ai": true
+    },
+    "unesco.org": {
+      "tier": "intergovernmental",
+      "name": "UNESCO",
+      "reuse": "C",
+      "no_ai": true
+    },
+    "unodc.org": {
+      "tier": "intergovernmental",
+      "name": "United Nations Office on Drugs and Crime",
+      "reuse": "C"
+    },
+    "aiverifyfoundation.sg": {
+      "tier": "professional",
+      "name": "AI Verify Foundation (Singapore)",
+      "reuse": "C",
+      "no_ai": true
     }
   },
   "doi_prefixes": {

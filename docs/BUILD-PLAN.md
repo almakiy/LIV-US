@@ -255,8 +255,8 @@ Design: `STRATEGY-JURISDICTION-LANGUAGE.md` Q3. Non-software work first; softwar
 | S.1 | Written standards-development procedure: balanced committee (no single interest in the majority), public comment with a written answer to each comment, approval by at least two thirds, procedural appeals, dated editions, review at least every 5 years, independent oversight. | strategy memo | — |
 | S.2 | LIV Governance Body of Knowledge and competence standard from a practice analysis across regions (tasks, competence per task, prerequisites, assessment, recertification), as ISO/IEC 17024:2026 expects of a scheme. | strategy memo | — |
 | S.3 | Public comment page for draft LIV standards (comments, responses, editions) built on the Knowledge Hub and the QMS records. | strategy memo | M |
-| S.5 | LIV standard template from the drafting pattern in `REFERENCE-FRAMEWORKS.md` §4 (GovS-based sections, verb table, outcome → principle → requirements → practices → evidence, three organization tiers, four maturity levels, apply and explain, document control). | REF §4 | S |
-| S.6 | Source rights in the engines: record each source's reuse class and a "no AI processing" flag in the trusted-source register (ICC, GRI, IFRS, UNESCO, AI Verify Foundation); the Producer engine (K.1) never puts flagged sources in an evidence pack. Add the U.S. federal publishers (govinfo, ecfr, ussc, justice.gov, files.gao.gov, whitehouse.gov, nist.gov) and EUR-Lex to the register. | REF §1 | S |
+| S.5 | **Built:** `STANDARD-TEMPLATE.md`. LIV standard template from the drafting pattern in `REFERENCE-FRAMEWORKS.md` §4 (GovS-based sections, verb table, outcome → principle → requirements → practices → evidence, three organization tiers, four maturity levels, apply and explain, document control). | REF §4 | S |
+| S.6 | **Built.** Source rights in the engines: record each source's reuse class and a "no AI processing" flag in the trusted-source register (ICC, GRI, IFRS, UNESCO, AI Verify Foundation); the Producer engine (K.1) never puts flagged sources in an evidence pack. Add the U.S. federal publishers (govinfo, ecfr, ussc, justice.gov, files.gao.gov, whitehouse.gov, nist.gov) and EUR-Lex to the register. | REF §1 | S |
 | S.4 | Later option: ANSI accreditation as a standards developer. Until it is granted, the texts are "LIV standards" only. | strategy memo | — |
 
 ### Track O — Owner and specialists (non-software, long lead times)
@@ -309,7 +309,7 @@ Track K and Track M: any time after Phase 1. Track S: non-software work any time
 | D-S.3 | LIV's own standards | Yes: body of knowledge and competence standard first, under the written procedure in S.1; ANSI developer accreditation as a later option. **Approved October 10.** |
 | D-S.4 | Languages | English is the language of record; Arabic is the first service language for pages and publications; Arabic exams later, through the ITC guidelines. **Approved October 10.** |
 | D-S.5 | MENA focus | Show it from day one through a Regions hub (M.5); the homepage and credentials keep the international U.S.-based identity. **Approved October 10.** |
-| D-S.6 | First layer of reference frameworks and drafting pattern | Adopt the Class A frameworks in `REFERENCE-FRAMEWORKS.md` §2 as LIV's first layer, cite Classes B to D only, and write LIV standards on the pattern in §4. |
+| D-S.6 | First layer of reference frameworks and drafting pattern | Adopt the Class A frameworks in `REFERENCE-FRAMEWORKS.md` §2 as LIV's first layer, cite Classes B to D only, and write LIV standards on the pattern in §4. **Approved October 12.** |
 
 ## 6. Conflicts in older documents and how this plan resolves them
 | # | Older text | Resolution |

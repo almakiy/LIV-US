@@ -104,10 +104,10 @@ async function buildReviewPack(a, report, { register = defaultSources() } = {}) 
   list(cl, 'F', 2, claims.length + 1, VERDICTS); wrap(cl);
 
   const so = wb.addWorksheet('Sources');
-  header(so, [['#', 6], ['Title / العنوان', 55], ['Publisher and license / الناشر والترخيص', 32], ['Link / الرابط', 50], ['Accessed / تاريخ الوصول', 14], ['Trust tier / مستوى الثقة', 18], ['Opened and current? / فُتح وساري؟', 18], ['Note / ملاحظة', 40]]);
+  header(so, [['#', 6], ['Title / العنوان', 55], ['Publisher and license / الناشر والترخيص', 32], ['Link / الرابط', 50], ['Accessed / تاريخ الوصول', 14], ['Trust tier / مستوى الثقة', 18], ['Opened and current? / فُتح وساري؟', 18], ['Note / ملاحظة', 40], ['Reuse class / فئة الاستخدام', 22]]);
   sources.forEach((s, i) => {
     const t = publisherOf(s.url, register);
-    const row = so.addRow([i + 1, s.title, s.publisher || '', s.url, s.accessed || '', t ? t.tier : 'not in register', '', '']);
+    const row = so.addRow([i + 1, s.title, s.publisher || '', s.url, s.accessed || '', t ? t.tier : 'not in register', '', '', t && t.reuse ? `${t.reuse}${t.no_ai ? ', no AI processing' : ''}` : 'check terms']);
     row.getCell(4).value = { text: s.url, hyperlink: s.url };
   });
   list(so, 'G', 2, sources.length + 1, YESNO); wrap(so);

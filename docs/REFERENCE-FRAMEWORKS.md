@@ -4,7 +4,7 @@ Status (October 10, 2026): catalog prepared at the owner's request. Before LIV w
 - Where the license allows, LIV quotes, republishes and adapts them.
 - Elsewhere, LIV learns from how they are organized and summarizes them in its own words.
 
-The first-layer list and the drafting pattern are decision D-S.6 in `BUILD-PLAN.md`.
+The first-layer list and the drafting pattern were **approved by the owner on October 12, 2026** (decision D-S.6 in `BUILD-PLAN.md`). The template is `STANDARD-TEMPLATE.md`; reuse classes and the no-AI flag are recorded in `engines/data/trusted-sources.json`.
 
 **Evidence.** Four verification passes on October 10, 2026 read each framework's current edition and its reuse terms on the issuer's own pages or PDFs. Copies, with SHA-256 hashes, are kept outside the repository for the reviewer. Sites that refused automated readers were not bypassed. What no official copy confirmed is marked **not verified**.
 

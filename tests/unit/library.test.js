@@ -60,6 +60,17 @@ test('every library item is valid, unique and passes the Reviewer without blocki
   }
 });
 
+test('the register records reuse classes, and sources whose terms forbid AI processing stay out of engines', () => {
+  const reg = defaultSources();
+  assert.strictEqual(checks.publisherOf('https://files.gao.gov/assets/gao-25-107721.pdf', reg).reuse, 'A');
+  assert.strictEqual(checks.publisherOf('https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.29.pdf', reg).tier, 'standards');
+  assert.strictEqual(checks.evidenceAllowed('https://www.globalreporting.org/standards/', reg), false);
+  assert.strictEqual(checks.evidenceAllowed('https://www.hse.gov.uk/pubns/books/hsg65.htm', reg), true);
+  const a = { kind: 'guide', summary: 's', body_md: 'Boards should oversee reporting [1].', sources: [{ title: 'GRI 2', url: 'https://www.globalreporting.org/standards/' }] };
+  assert.deepStrictEqual(checks.sources({ ...a, ai_assisted: true }, reg).map((f) => f.id), ['sources.no-ai']);
+  assert.deepStrictEqual(checks.sources(a, reg), [], 'a person-written draft may cite it');
+});
+
 test('re-saving sources in the editor keeps their access dates and excerpts', () => {
   const { mergeExcerpts } = require('../../src/lib/content');
   const old = [{ title: 'A', url: 'https://www.iso.org/a', accessed: '2026-10-09' }, { title: 'B', url: 'https://www.oecd.org/b', excerpt: 'quote', accessed: '2026-10-01' }];
@@ -119,6 +130,8 @@ test('the expert review pack lists every statement with its cited source, the so
   assert.strictEqual(cl.getCell('F2').dataValidation.type, 'list');
   assert.strictEqual(wb.getWorksheet('Sources').getCell('F2').value, 'standards');
   assert.strictEqual(wb.getWorksheet('Sources').getCell('F3').value, 'not in register');
+  assert.strictEqual(wb.getWorksheet('Sources').getCell('I2').value, 'D');
+  assert.strictEqual(wb.getWorksheet('Sources').getCell('I3').value, 'check terms');
   assert.strictEqual(wb.getWorksheet('Document').getCell('B6').value, 'Owners');
   assert.strictEqual(wb.getWorksheet('Quality checklist').rowCount, CHECKLIST.length + 1);
 });
