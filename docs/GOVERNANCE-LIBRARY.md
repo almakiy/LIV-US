@@ -21,7 +21,8 @@ The library makes no claim about LIV's own status. It says nothing about accredi
    - Items are loaded as drafts. Each carries an automated Reviewer report, and `ai_assisted` is set.
    - Publishing needs a named subject-matter reviewer. If the Reviewer blocks an item, publishing it anyway needs a recorded override reason.
    - The reviewer checks each cited fact against its source before publishing, above all the instrument numbers, dates and amendments in the regulatory maps.
-7. **Not legal advice.** Regulatory texts say so, and they point readers to the official text and to counsel.
+7. **Reuse rights.** Each source keeps to its reuse class in `REFERENCE-FRAMEWORKS.md` §1: open texts (U.S. federal works, OGL, CC BY, EUR-Lex) may be quoted and adapted with their attribution line; all others are summarized in our own words with short quotations. Texts whose terms forbid AI processing (ICC, GRI, IFRS, UNESCO, AI Verify Foundation) are summarized by a person and never given to an engine.
+8. **Not legal advice.** Regulatory texts say so, and they point readers to the official text and to counsel.
 
 ## How the AI engines use this
 - The Reviewer engine applies rules 1 to 3 automatically on every draft: from the library, from the Content API, or written in the editor.
