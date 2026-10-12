@@ -9,4 +9,6 @@ const BLOCK = [
 ];
 // US spelling is the house style (warnings only).
 const BRITISH = ['organisation', 'organisations', 'programme', 'programmes', 'colour', 'centre', 'centres', 'behaviour', 'licence', 'analyse', 'analysed', 'realise', 'realised', 'prioritise', 'standardise', 'minimise', 'optimise', 'whilst', 'labour', 'catalogue', 'judgement', 'defence', 'favour', 'neighbour'];
-module.exports = { BLOCK, BRITISH };
+// Official names keep their own spelling (e.g. the UK licence that GOV.UK texts require in attributions).
+const PROPER_NAMES = ['Open Government Licence', 'Global Internal Audit Standards'];
+module.exports = { BLOCK, BRITISH, PROPER_NAMES };

@@ -60,6 +60,12 @@ test('every library item is valid, unique and passes the Reviewer without blocki
   }
 });
 
+test('official names keep their spelling, other British spellings are flagged', () => {
+  const base = { title: 'T', summary: 'S', body_md: 'Contains public sector information licensed under the Open Government Licence v3.0.' };
+  assert.deepStrictEqual(checks.identity(base), []);
+  assert.deepStrictEqual(checks.identity({ ...base, body_md: 'The licence allows reuse.' }).map((f) => f.id), ['identity.us-spelling']);
+});
+
 test('the register records reuse classes, and sources whose terms forbid AI processing stay out of engines', () => {
   const reg = defaultSources();
   assert.strictEqual(checks.publisherOf('https://files.gao.gov/assets/gao-25-107721.pdf', reg).reuse, 'A');

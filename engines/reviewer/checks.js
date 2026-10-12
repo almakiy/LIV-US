@@ -1,5 +1,5 @@
 // Deterministic checks. No model needed, no cost: these catch the objective problems and always run.
-const { BLOCK, BRITISH } = require('./rules');
+const { BLOCK, BRITISH, PROPER_NAMES } = require('./rules');
 
 const flag = (severity, check, id, message, location) => ({ id, severity, check, message, ...(location ? { location } : {}) });
 const snippet = (text, idx, len = 70) => text.slice(Math.max(0, idx - 20), idx + len).replace(/\s+/g, ' ').trim();
@@ -13,7 +13,8 @@ function identity(a) {
   const out = []; const text = `${a.title}\n${a.summary}\n${a.body_md}`;
   for (const r of BLOCK) { const m = r.re.exec(text); if (m) out.push(flag('block', 'identity', `identity.${r.id}`, r.why, snippet(text, m.index))); }
   const found = new Set();
-  for (const w of BRITISH) { const m = new RegExp(`\\b${w}\\b`, 'i').exec(text); if (m) found.add(w); }
+  const plain = PROPER_NAMES.reduce((t, n) => t.split(n).join(''), text);
+  for (const w of BRITISH) { const m = new RegExp(`\\b${w}\\b`, 'i').exec(plain); if (m) found.add(w); }
   if (found.size) out.push(flag('warn', 'identity', 'identity.us-spelling', `Use US spelling (house style): ${[...found].slice(0, 6).join(', ')}.`));
   if (hasNonLatin(text)) out.push(flag('block', 'language', 'language.non-latin', 'The site is English only: letters from other scripts were found.'));
   return out;
