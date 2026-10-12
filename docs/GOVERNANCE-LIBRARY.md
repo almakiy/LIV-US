@@ -1,6 +1,6 @@
 # Governance editorial library
 
-Status (October 9, 2026): first collection prepared in `content/library/governance/` (14 items) and `content/library/research/` (9 research digests). It is loaded into the site as **drafts only**. Nothing is public until a named reviewer publishes each item.
+Status (October 12, 2026): `content/library/governance/` (14 items), `content/library/research/` (9 research digests) and `content/library/reference/` (8 first-layer reference items built on openly licensed frameworks, see `REFERENCE-FRAMEWORKS.md`). It is loaded into the site as **drafts only**. Nothing is public until a named reviewer publishes each item.
 
 ## Purpose
 The library sets out what governance is, how to write it down and how to lead it. It covers organizations of every size, from a single shop to a listed company. It comes first, before any training or credential, so that later courses and assessments rest on a body of knowledge that is already published and cited. This also follows the brief's priority order: Knowledge Hub before credential engines.
