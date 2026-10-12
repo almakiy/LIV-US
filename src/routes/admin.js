@@ -153,6 +153,7 @@ function readArticleForm(b) {
     jurisdiction: String(b.jurisdiction || '').trim().slice(0, 80),
     reviewed_by: String(b.reviewed_by || '').trim().slice(0, 150),
     next_review_at: /^\d{4}-\d{2}-\d{2}$/.test(b.next_review_at || '') ? b.next_review_at : null,
+    publish_on: /^\d{4}-\d{2}-\d{2}$/.test(b.publish_on || '') ? b.publish_on : null,
     standards: parseStandards(b.standards),
     sources: parseSourcesText(b.sources_text),
     override_reason: String(b.override_reason || '').trim().slice(0, 300),
@@ -167,7 +168,7 @@ const editForm = async (res, a, error) => {
 };
 
 r.get('/content', wrap(async (req, res) => {
-  const { rows } = await q(`SELECT id, slug, title, category, kind, status, published_at, updated_at, origin, ai_assisted, reviewed_by, next_review_at, (next_review_at IS NOT NULL AND next_review_at < CURRENT_DATE) AS stale FROM articles ORDER BY updated_at DESC LIMIT 200`);
+  const { rows } = await q(`SELECT id, slug, title, category, kind, status, published_at, updated_at, origin, ai_assisted, reviewed_by, next_review_at, (next_review_at IS NOT NULL AND next_review_at < CURRENT_DATE) AS stale, (status = 'published' AND published_at > now()) AS scheduled FROM articles ORDER BY (status = 'published' AND published_at > now()) DESC, updated_at DESC LIMIT 200`);
   const lib = await require('../lib/library').pending();
   res.render('admin/content', { title: 'Knowledge hub content', rows, CATEGORIES, KINDS, lib: { total: lib.items.length, missing: lib.missing.length, errors: lib.errors } });
 }));
@@ -221,6 +222,11 @@ r.post('/content', wrap(async (req, res) => {
   if (!f.title) return editForm(res, back, 'A title is required.');
   if (publish && (!f.body_md.trim() || !f.summary)) return editForm(res, back, 'A summary and body are required to publish.');
   if (publish && !f.reviewed_by) return editForm(res, back, 'Every published item needs a named human subject-matter reviewer. Fill in "Reviewed by" first.');
+  // Release date: an approved item can be scheduled to go live on a later date (12:00 UTC), so content appears on a steady
+  // calendar. The same human gate applies; the date only delays visibility. Back-dating is not allowed.
+  const today = new Date().toISOString().slice(0, 10);
+  if (publish && f.publish_on && f.publish_on < today) return editForm(res, back, 'The release date cannot be in the past.');
+  const releaseAt = publish && f.publish_on && f.publish_on > today ? new Date(`${f.publish_on}T12:00:00Z`) : null;
   const slug = await uniqueSlug(f.slug, id);
   const by = req.user.full_name || req.user.email;
   let saved;
@@ -243,22 +249,24 @@ r.post('/content', wrap(async (req, res) => {
         sources=$12, standards=$13, ai_assisted=$14, next_review_at=$15, version = version + $16,
         reviewed_by = $17::varchar, reviewed_at = CASE WHEN $17::varchar = '' THEN NULL WHEN $17::varchar <> reviewed_by OR reviewed_at IS NULL THEN now() ELSE reviewed_at END, approved_by = CASE WHEN $17::varchar = '' THEN NULL ELSE $18::uuid END,
         status = CASE WHEN $9 THEN 'published' WHEN $10 THEN 'draft' ELSE status END,
-        published_at = CASE WHEN $9 AND published_at IS NULL THEN now() ELSE published_at END
-      WHERE id=$11 RETURNING id, status, slug`, [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish, req.body.action === 'unpublish', id,
-      JSON.stringify(f.sources), f.standards, f.ai_assisted, f.next_review_at, changed ? 1 : 0, reviewerKept ? f.reviewed_by : '', req.user.id]);
+        published_at = CASE WHEN $9 AND $19::timestamptz IS NOT NULL AND (status <> 'published' OR published_at > now()) THEN $19::timestamptz
+          WHEN $9 AND $20 AND published_at > now() THEN now() WHEN $9 AND published_at IS NULL THEN now() WHEN $10 AND published_at > now() THEN NULL ELSE published_at END
+      WHERE id=$11 RETURNING id, status, slug, published_at`, [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish, req.body.action === 'unpublish', id,
+      JSON.stringify(f.sources), f.standards, f.ai_assisted, f.next_review_at, changed ? 1 : 0, reviewerKept ? f.reviewed_by : '', req.user.id, releaseAt, f.publish_on === today]);
     saved = x;
     if (changed) await snapshot(id, by, f.change_note || 'Edited');
   } else {
     const { rows: [x] } = await q(`INSERT INTO articles (slug, title, summary, body_md, category, kind, author_name, tags, status, published_at, created_by, sources, standards, ai_assisted, next_review_at, reviewed_by, reviewed_at, approved_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::varchar, CASE WHEN $16::varchar = '' THEN NULL ELSE now() END, CASE WHEN $16::varchar = '' THEN NULL ELSE $11::uuid END) RETURNING id, status, slug`,
-    [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish ? 'published' : 'draft', publish ? new Date() : null, req.user.id,
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::varchar, CASE WHEN $16::varchar = '' THEN NULL ELSE now() END, CASE WHEN $16::varchar = '' THEN NULL ELSE $11::uuid END) RETURNING id, status, slug, published_at`,
+    [slug, f.title, f.summary, f.body_md, f.category, f.kind, f.author_name, f.tags, publish ? 'published' : 'draft', publish ? (releaseAt || new Date()) : null, req.user.id,
       JSON.stringify(f.sources), f.standards, f.ai_assisted, f.next_review_at, f.reviewed_by]);
     saved = x;
     await snapshot(x.id, by, f.change_note || 'Created');
   }
   await q('UPDATE articles SET jurisdiction = $1 WHERE id = $2', [f.jurisdiction, saved.id]);
-  await audit({ user: req.user, action: `content.${saved.status === 'published' ? 'publish' : 'save'}`, target: slug });
-  flash(req, 'success', saved.status === 'published' ? 'Saved and published.' : 'Draft saved.');
+  const scheduled = saved.status === 'published' && saved.published_at && new Date(saved.published_at) > new Date();
+  await audit({ user: req.user, action: `content.${scheduled ? 'schedule' : saved.status === 'published' ? 'publish' : 'save'}`, target: slug, ...(scheduled ? { metadata: { release: saved.published_at } } : {}) });
+  flash(req, 'success', scheduled ? `Approved and scheduled: it goes live on ${new Date(saved.published_at).toISOString().slice(0, 10)}.` : saved.status === 'published' ? 'Saved and published.' : 'Draft saved.');
   res.redirect(`/admin/content/${saved.id}`);
 }));
 r.post('/content/:id/request-review', wrap(async (req, res, next) => {

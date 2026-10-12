@@ -16,7 +16,7 @@ r.get(['/knowledge', ...Object.keys(SECTIONS)], wrap(async (req, res) => {
   const kind = SECTIONS[req.path] || (KINDS[req.query.kind] ? req.query.kind : '');
   const search = String(req.query.q || '').trim().slice(0, 80);
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const where = ["status = 'published'"]; const params = [];
+  const where = ["status = 'published'", 'published_at <= now()']; const params = [];
   if (category) { params.push(category); where.push(`category = $${params.length}`); }
   if (kind) { params.push(kind); where.push(`kind = $${params.length}`); }
   if (search) { params.push(`%${search.toLowerCase()}%`); where.push(`(lower(title) LIKE $${params.length} OR lower(summary) LIKE $${params.length} OR $${params.length} ILIKE ANY (SELECT '%' || unnest(tags) || '%'))`); }
@@ -27,20 +27,20 @@ r.get(['/knowledge', ...Object.keys(SECTIONS)], wrap(async (req, res) => {
 }));
 
 r.get('/knowledge/:slug', wrap(async (req, res, next) => {
-  const { rows: [a] } = await q(`SELECT * FROM articles WHERE slug = $1 AND status = 'published'`, [req.params.slug]);
+  const { rows: [a] } = await q(`SELECT * FROM articles WHERE slug = $1 AND status = 'published' AND published_at <= now()`, [req.params.slug]);
   if (!a) return next();
-  const { rows: related } = await q(`SELECT slug, title, kind FROM articles WHERE status='published' AND category=$1 AND id <> $2 ORDER BY published_at DESC LIMIT 3`, [a.category, a.id]);
+  const { rows: related } = await q(`SELECT slug, title, kind FROM articles WHERE status='published' AND published_at <= now() AND category=$1 AND id <> $2 ORDER BY published_at DESC LIMIT 3`, [a.category, a.id]);
   res.render('public/knowledge-article', { title: a.title, description: a.summary, ogType: 'article', article: { published: a.published_at ? new Date(a.published_at).toISOString() : '', author: a.author_name }, a, html: renderMarkdown(a.body_md), minutes: readingMinutes(a.body_md), related, CATEGORIES, KINDS, preview: false });
 }));
 
 r.get('/rss.xml', wrap(async (req, res) => {
-  const { rows } = await q(`SELECT slug, title, summary, published_at FROM articles WHERE status='published' ORDER BY published_at DESC LIMIT 20`);
+  const { rows } = await q(`SELECT slug, title, summary, published_at FROM articles WHERE status='published' AND published_at <= now() ORDER BY published_at DESC LIMIT 20`);
   const items = rows.map((a) => `<item><title>${esc(a.title)}</title><link>${cfg.baseUrl}/knowledge/${esc(a.slug)}</link><guid>${cfg.baseUrl}/knowledge/${esc(a.slug)}</guid><pubDate>${new Date(a.published_at).toUTCString()}</pubDate><description>${esc(a.summary)}</description></item>`).join('');
   res.type('application/rss+xml').send(`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${esc(cfg.brand)} Knowledge Hub</title><link>${cfg.baseUrl}/knowledge</link><description>Research, guides and standards explained by ${esc(cfg.brandLong)}.</description>${items}</channel></rss>`);
 }));
 
 r.get('/sitemap.xml', wrap(async (req, res) => {
-  const { rows } = await q(`SELECT slug, updated_at FROM articles WHERE status='published' ORDER BY published_at DESC`);
+  const { rows } = await q(`SELECT slug, updated_at FROM articles WHERE status='published' AND published_at <= now() ORDER BY published_at DESC`);
   const SCHEMES = await require('../lib/scheme-store').listSchemes({ publicOnly: true });
   const { rows: partners } = await q(`SELECT public_slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL`);
   const fixed = ['/', '/verify', '/credentials', ...SCHEMES.map((s) => `/credentials/${s.slug}`), '/partners', ...partners.map((p) => `/partners/${esc(p.public_slug)}`), '/knowledge', '/research', '/guides', '/standards', '/about', '/contact'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);

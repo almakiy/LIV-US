@@ -29,7 +29,7 @@ const view = (a) => ({
   status: a.status, version: a.version, ai_assisted: a.ai_assisted,
   review: { reviewed_by: a.reviewed_by || null, reviewed_at: a.reviewed_at, next_review_at: a.next_review_at },
   published_at: a.published_at, updated_at: a.updated_at,
-  public_url: a.status === 'published' ? `${cfg.baseUrl}/knowledge/${a.slug}` : null,
+  public_url: a.status === 'published' && a.published_at && new Date(a.published_at) <= new Date() ? `${cfg.baseUrl}/knowledge/${a.slug}` : null,
 });
 
 // Create or update a draft (idempotent on external_id).

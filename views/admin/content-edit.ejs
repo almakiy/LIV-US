@@ -1,6 +1,6 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1><%= a.id ? 'Edit article' : 'New article' %></h1>
-  <% if (a.id) { %><span class="badge <%= a.status === 'published' ? 'b-active' : 'b-pending' %>"><%= a.status %></span><% } %></div>
+  <% if (a.id) { %><% const sched = a.status === 'published' && a.published_at && new Date(a.published_at) > new Date(); %><span class="badge <%= a.status === 'published' && !sched ? 'b-active' : 'b-pending' %>"><%= sched ? 'scheduled ' + new Date(a.published_at).toISOString().slice(0, 10) : a.status %></span><% } %></div>
 <form method="post" action="/admin/content" class="card">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <% if (a.id) { %><input type="hidden" name="id" value="<%= a.id %>"><% } %>
@@ -30,6 +30,7 @@
     <div class="row">
       <div class="field"><label>Reviewed by <span class="muted small">(named human subject-matter reviewer; required to publish)</span></label><input type="text" name="reviewed_by" maxlength="150" value="<%= a.reviewed_by || '' %>"></div>
       <div class="field"><label>Change note <span class="muted small">(saved in the version history)</span></label><input type="text" name="change_note" maxlength="300"></div>
+      <div class="field"><label>Release date <span class="muted small">(optional: Publish then schedules the item to go live on this date; see the editorial calendar)</span></label><input type="date" name="publish_on" value="<%= a.status === 'published' && a.published_at && new Date(a.published_at) > new Date() ? new Date(a.published_at).toISOString().slice(0, 10) : '' %>"></div>
     </div>
     <% if (report && report.result === 'block') { %><div class="field"><label>Override reason <span class="muted small">(the automated review blocked this version; a reason is recorded if you publish anyway)</span></label><input type="text" name="override_reason" maxlength="300"></div><% } %>
     <label class="small"><input type="checkbox" name="ai_assisted" <%= a.ai_assisted ? 'checked' : '' %>> Prepared with AI assistance (shows a disclosure on the public page)</label>

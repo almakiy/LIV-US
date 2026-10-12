@@ -56,6 +56,9 @@ Some official sites (www.iso.org, www.oecd.org, ILO NORMLEX, several journal sit
 
 Results on October 9, 2026: every library source was reached through an official route (ISO Open Data, Crossref, DataCite, OpenAlex, or the official host itself, including the ILO authentic convention texts, Bahrain LLOC, the Oman Official Gazette and the Saudi Ministry of Commerce). Official texts retrieved for review are kept outside the repository; points that no official text confirms are listed under "Points still being verified" in the GCC map. `check:standards` found four registry editions out of date and corrected them: ISO/IEC 17024:2026 (third edition, March 31, 2026), ISO 9000:2026, ISO 19011:2026 and ISO 21001:2025.
 
+## Release schedule
+Reviewed items are released one a week on the calendar in `EDITORIAL-CALENDAR.md`. Enter the release date in the editor and press **Publish**: the item shows as scheduled and goes live on that date.
+
 ## Loading the library
 In **Admin → Knowledge hub content**, the "Editorial library" panel shows how many items are not on the site yet. **Load library drafts** adds those items as drafts, each with an automated review report.
 - An item that already exists (same slug) is never overwritten, so changes made on the site are kept.

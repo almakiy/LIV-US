@@ -13,9 +13,9 @@
   <% if (!rows.length) { %><tr><td colspan="7" class="muted center">Nothing here yet. Write the first article.</td></tr><% } %>
   <% rows.forEach(a => { %><tr><td><a href="/admin/content/<%= a.id %>"><%= a.title %></a><div class="small muted">/knowledge/<%= a.slug %></div></td>
   <td><%= CATEGORIES[a.category] %></td><td><%= KINDS[a.kind] %></td>
-  <td><span class="badge <%= a.status === 'published' ? 'b-active' : 'b-pending' %>"><%= a.status %></span></td>
+  <td><span class="badge <%= a.status === 'published' && !a.scheduled ? 'b-active' : 'b-pending' %>"><%= a.scheduled ? 'scheduled ' + new Date(a.published_at).toISOString().slice(0, 10) : a.status %></span></td>
   <td class="small"><%= a.reviewed_by ? a.reviewed_by : 'not reviewed' %><% if (a.origin === 'engine') { %> <span class="badge b-pending">engine</span><% } %><% if (a.origin === 'library') { %> <span class="badge b-pending">library</span><% } %><% if (a.stale) { %> <span class="badge b-suspended">review due</span><% } %></td>
   <td><%= usDate(a.updated_at) %></td>
-  <td class="right"><% if (a.status === 'published') { %><a href="/knowledge/<%= a.slug %>" target="_blank" rel="noopener">View</a><% } %></td></tr><% }) %>
+  <td class="right"><% if (a.status === 'published' && !a.scheduled) { %><a href="/knowledge/<%= a.slug %>" target="_blank" rel="noopener">View</a><% } %></td></tr><% }) %>
 </table></div>
 <%- include('../partials/app-end') %>
