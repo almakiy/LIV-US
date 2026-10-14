@@ -74,6 +74,7 @@ Attribution lines:
 | Sustainability reporting | GRI 2 General Disclosures (2021); IFRS S1/S2 (2023) | C, D for training | GRI training needs GRI approval; both forbid AI use |
 | AI | OECD AI Principles (2019, amended 2024); UNESCO Recommendation on AI Ethics (2021); Singapore Model AI Governance Frameworks (2020, 2024, 2026) | C until a license is confirmed | 5 principles; 4 values and 10 principles; human-involvement levels |
 | Paid standards | ISO 37000, 37001, 37301, 31000, 45001, ISO/IEC 38500, 42001; COBIT 2019; DAMA-DMBOK; ICE 1100 and NCCA Standards | D | Cited by number only; ICE 1100 and NCCA are the U.S. benchmark for credential schemes |
+| GRC certification suite | OCEG GRC Capability Model 3.5 ("Red Book") and the OCEG certification suite (see §3a) | C, no AI processing; commercial use licensed; trademarks | Core then specialist credentials on one body of knowledge; Learn, Align, Perform, Review |
 | Badges | 1EdTech Open Badges 3.0 (June 2026) | B: implement freely, no derivatives of the text | Data model for LIV digital badges; "1EdTech certified" only after passing its certification |
 
 Not verified (sites refused automated readers), checked by a person before use:
@@ -83,6 +84,38 @@ Not verified (sites refused automated readers), checked by a person before use:
 - NHS England code text and license.
 - ecoDa on its own host.
 - King V effective date and IP policy.
+
+## 3a. Credential design benchmark: OCEG (owner addition, October 14, 2026)
+Added at the owner's request as a benchmark for LIV's credential structure and curriculum (Track S, S.2). The facts below come from OCEG's own pages, read on October 14, 2026: the certifications page, the GRC Capability Model page, the Terms of Service and the Advanced License Permissions page.
+
+**What OCEG publishes**
+- **A suite of certifications.**
+  - Two core certifications: GRC Professional (GRCP) and GRC Auditor (GRCA), which builds on GRCP.
+  - Specialist certifications: policy management, data privacy, audit and assurance, compliance and ethics, risk management, IT GRC and artificial intelligence.
+  - Three more are listed as "coming soon": governance and oversight, strategy and performance, security and continuity.
+- **One annual fee** that covers materials, preparation, exams including retakes, and maintenance.
+- **Certifications built on an "essential body of knowledge"** that includes free and open-source standards. OCEG states that it has ended its Authorized Training Partner program.
+- **The GRC Capability Model 3.5 ("Red Book")**, with a free version.
+  - It is built around four parts: Learn, Align, Perform and Review.
+  - OCEG describes it as developed with a panel of more than 300 experts who studied more than 500 organizations.
+  - A premium edition adds a tools and techniques appendix.
+- **Official policies in English only**, to keep one authoritative version.
+
+**Reuse terms (Class C, no AI processing)**
+- All site content is OCEG's copyrighted work unless marked otherwise. A few standards carry a "copyleft" license; the example OCEG gives is CC BY-NC-ND 4.0.
+- The Terms of Service forbid copying, screenshots, scraping, and creating abstracts of site content for use on another website.
+- Any commercial use needs an advance commercial license, which OCEG says starts at $10,000 per use.
+- OCEG lists many names as trademarks, among them GRC Professional, GRCP, GRC Auditor, Principled Performance and Lines of Accountability.
+
+**How LIV uses it**
+- **LIV learns from the design ideas**, which are not protected:
+  - a core credential followed by specialist credentials;
+  - one body of knowledge published openly;
+  - an integrated view across governance, risk, compliance and audit instead of separate silos;
+  - one authoritative language for policies.
+- **LIV does not copy or summarize OCEG text, diagrams or models on its site or in its products.** Doing so needs OCEG's written consent or license. OCEG material is never given to an AI engine.
+- **LIV credential names, abbreviations and slogans avoid OCEG's trademarks**, for example "GRC Professional" or "Principled Performance". Every proposed name is checked against them before use.
+- **Pricing and partner-training choices** stay owner decisions. OCEG's single-fee model and its exit from authorized training partners are data points, not recommendations.
 
 ## 4. The drafting pattern for LIV standards
 These patterns come from the frameworks above. Ideas and structure are free to use. The text of GovS 001 and its handbook is also open (OGL), so it can be adapted directly.

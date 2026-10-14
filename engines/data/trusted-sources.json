@@ -380,6 +380,12 @@
       "name": "AI Verify Foundation (Singapore)",
       "reuse": "C",
       "no_ai": true
+    },
+    "oceg.org": {
+      "tier": "professional",
+      "name": "OCEG (Open Compliance and Ethics Group)",
+      "reuse": "C",
+      "no_ai": true
     }
   },
   "doi_prefixes": {
