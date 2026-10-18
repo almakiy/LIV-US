@@ -7,7 +7,10 @@ const banner = {
   tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this credential.'],
   not_found: ['?', 'NOT FOUND', 'No credential matches these details. Check the ID and try again.'],
   invalid_format: ['?', 'NOT FOUND', 'That Credential ID is not in a valid format.'],
+  unavailable: ['!', 'TEMPORARILY UNAVAILABLE', 'Verification is temporarily unavailable. Please try again later. Do not treat this page as confirmation that the credential is valid.'],
 }[R];
+// Provider status labels. The status at issuance comes only from the record made at issuance; it is never inferred.
+const provLabel = (st) => st === 'active' ? 'LIV Authorized Training Provider' : st ? 'Partner ' + st : null;
 %>
 <div class="container verify-wrap">
   <div class="vhead"><%- include('../partials/logo') %><div><h1 class="mb0" style="font-size:1.4rem">Official Verification Portal</h1><div class="muted small">Checked <%= usDateTime(new Date()) %></div></div></div>
@@ -17,18 +20,34 @@ const banner = {
   </div>
   <% if (c && R !== 'tampered') { %>
   <div class="card details">
+    <% const RT = (recordTypes[c.record_type] || recordTypes.training_completion); %>
+    <h3 class="vsec">1. Record integrity</h3>
     <dl>
-      <% const RT = (recordTypes[c.record_type] || recordTypes.training_completion); %>
+      <dt>Checked by <%= brand %></dt><dd>The record matches <%= brand %>'s digital signature and has not been altered.</dd>
+    </dl>
+    <hr>
+    <h3 class="vsec">2. Credential</h3>
+    <dl>
+      <dt>Credential status</dt><dd><% if (R === 'revoked') { %><span class="badge b-suspended">Revoked</span><% } else { %><span class="badge b-active">Valid</span><% } %></dd>
       <dt>Record type</dt><dd><%= RT.label %> <span class="muted small">(<%= RT.disclosure %>)</span></dd>
       <dt>Credential holder</dt><dd><%= c.recipient_first_name %> <%= c.recipient_last_name %></dd>
       <dt>Course</dt><dd><%= c.course_name %></dd>
       <dt>Completion date</dt><dd><%= longDate(c.completion_date) %></dd>
       <dt>Issue date</dt><dd><%= longDate(c.issue_date) %></dd>
+      <dt>Issued by</dt><dd><%= brand %></dd>
       <dt>Credential ID</dt><dd class="mono"><%= c.cert_number %></dd>
-      <dt>Education provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span>
-        <% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">LIV Authorized Training Provider</span><% } %></div></dd>
-      <% if (c.scope_title) { %><dt>Authorized scope</dt><dd><%= c.scope_title %><% if (c.scheme_name) { %> <span class="muted small">(<%= c.scheme_name %> family)</span><% } %><% if (c.scope_status !== 'active') { %> <span class="badge b-suspended">scope <%= c.scope_status %></span><% } %></dd><% } %>
       <% if (R === 'revoked') { %><dt>Revoked on</dt><dd><%= longDate(new Date(c.revoked_at)) %></dd><% } %>
+    </dl>
+    <hr>
+    <h3 class="vsec">3. Training provider</h3>
+    <dl>
+      <dt>Training provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span></div></dd>
+      <dt>Status when issued</dt><dd><% if (c.issued_partner_status) { %><%= provLabel(c.issued_partner_status) %><% } else { %><span class="muted">Not recorded</span><% } %></dd>
+      <dt>Status today</dt><dd><% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">LIV Authorized Training Provider</span><% } %></dd>
+      <% if (c.scope_title) { %><dt>Authorized scope</dt><dd><%= c.scope_title %><% if (c.scheme_name) { %> <span class="muted small">(<%= c.scheme_name %> family)</span><% } %>
+        <div class="small"><% if (c.issued_scope_status) { %>When issued: <%= c.issued_scope_status %>. <% } %>Today: <% if (c.scope_status !== 'active') { %><span class="badge b-suspended">scope <%= c.scope_status %></span><% } else { %>active<% } %></div></dd><% } %>
+    </dl>
+    <p class="small muted">A later change in the provider's status does not change the status of a credential issued earlier.</p>
     </dl>
     <div class="actions">
       <% if (R !== 'revoked' && token) { %><a class="btn" href="/verify/<%= c.cert_number %>/pdf?t=<%= token %>">Download original PDF</a><% } %>

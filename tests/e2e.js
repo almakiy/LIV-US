@@ -124,7 +124,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   await pub.goto(verifyUrl);
   ok(await see(pub, '.sb-valid'), `${certNum} shows VALID via QR link`);
   { const vt = await pub.textContent('body');
-    ok(vt.includes('Education provider') && vt.includes('Demo Safety Training Co.') && vt.includes('LIV Authorized Training Provider'), 'verification record shows the education provider and its LIV authorization');
+    ok(vt.includes('Training provider') && vt.includes('Record integrity') && vt.includes('Status when issued') && vt.includes('Demo Safety Training Co.') && vt.includes('LIV Authorized Training Provider'), 'verification record shows the education provider and its LIV authorization');
     ok(vt.includes('Training Completion Credential'), 'verification record states the record type'); }
   ok(!(await pub.content()).includes(`@example.com`), 'trainee email not exposed publicly');
   await shot(pub, '06-verify-valid');
@@ -784,6 +784,14 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     psql(`UPDATE platforms SET accreditation_status = 'suspended' WHERE id = '${demoId}'`);
     const susp = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(6), course_name: 'Hazard Communication', completion_date: '2026-10-01' }] });
     ok(susp.status() === 403 || susp.status() === 422, 'a suspended training provider cannot issue');
+    console.log('Verification card (Batch C)');
+    const vSusp = await (await anon.request.get(sc.verify_url)).text();
+    ok(vSusp.includes('sb-valid') && vSusp.includes('Status when issued</dt><dd>LIV Authorized Training Provider') && vSusp.includes('Partner suspended'), 'suspending the provider later does not make an earlier credential invalid; both statuses are shown');
+    const apiS = await (await anon.request.get(`${BASE}/api/v1/verify/${sc.cert_number}`)).json();
+    ok(apiS.result === 'valid' && apiS.certificate.education_provider.status_at_issuance === 'active' && apiS.certificate.education_provider.authorization_status === 'suspended', 'verification API separates status at issuance from status today');
+    psql(`UPDATE certificates SET issued_partner_status = NULL WHERE cert_number = '${sc.cert_number}'`);
+    ok((await (await anon.request.get(sc.verify_url)).text()).includes('Not recorded'), 'a credential without an issuance record shows "Not recorded", never today\'s status');
+    psql(`UPDATE certificates SET issued_partner_status = 'active' WHERE cert_number = '${sc.cert_number}'`);
     psql(`UPDATE platforms SET accreditation_status = '${before}' WHERE id = '${demoId}'`);
   }
 

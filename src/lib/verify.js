@@ -5,21 +5,28 @@ const { certHmac, qrToken, safeEqual, ipHash } = require('./crypto');
 const CERT_RE = /^LIV-\d{4}-[A-Z2-9]{8}$/;
 
 /**
- * Returns { result: 'valid'|'revoked'|'not_found'|'tampered'|'invalid_format', cert?, platform? }
+ * Returns { result: 'valid'|'revoked'|'not_found'|'tampered'|'invalid_format'|'unavailable', cert?, platform? }
+ * 'unavailable' means the record could not be read; callers must never fall back to a cached "valid".
  */
 async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'web' } = {}) {
   const certNumber = String(rawNumber || '').trim().toUpperCase();
   let out;
   if (!CERT_RE.test(certNumber)) out = { result: 'invalid_format' };
   else {
-    const { rows: [row] } = await q(
+    let row;
+    try {
+      ({ rows: [row] } = await q(
       `SELECT c.*, p.company_name, p.logo_path, p.primary_color, p.accreditation_status, p.website,
               ps.title AS scope_title, ps.status AS scope_status, cs.name AS scheme_name
          FROM certificates c JOIN platforms p ON p.id = c.platform_id
          LEFT JOIN partner_scopes ps ON ps.id = c.partner_scope_id LEFT JOIN credential_schemes cs ON cs.id = c.scheme_id
         WHERE c.cert_number = $1`,
       [certNumber]
-    );
+      ));
+    } catch (e) {
+      console.error('[verify] record read failed:', e.message);
+      return { result: 'unavailable' };
+    }
     if (!row) out = { result: 'not_found' };
     else if (lastName && row.recipient_last_name.trim().toLowerCase() !== String(lastName).trim().toLowerCase()) out = { result: 'not_found' };
     else {
@@ -60,7 +67,11 @@ function publicView(out, baseUrl) {
       revoked_at: c.revoked_at,
       record_type: c.record_type || 'training_completion',
       issued_by: cfg.legalEntity,
-      education_provider: { name: c.company_name, authorization_status: c.accreditation_status, website: c.website, authorized_scope: c.scope_title || null },
+      education_provider: {
+        name: c.company_name, authorization_status: c.accreditation_status, website: c.website, authorized_scope: c.scope_title || null,
+        // Recorded at issuance (Batch B); null = not recorded. Never filled from today's status.
+        status_at_issuance: c.issued_partner_status || null, scope_status_today: c.scope_title ? c.scope_status : null, scope_status_at_issuance: c.issued_scope_status || null,
+      },
       issuer: { name: c.company_name, accreditation_status: c.accreditation_status, website: c.website }, // legacy field, kept for existing integrations
       verify_url: `${baseUrl}/verify/${c.cert_number}`,
     },

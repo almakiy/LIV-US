@@ -115,7 +115,8 @@ tr.err td{background:#FFF8F7}
 .status-banner{border-radius:14px;padding:26px 28px;display:flex;align-items:center;gap:18px;color:#fff;margin-bottom:20px}
 .status-banner .icon{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:30px;font-weight:800;flex:none}
 .status-banner h2{margin:0;font-size:1.6rem;letter-spacing:1px;color:#fff}.status-banner p{margin:4px 0 0;opacity:.92}
-.sb-valid{background:var(--green)}.sb-revoked,.sb-tampered,.sb-not_found,.sb-invalid_format{background:var(--red)}.sb-expired{background:#B26A00}
+.sb-valid{background:var(--green)}.sb-revoked,.sb-tampered,.sb-not_found,.sb-invalid_format{background:var(--red)}.sb-expired,.sb-unavailable{background:#B26A00}
+.vsec{margin:0 0 .25rem;font-size:1rem}.vsec+dl{margin-top:.25rem}.details hr{border:0;border-top:1px solid #e3e6ea;margin:1rem 0}
 .details dl{display:grid;grid-template-columns:180px 1fr;gap:0;margin:0}
 .details dt,.details dd{padding:12px 0;border-bottom:1px solid var(--line);margin:0}
 .details dt{color:var(--muted);font-size:.88rem}.details dd{font-weight:600}

@@ -14,7 +14,7 @@ const MAX_PER_CALL = 500;
 r.get('/verify/:cert', limiter(1, 60, true), wrap(async (req, res) => {
   const out = await verifyCertificate(req.params.cert, { token: req.query.t, ip: req.ip, channel: 'api' });
   const body = publicView(out, cfg.baseUrl);
-  res.status(out.cert ? 200 : 404).json(body);
+  res.status(out.result === 'unavailable' ? 503 : out.cert ? 200 : 404).json(body);
 }));
 
 // API key auth for everything below
