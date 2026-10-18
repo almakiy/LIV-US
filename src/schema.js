@@ -701,6 +701,67 @@ DROP TRIGGER IF EXISTS partner_app_events_lock ON partner_application_events;
 CREATE TRIGGER partner_app_events_lock BEFORE UPDATE OR DELETE ON partner_application_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_app_evidence_lock ON partner_application_evidence;
 CREATE TRIGGER partner_app_evidence_lock BEFORE UPDATE OR DELETE ON partner_application_evidence FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Assessment, recommendation and decision (Batch E). Every row is locked once written (same trigger as above):
+-- a re-assessment is a new assessment, a recalculation is a new recommendation, and nothing is edited in place.
+-- input_hash fingerprints everything a recommendation was computed from; a decision is refused if it no longer matches.
+CREATE TABLE IF NOT EXISTS partner_assessments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  version INT NOT NULL,                       -- the submitted application version that was assessed
+  criteria_version VARCHAR(20) NOT NULL,
+  assessor_user_id UUID NOT NULL REFERENCES users(id),
+  assessor_label VARCHAR(200) NOT NULL,
+  summary TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE INDEX IF NOT EXISTS idx_partner_assessments_app ON partner_assessments(application_id, created_at);
+CREATE TABLE IF NOT EXISTS partner_assessment_findings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id UUID NOT NULL REFERENCES partner_assessments(id) ON DELETE CASCADE,
+  criterion VARCHAR(4) NOT NULL CHECK (criterion IN ('C1','C2','C3','C4','C5','C6','C7','C8','C9')),
+  result VARCHAR(20) NOT NULL CHECK (result IN ('met','minor','major','needs_information')),
+  reason TEXT NOT NULL CHECK (length(btrim(reason)) > 0),
+  evidence_id UUID REFERENCES partner_application_evidence(id),
+  UNIQUE (assessment_id, criterion)
+);
+CREATE TABLE IF NOT EXISTS partner_recommendations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_id UUID NOT NULL REFERENCES partner_assessments(id) ON DELETE CASCADE,
+  outcome VARCHAR(30) NOT NULL CHECK (outcome IN ('accept','accept_with_conditions','not_ready','incomplete')),
+  rationale JSONB NOT NULL,
+  input_hash CHAR(64) NOT NULL,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS partner_application_decisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  recommendation_id UUID NOT NULL REFERENCES partner_recommendations(id),
+  outcome VARCHAR(30) NOT NULL CHECK (outcome IN ('accepted','accepted_with_conditions','declined')),
+  reasons TEXT NOT NULL CHECK (length(btrim(reasons)) > 0),
+  criteria_version VARCHAR(20) NOT NULL,
+  version INT NOT NULL,
+  decided_by UUID NOT NULL REFERENCES users(id),
+  decided_by_label VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS partner_application_conditions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  decision_id UUID NOT NULL REFERENCES partner_application_decisions(id) ON DELETE CASCADE,
+  text TEXT NOT NULL CHECK (length(btrim(text)) > 0),
+  blocking BOOLEAN NOT NULL,
+  due_date DATE
+);
+DROP TRIGGER IF EXISTS partner_assessments_lock ON partner_assessments;
+CREATE TRIGGER partner_assessments_lock BEFORE UPDATE OR DELETE ON partner_assessments FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_findings_lock ON partner_assessment_findings;
+CREATE TRIGGER partner_findings_lock BEFORE UPDATE OR DELETE ON partner_assessment_findings FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_recommendations_lock ON partner_recommendations;
+CREATE TRIGGER partner_recommendations_lock BEFORE UPDATE OR DELETE ON partner_recommendations FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_decisions_lock ON partner_application_decisions;
+CREATE TRIGGER partner_decisions_lock BEFORE UPDATE OR DELETE ON partner_application_decisions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_conditions_lock ON partner_application_conditions;
+CREATE TRIGGER partner_conditions_lock BEFORE UPDATE OR DELETE ON partner_application_conditions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},

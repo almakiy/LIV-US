@@ -1,0 +1,77 @@
+<%- include('../partials/app-start') %>
+<%
+  const label = (s) => String(s).replace(/_/g, ' ');
+  const last = latest;
+  const latestVersion = versions.length ? versions[versions.length - 1] : null;
+  const findingsOf = (id) => Object.fromEntries(findings.filter((f) => f.assessment_id === id).map((f) => [f.criterion, f]));
+  const evName = (id) => { const e = evidence.find((x) => x.id === id); return e ? e.criterion + ' · ' + e.filename : ''; };
+  const titleOf = (code) => (criteria.find((c) => c.code === code) || {}).title || '';
+  const moves = STAFF_MOVES.filter((to) => allowedBy(app.state, to) === 'staff');
+%>
+<div class="page-head"><h1><%= app.company_name %></h1><div><span class="badge b-pending"><%= label(app.state) %></span></div></div>
+<p class="small muted"><a href="/admin/applications">All applications</a> · <%= app.country || 'Country not stated' %> · criteria <%= app.criteria_version %> (draft) · submitted version <%= app.current_version || 'none' %></p>
+
+<h2 class="mt">Submitted form</h2>
+<% if (latestVersion) { %><div class="card details"><dl>
+  <% Object.entries(latestVersion.form || {}).forEach(([k, v]) => { %><dt><%= label(k) %></dt><dd><%= typeof v === 'string' ? v : JSON.stringify(v) %></dd><% }) %>
+</dl></div><% } else { %><p class="muted">Nothing has been submitted yet.</p><% } %>
+
+<h2 class="mt">Evidence</h2>
+<% if (evidence.length) { %><div class="table-wrap"><table><tr><th>Criterion</th><th>File</th><th>Version</th><th>Size</th><th>SHA-256</th><th></th></tr>
+<% evidence.forEach(e => { %><tr><td><strong><%= e.criterion %></strong><div class="small muted"><%= titleOf(e.criterion) %></div></td><td><%= e.filename %></td><td><%= e.version || 'draft' %></td><td class="small"><%= Math.ceil(e.bytes / 1024) %> KB</td><td class="small"><code><%= e.sha256.slice(0, 12) %>…</code></td><td><a class="btn sm secondary" href="/admin/applications/evidence/<%= e.id %>">Download</a></td></tr><% }) %></table></div>
+<p class="small muted">Each download is logged.</p>
+<% } else { %><p class="muted">No evidence uploaded.</p><% } %>
+
+<% if (moves.length) { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/move"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Next step</h3>
+  <div class="row"><div class="field"><label for="mv-to">Move to</label><select id="mv-to" name="to"><% moves.forEach(to => { %><option value="<%= to %>"><%= label(to) %></option><% }) %></select></div>
+  <div class="field"><label for="mv-reason">Reason *</label><input id="mv-reason" name="reason" maxlength="500" required></div></div>
+  <button class="btn">Move</button></form>
+<% } %>
+
+<h2 class="mt">Assessment and recommendation</h2>
+<% if (!assessments.length) { %><p class="muted">No assessment recorded yet.</p><% } %>
+<% assessments.slice().reverse().forEach((a, idx) => { const fs = findingsOf(a.id); const recs = recommendations.filter((r) => r.assessment_id === a.id).slice().reverse(); %>
+<div class="card mt"><h3>Assessment of version <%= a.version %> <span class="small muted">by <%= a.assessor_label %> · <%= usDateTime(a.created_at) %><%= idx === 0 ? ' · latest' : '' %></span></h3>
+  <% if (a.summary) { %><p><%= a.summary %></p><% } %>
+  <div class="table-wrap"><table><tr><th>Criterion</th><th>Result</th><th>Reason</th><th>Evidence</th></tr>
+  <% CRITERIA.forEach(c => { const f = fs[c]; if (!f) return; %><tr><td><strong><%= c %></strong><div class="small muted"><%= titleOf(c) %></div></td><td><span class="badge b-<%= f.result === 'met' ? 'active' : 'suspended' %>"><%= label(f.result) %></span></td><td class="small"><%= f.reason %></td><td class="small"><%= f.evidence_id ? evName(f.evidence_id) : '—' %></td></tr><% }) %></table></div>
+  <p class="small"><strong>Recommendations</strong> (newest first):
+  <% recs.forEach((r, i) => { %><br><%= usDateTime(r.created_at) %> · <strong><%= label(r.outcome) %></strong><%= i === 0 && idx === 0 ? (last && last.current ? ' (matches the current application)' : ' (out of date: recalculate or reassess)') : '' %><% }) %></p>
+</div>
+<% }) %>
+<% if (assessments.length && !['declined','withdrawn','closed','accepted_pending_activation'].includes(app.state)) { %>
+<form method="post" action="/admin/applications/<%= app.id %>/recalculate" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Recalculate recommendation</button> <span class="small muted">Adds a new recommendation. The earlier one and any decision stay as they are.</span></form>
+<% } %>
+
+<% if (app.state === 'technical_review') { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/assessment"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Record an assessment of version <%= app.current_version %></h3>
+  <p class="small muted">One finding per criterion, each with a reason. "Met" needs evidence you reviewed. Unreviewed evidence is "needs information", not a failure. The person who records the assessment cannot take the decision.</p>
+  <% CRITERIA.forEach(c => { %><fieldset class="mt"><legend><strong><%= c %></strong> <%= titleOf(c) %></legend>
+    <div class="row"><div class="field"><label for="r-<%= c %>">Result</label><select id="r-<%= c %>" name="result_<%= c %>" required><option value="">Choose</option><% RESULTS.forEach(x => { %><option value="<%= x %>"><%= label(x) %></option><% }) %></select></div>
+    <div class="field"><label for="e-<%= c %>">Evidence reviewed</label><select id="e-<%= c %>" name="evidence_<%= c %>"><option value="">None</option><% evidence.filter(e => e.version).forEach(e => { %><option value="<%= e.id %>" <%= e.criterion === c ? 'selected' : '' %>><%= e.criterion %> · <%= e.filename %></option><% }) %></select></div></div>
+    <div class="field"><label for="w-<%= c %>">Reason *</label><textarea id="w-<%= c %>" name="reason_<%= c %>" rows="2" maxlength="4000" required></textarea></div></fieldset><% }) %>
+  <div class="field"><label for="sm">Summary</label><textarea id="sm" name="summary" rows="2" maxlength="4000"></textarea></div>
+  <button class="btn">Record assessment</button></form>
+<% } %>
+
+<h2 class="mt">Decision</h2>
+<% decisions.forEach(d => { const ks = conditions.filter((k) => k.decision_id === d.id); %>
+<div class="card mt"><strong><%= label(d.outcome) %></strong> · <%= d.decided_by_label %> · <%= usDateTime(d.created_at) %> · version <%= d.version %>, criteria <%= d.criteria_version %><p><%= d.reasons %></p>
+  <% if (ks.length) { %><ul><% ks.forEach(k => { %><li><%= k.blocking ? 'Blocking' : 'Non-blocking' %>: <%= k.text %><%= k.due_date ? ' (due ' + usDate(k.due_date) + ')' : '' %></li><% }) %></ul><% } %></div><% }) %>
+<% if (app.state === 'awaiting_decision') { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/decision"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Record the decision</h3>
+  <p class="small muted">Latest recommendation: <strong><%= last && last.recommendation ? label(last.recommendation.outcome) : 'none' %></strong><%= last && !last.current ? ' (out of date, the server will refuse a decision)' : '' %>. The server refuses a decision from anyone who recorded an assessment of this application. Accepting does not activate the provider.</p>
+  <div class="field"><label for="d-out">Decision *</label><select id="d-out" name="outcome" required><option value="">Choose</option><option value="accepted">Accept (pending activation)</option><option value="accepted_with_conditions">Accept with conditions</option><option value="declined">Decline</option></select></div>
+  <div class="field"><label for="d-why">Reasons *</label><textarea id="d-why" name="reasons" rows="3" maxlength="4000" required></textarea></div>
+  <p class="small muted">Conditions (only for "accept with conditions"; a non-blocking condition needs a due date):</p>
+  <% for (let i = 0; i < 3; i++) { %><div class="row"><div class="field"><label for="ct<%= i %>">Condition <%= i + 1 %></label><input id="ct<%= i %>" name="condition_text" maxlength="2000"></div>
+    <div class="field"><label for="cb<%= i %>">Blocking activation?</label><select id="cb<%= i %>" name="condition_blocking"><option value="yes">Yes</option><option value="no">No</option></select></div>
+    <div class="field"><label for="cd<%= i %>">Due date</label><input id="cd<%= i %>" type="date" name="condition_due"></div></div><% } %>
+  <button class="btn">Record decision</button></form>
+<% } %>
+
+<h2 class="mt">History</h2>
+<div class="table-wrap"><table><tr><th>When</th><th>From</th><th>To</th><th>By</th><th>Reason</th></tr>
+<% events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= e.from_state ? label(e.from_state) : '—' %></td><td class="small"><%= label(e.to_state) %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.reason %></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

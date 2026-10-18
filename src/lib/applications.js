@@ -153,6 +153,12 @@ async function staffTransition(appId, user, to, reason) {
     const { rows: [app] } = await c.query('SELECT * FROM partner_applications WHERE id = $1 FOR UPDATE', [appId]);
     if (!app) throw new ApplicationError('Application not found.', 404);
     if (allowedBy(app.state, to) !== 'staff') throw new ApplicationError(`LIV staff cannot move an application from ${app.state} to ${to}.`, 409);
+    // The decision itself is recorded by assessment.decide(), by a different person from the assessor; never as a plain move.
+    if (app.state === 'awaiting_decision') throw new ApplicationError('Record the decision on the decision form.', 409);
+    if (to === 'awaiting_decision') {
+      const blocked = await require('./assessment').readyForDecision(c, app);
+      if (blocked) throw new ApplicationError(blocked, 409);
+    }
     await event(c, app, to, user, reason);
     return { id: app.id, state: app.state };
   });
@@ -188,5 +194,5 @@ async function readEvidence(evidenceId, user, { platformId, staff = false } = {}
 
 module.exports = {
   ApplicationError, TRANSITIONS, FINAL, APPLICANT_HOLDS, MAX_EVIDENCE_BYTES, allowedBy, sniff,
-  createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
+  event, createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
 };
