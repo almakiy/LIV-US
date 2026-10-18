@@ -60,3 +60,23 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | P-15 | The numbers in §3 (12, 24 and 6 months; 2 and 4 sample reviews; 24-month look-backs), the 90-day cure period, the 30-day decision target and the $150 extra review |
 | P-16 | Wording of the badge sentence and the badge licence terms (counsel) |
 | P-17 | The additional obligations for Gold in §3 row 9 |
+
+## 9. Side by side (summary of §1 to §6 and `FEES-REVIEW.md`; all values proposed)
+
+| | **Bronze** | **Silver** | **Gold** |
+|---|---|---|---|
+| Billing plan | Starter | Professional | Enterprise |
+| Typical provider | One site or platform, up to about 250 certificates a year | A centre or small group, up to about 1,500 a year | Several sites or countries, or very high volume |
+| How to reach it | Entry level for every new provider | Promotion after 12 months (6 by the evidence route) | Promotion after 12 months at Silver and 24 in total |
+| Intake fee (non-refundable) | $150 | $250 | $400 |
+| Assessment fee | $350 | $750 | $1,600 (multi-site quoted) |
+| Annual fee (prepaid) | $900 | $2,400 | from $6,000 |
+| Certificates included a year | 100 | 500 | 2,000 |
+| Per certificate beyond that: first 1,000 / next 4,000 / above 5,000 | $4.00 / $3.00 / $2.00 | $3.50 / $2.75 / $2.00 | $3.25 / $2.50 / $1.75 |
+| Footprint of the authorized scope | One site or platform, scopes as approved | Several scopes, sites or platforms | Multi-country or many sites |
+| May later apply for (separate approvals and fees, never automatic) | Nothing beyond the Training Completion Credential | Programme approval for an Assessed Qualification, after a clean surveillance | The same, and exam-site authorization |
+| Support | Standard | Priority | Priority and a named contact |
+| Extra obligations to qualify and to keep the level | None beyond the common rules | Prepaid Silver plan; clean surveillance record; two clean sample reviews | Prepaid Gold plan; named quality officer; annual data return; evidence of the wider footprint; four clean sample reviews; two clean surveillance reviews in a row |
+| Badge | Bronze | Silver | Gold |
+
+**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the learner's certificate and the public verification page; the ban on assessing or certifying one's own learners for a Professional Certification; the badge sentence in §1.
