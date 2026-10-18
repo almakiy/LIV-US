@@ -795,6 +795,50 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     psql(`UPDATE platforms SET accreditation_status = '${before}' WHERE id = '${demoId}'`);
   }
 
+  console.log('Partner applications data model (Batch D)');
+  {
+    const A = require('../src/lib/applications');
+    const mk = (n) => psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email) VALUES ('Applicant ${n} ${stamp}', 'app${n}.${stamp}@example.com') RETURNING id)
+      INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Applicant ${n}', 'app${n}.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
+    const [pA, uA] = mk(1); const [pB, uB] = mk(2);
+    const userA = { id: uA, email: `app1.${stamp}@example.com`, role: 'platform_admin' };
+    const userB = { id: uB, email: `app2.${stamp}@example.com`, role: 'platform_admin' };
+    const staff = { id: psql("SELECT id FROM users WHERE role = 'super_admin' LIMIT 1"), email: 'admin', role: 'super_admin' };
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const app = await A.createDraft(pA, userA);
+    ok(app.state === 'draft' && app.criteria_version === 'v0.1', 'a new application starts as a draft against the recorded criteria version');
+    ok(await fails(A.createDraft(pA, userA), 409), 'a partner cannot open a second application while one is open');
+    await A.saveDraft(app.id, pA, userA, { legal_name: 'Applicant One LLC' });
+    const pdf = Buffer.from('%PDF-1.4\n% evidence\n');
+    const ev1 = await A.addEvidence(app.id, pA, userA, { criterion: 'C1', filename: 'registration.pdf', buffer: pdf });
+    ok(await fails(A.addEvidence(app.id, pA, userA, { criterion: 'C1', filename: 'x.pdf', buffer: Buffer.from('<html></html>') }), 422), 'evidence that is not a PDF, PNG or JPEG is refused');
+    const sub = await A.submit(app.id, pA, userA);
+    ok(sub.version === 1 && sub.state === 'completeness_check', 'submitting locks version 1 and moves to the completeness check');
+    ok(await fails(A.saveDraft(app.id, pA, userA, { legal_name: 'Changed' }), 409), 'the applicant cannot edit while LIV reviews');
+    const locked = psqlRefused(`UPDATE partner_application_versions SET form = '{}' WHERE application_id = '${app.id}'`)
+      && psqlRefused(`UPDATE partner_application_evidence SET filename = 'changed.pdf' WHERE id = '${ev1.id}'`)
+      && psqlRefused(`DELETE FROM partner_application_evidence WHERE id = '${ev1.id}'`)
+      && psqlRefused(`DELETE FROM partner_application_events WHERE application_id = '${app.id}'`);
+    ok(locked, 'a submitted version, its evidence and the history cannot be changed or deleted, even directly in the database');
+    ok(await fails(A.staffTransition(app.id, userA, 'technical_review', 'x'), 403), 'a partner user cannot make a LIV staff move');
+    ok(await fails(A.staffTransition(app.id, staff, 'accepted_pending_activation', 'skip'), 409), 'LIV staff cannot skip states');
+    await A.staffTransition(app.id, staff, 'info_requested', 'Please add the trading license');
+    await A.saveDraft(app.id, pA, userA, { legal_name: 'Applicant One LLC', license: 'added' });
+    await A.addEvidence(app.id, pA, userA, { criterion: 'C1', filename: 'registration-v2.pdf', buffer: Buffer.from('%PDF-1.4\n% corrected\n'), supersedesId: ev1.id });
+    const sub2 = await A.submit(app.id, pA, userA);
+    const view = await A.getOwn(app.id, pA);
+    ok(sub2.version === 2 && view.versions.length === 2 && view.versions[0].form.legal_name === 'Applicant One LLC' && !view.versions[0].form.license
+      && view.evidence.find((e) => e.id === ev1.id).version === 1 && view.evidence.some((e) => e.version === 2 && e.supersedes_id === ev1.id), 'a correction creates version 2 linked to the earlier evidence; version 1 is unchanged');
+    ok(view.events.map((e) => e.to_state).join(',') === 'draft,submitted,completeness_check,info_requested,completeness_check', 'every state change is in the application history');
+    ok(await fails(A.getOwn(app.id, pB), 404) && await fails(A.readEvidence(ev1.id, userB, { platformId: pB }), 404) && await fails(A.submit(app.id, pB, userB), 404)
+      && await fails(A.readEvidence(ev1.id, userB, { staff: true }), 404), 'one partner cannot read or act on another partner\'s application or evidence');
+    const own = await A.readEvidence(ev1.id, userA, { platformId: pA });
+    ok(own.content.equals(pdf) && psql(`SELECT count(*) FROM audit_logs WHERE action = 'application.evidence.download' AND target = '${app.id}'`) === '1', 'the applicant reads its own evidence and every download is logged');
+    await A.withdraw(app.id, pA, userA, 'E2E');
+    ok(await fails(A.staffTransition(app.id, staff, 'technical_review', 'reopen'), 409), 'a withdrawn application is final');
+    ok((await A.createDraft(pA, userA)).id !== app.id, 'a new application after a final state is a new record');
+  }
+
   console.log('Knowledge distribution');
   {
     const slugA = psql("SELECT slug FROM articles WHERE status = 'published' LIMIT 1");

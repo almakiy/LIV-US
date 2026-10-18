@@ -620,4 +620,96 @@ CREATE OR REPLACE FUNCTION stored_files_write_once() RETURNS trigger AS $f$
 BEGIN RAISE EXCEPTION 'stored_files rows are written once and cannot be changed'; END $f$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS stored_files_no_update ON stored_files;
 CREATE TRIGGER stored_files_no_update BEFORE UPDATE ON stored_files FOR EACH ROW EXECUTE FUNCTION stored_files_write_once();
+
+-- Partner applications (docs/PARTNER-AUTHORIZATION.md §2-§4, §11; Batch D). Data model only: screens come in Batches E and F.
+-- An application keeps numbered, locked versions with their evidence. A submitted version, its evidence and the event
+-- history are never changed; a correction is a new version. Rows go only when their partner record is removed (cascade).
+-- Retention periods are pending decision P-14; the criteria transition rule is pending decision P-9.
+CREATE TABLE IF NOT EXISTS partner_criteria_sets (
+  version VARCHAR(20) PRIMARY KEY,            -- e.g. v0.1 (PA-CRIT)
+  status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','in_force','retired')),
+  criteria JSONB NOT NULL,                    -- [{code, title, if_not_met}]
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS partner_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  state VARCHAR(30) NOT NULL DEFAULT 'draft' CHECK (state IN ('draft','submitted','completeness_check','info_requested','technical_review','corrective_action','awaiting_decision','accepted_pending_activation','declined','withdrawn','closed')),
+  criteria_version VARCHAR(20) NOT NULL REFERENCES partner_criteria_sets(version),
+  draft JSONB NOT NULL DEFAULT '{}'::jsonb,   -- the applicant's working copy; editable only while the applicant holds the application
+  current_version INT NOT NULL DEFAULT 0,     -- last submitted version (0 = never submitted)
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  closed_at TIMESTAMPTZ
+);
+-- One open application per partner; declined, withdrawn and closed are final and a new application is a new record.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_applications_open ON partner_applications(platform_id) WHERE state NOT IN ('declined','withdrawn','closed');
+CREATE TABLE IF NOT EXISTS partner_application_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  version INT NOT NULL,
+  form JSONB NOT NULL,
+  criteria_version VARCHAR(20) NOT NULL,
+  submitted_by UUID REFERENCES users(id),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (application_id, version)
+);
+CREATE TABLE IF NOT EXISTS partner_application_evidence (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  version INT,                                -- NULL while in the draft; set once when the version is submitted
+  criterion VARCHAR(4) NOT NULL CHECK (criterion IN ('C1','C2','C3','C4','C5','C6','C7','C8','C9')),
+  file_key TEXT NOT NULL,                     -- private key in stored_files; never a public URL
+  filename VARCHAR(200) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  bytes INT NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  supersedes_id UUID REFERENCES partner_application_evidence(id),
+  uploaded_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_partner_app_evidence ON partner_application_evidence(application_id, version);
+CREATE TABLE IF NOT EXISTS partner_application_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  from_state VARCHAR(30),
+  to_state VARCHAR(30) NOT NULL,
+  version INT,
+  actor_user_id UUID REFERENCES users(id),
+  actor_label VARCHAR(200),
+  reason TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()   -- not now(): several events in one transaction keep their order
+);
+CREATE INDEX IF NOT EXISTS idx_partner_app_events ON partner_application_events(application_id, created_at);
+-- Locks. pg_trigger_depth() > 1 means the delete cascades from removing the partner record (the only allowed path).
+CREATE OR REPLACE FUNCTION partner_app_locked() RETURNS trigger AS $f$
+BEGIN
+  IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD; END IF;
+  IF TG_TABLE_NAME = 'partner_application_evidence' THEN
+    IF TG_OP = 'DELETE' AND OLD.version IS NULL THEN RETURN OLD; END IF;
+    IF TG_OP = 'UPDATE' AND OLD.version IS NULL AND NEW.version IS NOT NULL
+       AND (NEW.application_id, NEW.criterion, NEW.file_key, NEW.filename, NEW.content_type, NEW.bytes, NEW.sha256, NEW.supersedes_id, NEW.uploaded_by, NEW.created_at)
+       IS NOT DISTINCT FROM (OLD.application_id, OLD.criterion, OLD.file_key, OLD.filename, OLD.content_type, OLD.bytes, OLD.sha256, OLD.supersedes_id, OLD.uploaded_by, OLD.created_at)
+    THEN RETURN NEW; END IF;
+  END IF;
+  RAISE EXCEPTION '% rows are locked once submitted and cannot be changed or deleted', TG_TABLE_NAME;
+END $f$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS partner_app_versions_lock ON partner_application_versions;
+CREATE TRIGGER partner_app_versions_lock BEFORE UPDATE OR DELETE ON partner_application_versions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_app_events_lock ON partner_application_events;
+CREATE TRIGGER partner_app_events_lock BEFORE UPDATE OR DELETE ON partner_application_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_app_evidence_lock ON partner_application_evidence;
+CREATE TRIGGER partner_app_evidence_lock BEFORE UPDATE OR DELETE ON partner_application_evidence FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
+  {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
+  {"code":"C2","title":"Training management","if_not_met":"major"},
+  {"code":"C3","title":"Trainer eligibility (required for activation)","if_not_met":"major"},
+  {"code":"C4","title":"Course content","if_not_met":"major or minor"},
+  {"code":"C5","title":"Delivery","if_not_met":"major"},
+  {"code":"C6","title":"Completion and learning assessment","if_not_met":"major"},
+  {"code":"C7","title":"Learner protection","if_not_met":"major"},
+  {"code":"C8","title":"Records and data","if_not_met":"major"},
+  {"code":"C9","title":"Integrity and marketing","if_not_met":"minor, or major for a misleading claim"}
+]'::jsonb) ON CONFLICT (version) DO NOTHING;
 `;
