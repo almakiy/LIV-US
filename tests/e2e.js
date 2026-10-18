@@ -803,7 +803,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     const [pA, uA] = mk(1); const [pB, uB] = mk(2);
     const userA = { id: uA, email: `app1.${stamp}@example.com`, role: 'platform_admin' };
     const userB = { id: uB, email: `app2.${stamp}@example.com`, role: 'platform_admin' };
-    const staff = { id: psql("SELECT id FROM users WHERE role = 'super_admin' LIMIT 1"), email: 'admin', role: 'super_admin' };
+    const staff = { id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Reviewer D', 'revd.${stamp}@example.com', 'x', 'application_assessor') RETURNING id`).split('\n')[0], email: `revd.${stamp}@example.com`, role: 'super_admin' };
     const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
     const app = await A.createDraft(pA, userA);
     ok(app.state === 'draft' && app.criteria_version === 'v0.1', 'a new application starts as a draft against the recorded criteria version');
@@ -839,39 +839,66 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok((await A.createDraft(pA, userA)).id !== app.id, 'a new application after a final state is a new record');
   }
 
-  console.log('Partner application review and decision (Batch E)');
+  console.log('Partner application review, decision and activation (Batch E)');
   {
     const A = require('../src/lib/applications');
     const S = require('../src/lib/assessment');
-    const mkStaff = (n) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash) VALUES ('super_admin', 'Reviewer ${n}', 'rev${n}.${stamp}@example.com', 'x') RETURNING id`).split('\n')[0], email: `rev${n}.${stamp}@example.com`, role: 'super_admin' });
-    const assessor = mkStaff(1); const decider = mkStaff(2);
-    const [pid, uid] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email) VALUES ('Reviewed ${stamp}', 'rv.${stamp}@example.com') RETURNING id)
-      INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Applicant', 'rv.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
-    const applicant = { id: uid, email: `rv.${stamp}@example.com`, role: 'platform_admin' };
+    const X = require('../src/lib/activation');
+    const P = require('../src/lib/positions');
+    const mkStaff = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Reviewer ${n}', 'rev${n}.${stamp}@example.com', 'x', ${position ? `'${position}'` : 'NULL'}) RETURNING id`).split('\n')[0], email: `rev${n}.${stamp}@example.com`, role: 'super_admin' });
+    const assessor = mkStaff(1, 'application_assessor'); const decider = mkStaff(2, 'authorization_decision_maker'); const officer = mkStaff(3, 'activation_officer'); const owner = mkStaff(4, null);
     const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
-    const app = await A.createDraft(pid, applicant);
-    await A.saveDraft(app.id, pid, applicant, { legal_name: 'Reviewed LLC' });
-    const ev = await A.addEvidence(app.id, pid, applicant, { criterion: 'C1', filename: 'reg.pdf', buffer: Buffer.from('%PDF-1.4\n% reg\n') });
-    await A.submit(app.id, pid, applicant);
-    ok(await fails(S.recordAssessment(app.id, assessor, { findings: {} }), 409), 'an assessment cannot be recorded before technical review');
-    await A.staffTransition(app.id, assessor, 'technical_review', 'Complete');
-    const findings = (over = {}) => Object.fromEntries(S.CRITERIA.map((c) => [c, { result: 'met', reason: `${c} reviewed`, evidence_id: ev.id, ...(over[c] || {}) }]));
-    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings({ C2: { reason: ' ' } }) }), 422), 'every finding needs a reason');
-    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings({ C2: { evidence_id: '' } }) }), 422), '"met" needs reviewed evidence');
-    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings({ C2: { evidence_id: '11111111-1111-1111-1111-111111111111' } }) }), 422), 'evidence from outside this application is refused');
+    const pdf = (t) => Buffer.from(`%PDF-1.4\n% ${t}\n`);
+    const findings = (ev, over = {}) => Object.fromEntries(S.CRITERIA.map((c) => [c, { result: 'met', reason: `${c} reviewed`, evidence_id: ev, ...(over[c] || {}) }]));
+    // A submitted application in technical review, with C1 and C3 evidence.
+    const prepare = async (tag) => {
+      const [pid, uid] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email) VALUES ('Reviewed ${tag} ${stamp}', 'rv${tag}.${stamp}@example.com') RETURNING id)
+        INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Applicant', 'rv${tag}.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
+      const applicant = { id: uid, email: `rv${tag}.${stamp}@example.com`, role: 'platform_admin' };
+      const app = await A.createDraft(pid, applicant);
+      await A.saveDraft(app.id, pid, applicant, { legal_name: `Reviewed ${tag} LLC` });
+      const ev = await A.addEvidence(app.id, pid, applicant, { criterion: 'C1', filename: 'reg.pdf', buffer: pdf('reg') });
+      const ev3 = await A.addEvidence(app.id, pid, applicant, { criterion: 'C3', filename: 'trainer.pdf', buffer: pdf('trainer') });
+      await A.submit(app.id, pid, applicant);
+      await A.staffTransition(app.id, assessor, 'technical_review', 'Complete');
+      return { app, pid, uid, ev, ev3 };
+    };
+    const toAwaiting = async (x) => { await S.recordAssessment(x.app.id, assessor, { findings: findings(x.ev.id, { C9: { result: 'minor', evidence_id: '' } }) }); await A.staffTransition(x.app.id, assessor, 'awaiting_decision', 'Assessed'); };
+    const x = await prepare('A');
+    const { app, pid, uid, ev, ev3 } = x;
+
+    console.log(' positions');
+    ok(await fails(S.recordAssessment(app.id, owner, { findings: findings(ev.id) }), 403) && await fails(S.decide(app.id, owner, { outcome: 'declined', reasons: 'x' }), 403) && await fails(X.activate(app.id, owner), 403), 'the owner administrator (no position) cannot assess, decide or activate');
+    ok(await fails(A.staffTransition(app.id, decider, 'awaiting_decision', 'x'), 403) && await fails(S.recordAssessment(app.id, officer, { findings: findings(ev.id) }), 403), 'a position holder cannot do another position\'s work');
+    const vac = psql("SELECT id FROM users WHERE staff_position = 'application_assessor' AND vacant LIMIT 1");
+    ok(!!vac && await fails(S.recordAssessment(app.id, { id: vac, email: 'v', role: 'super_admin' }, { findings: findings(ev.id) }), 403), 'a vacant position account cannot act');
+    ok(psql("SELECT count(*) FROM users WHERE vacant AND password_hash LIKE '!vacant-%' AND email LIKE '%@positions.liv.invalid'") === '3', 'each position starts with a vacant account that cannot sign in');
+    const appointee = await P.appoint(vac, owner, { full_name: `Person ${stamp}`, email: `person.${stamp}@example.com` });
+    ok(appointee.temp.length >= 12 && psql(`SELECT vacant::text || must_change_password::text FROM users WHERE id = '${vac}'`) === 'falsetrue', 'appointing a person fills the position with a temporary password they must change');
+    ok(await fails(P.appoint(psql("SELECT id FROM users WHERE staff_position = 'activation_officer' AND vacant LIMIT 1"), owner, { full_name: ` person ${stamp}`, email: `p2.${stamp}@example.com` }), 409), 'one person cannot hold two separated positions');
+    await P.release(vac, owner);
+    ok(psql(`SELECT vacant::text FROM users WHERE id = '${vac}'`) === 'true' && await fails(S.recordAssessment(app.id, { id: vac, email: 'v', role: 'super_admin' }, { findings: findings(ev.id) }), 403), 'releasing a position ends the person\'s access');
+
+    console.log(' assessment and recommendation');
+    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings(ev.id, { C2: { reason: ' ' } }) }), 422), 'every finding needs a reason');
+    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings(ev.id, { C2: { evidence_id: '' } }) }), 422), '"met" needs reviewed evidence');
+    ok(await fails(S.recordAssessment(app.id, assessor, { findings: findings(ev.id, { C2: { evidence_id: '11111111-1111-1111-1111-111111111111' } }) }), 422), 'evidence from outside this application is refused');
     ok(await fails(A.staffTransition(app.id, assessor, 'awaiting_decision', 'Too early'), 409), 'no decision step without an assessment');
-    const first = await S.recordAssessment(app.id, assessor, { findings: findings({ C9: { result: 'needs_information', evidence_id: '' } }) });
-    ok(first.recommendation.outcome === 'incomplete', 'a criterion that needs information gives no recommendation (not a failure)');
-    ok(await fails(A.staffTransition(app.id, assessor, 'awaiting_decision', 'Incomplete'), 409), 'an incomplete assessment cannot be sent for decision');
-    const second = await S.recordAssessment(app.id, assessor, { findings: findings({ C9: { result: 'minor', evidence_id: '' } }) });
+    const first = await S.recordAssessment(app.id, assessor, { findings: findings(ev.id, { C9: { result: 'needs_information', evidence_id: '' } }) });
+    ok(first.recommendation.outcome === 'incomplete' && await fails(A.staffTransition(app.id, assessor, 'awaiting_decision', 'Incomplete'), 409), 'a criterion that needs information gives no recommendation and blocks the decision step');
+    const second = await S.recordAssessment(app.id, assessor, { findings: findings(ev.id, { C9: { result: 'minor', evidence_id: '' } }) });
     ok(second.recommendation.outcome === 'accept_with_conditions' && psql(`SELECT count(*) FROM partner_assessments WHERE application_id = '${app.id}'`) === '2', 'a re-assessment is a new assessment; the earlier one is kept');
     const again = await S.recalculate(app.id, assessor);
-    ok(again.id !== second.recommendation.id && psql(`SELECT count(*) FROM partner_recommendations`) >= '3' && psqlRefused(`UPDATE partner_recommendations SET outcome = 'accept' WHERE id = '${again.id}'`), 'a recalculation adds a recommendation and never edits the earlier one');
+    ok(again.id !== second.recommendation.id && psqlRefused(`UPDATE partner_recommendations SET outcome = 'accept' WHERE id = '${again.id}'`), 'a recalculation adds a recommendation and never edits the earlier one');
     ok(psqlRefused(`UPDATE partner_assessment_findings SET result = 'met' WHERE assessment_id = '${second.assessment.id}'`) && psqlRefused(`DELETE FROM partner_assessments WHERE id = '${second.assessment.id}'`), 'assessments and findings are locked');
     await A.staffTransition(app.id, assessor, 'awaiting_decision', 'Assessed');
-    ok(await fails(A.staffTransition(app.id, decider, 'accepted_pending_activation', 'Skip the form'), 409), 'the decision cannot be made as a plain status move');
-    ok(await fails(S.decide(app.id, assessor, { outcome: 'accepted_with_conditions', reasons: 'Mine', conditions: [{ text: 'Fix', blocking: true }] }), 403), 'the assessor cannot record the decision, even by a direct call');
-    ok(psql(`SELECT count(*) FROM partner_application_decisions WHERE application_id = '${app.id}'`) === '0', 'the refused decision left no trace');
+
+    console.log(' decision');
+    ok(await fails(A.staffTransition(app.id, decider, 'accepted_pending_activation', 'Skip the form'), 403) && await fails(A.staffTransition(app.id, assessor, 'accepted_pending_activation', 'Skip the form'), 409), 'the decision cannot be made as a plain status move');
+    ok(await fails(S.decide(app.id, assessor, { outcome: 'declined', reasons: 'Mine' }), 403), 'the assessor cannot record the decision');
+    psql(`UPDATE users SET staff_position = 'authorization_decision_maker' WHERE id = '${assessor.id}'`);
+    ok(await fails(S.decide(app.id, assessor, { outcome: 'declined', reasons: 'Mine' }), 403) && psql(`SELECT count(*) FROM partner_application_decisions WHERE application_id = '${app.id}'`) === '0', 'even holding the decision position, the person who recorded the assessment cannot decide, and the refusal leaves no trace');
+    psql(`UPDATE users SET staff_position = 'application_assessor' WHERE id = '${assessor.id}'`);
     ok(await fails(S.decide(app.id, decider, { outcome: 'accepted', reasons: 'Looks fine' }), 409), 'a decision cannot be stronger than the recommendation');
     ok(await fails(S.decide(app.id, decider, { outcome: 'accepted_with_conditions', reasons: 'Ok' }), 422), 'acceptance with conditions needs a condition');
     ok(await fails(S.decide(app.id, decider, { outcome: 'accepted_with_conditions', reasons: 'Ok', conditions: [{ text: 'Late', blocking: false }] }), 422), 'a non-blocking condition needs a due date');
@@ -879,19 +906,66 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     psql(`UPDATE partner_criteria_sets SET criteria = jsonb_set(criteria, '{0,title}', to_jsonb('Changed after preparation'::text)) WHERE version = 'v0.1'`);
     ok(await fails(S.decide(app.id, decider, { outcome: 'declined', reasons: 'Stale' }), 409), 'a decision is refused when the inputs changed after the recommendation was prepared');
     psql(`UPDATE partner_criteria_sets SET criteria = jsonb_set(criteria, '{0,title}', to_jsonb('Legal entity and accountability'::text)) WHERE version = 'v0.1'`);
-    const d = await S.decide(app.id, decider, { outcome: 'accepted_with_conditions', reasons: 'Meets the criteria with one minor gap', conditions: [{ text: 'Close the C9 gap', blocking: false, due_date: '2027-03-01' }] });
+    const d = await S.decide(app.id, decider, { outcome: 'accepted_with_conditions', reasons: 'Meets the criteria with minor gaps', conditions: [{ text: 'Close the C9 gap', blocking: false, due_date: '2027-03-01' }, { text: 'Publish the refund policy', blocking: true }] });
     ok(d.outcome === 'accepted_with_conditions' && psql(`SELECT state FROM partner_applications WHERE id = '${app.id}'`) === 'accepted_pending_activation', 'the decision moves the application to accepted, pending activation');
-    ok(psql(`SELECT count(*) FROM partner_application_conditions WHERE decision_id = '${d.id}'`) === '1' && psqlRefused(`UPDATE partner_application_decisions SET outcome = 'declined' WHERE id = '${d.id}'`), 'conditions are recorded and the decision is locked');
-    ok(psql(`SELECT accreditation_status FROM platforms WHERE id = '${pid}'`) !== 'active', 'acceptance does not activate the partner');
+    ok(psql(`SELECT count(*) FROM partner_application_conditions WHERE decision_id = '${d.id}'`) === '2' && psqlRefused(`UPDATE partner_application_decisions SET outcome = 'declined' WHERE id = '${d.id}'`), 'conditions are recorded and the decision is locked');
+    ok(psql(`SELECT accreditation_status FROM platforms WHERE id = '${pid}'`) === 'pending', 'acceptance does not activate the provider');
     ok(await fails(S.decide(app.id, decider, { outcome: 'declined', reasons: 'Again' }), 409), 'a decided application cannot be decided again');
-    await S.recalculate(app.id, assessor);
-    ok(psql(`SELECT outcome FROM partner_application_decisions WHERE application_id = '${app.id}'`) === 'accepted_with_conditions', 'recalculating never changes the recorded decision');
+
+    console.log(' activation');
+    ok(await fails(X.activate(app.id, officer), 409), 'activation is refused while checklist items are open');
+    const items = (await X.getChecklist(app.id)).items;
+    ok(items.length === 6 && items.every((i) => !i.ok), 'every checklist item starts open (blocking condition, agreement, scope and trainer, two-factor, billing, test issuance)');
+    const [cid] = psql(`SELECT id FROM partner_application_conditions WHERE decision_id = '${d.id}' AND blocking`).split('\n');
+    ok(await fails(X.closeCondition(app.id, officer, cid, 'ok'), 403), 'only the assessor position verifies a condition');
+    await X.closeCondition(app.id, assessor, cid, 'Refund policy published at the stated URL');
+    ok(psqlRefused(`DELETE FROM partner_condition_closures WHERE condition_id = '${cid}'`), 'a condition closure is locked');
+    const scopeId = psql(`INSERT INTO partner_scopes (platform_id, title, decision_note) VALUES ('${pid}', 'Test Course', 'Batch E test') RETURNING id`).split('\n')[0];
+    ok(await fails(X.recordTrainer(app.id, assessor, { scope_id: scopeId, trainer_name: 'T. Trainer', evidence_id: ev.id, finding: 'x' }), 422), 'a trainer record needs C3 evidence of this application');
+    ok(await fails(X.recordTrainer(app.id, decider, { scope_id: scopeId, trainer_name: 'T. Trainer', evidence_id: ev3.id, finding: 'x' }), 403), 'only the assessor position records a trainer');
+    ok(await fails(X.recordTrainer(app.id, assessor, { scope_id: scopeId, trainer_name: 'T. Trainer', evidence_id: ev3.id, finding: ' ' }), 422), 'a trainer record needs the assessor\'s finding');
+    await X.recordTrainer(app.id, assessor, { scope_id: scopeId, trainer_name: 'T. Trainer', evidence_id: ev3.id, finding: 'CV and certificates verified against the original documents' });
+    ok(psqlRefused(`UPDATE partner_scope_trainers SET trainer_name = 'Other' WHERE scope_id = '${scopeId}'`), 'a trainer record is locked');
+    const agr = psql("SELECT id FROM agreements WHERE status = 'active'");
+    if (agr) psql(`INSERT INTO agreement_acceptances (platform_id, agreement_id, user_id, accepted_name) VALUES ('${pid}', '${agr}', '${uid}', 'Applicant')`);
+    psql(`UPDATE platforms SET billing_name = 'Billing', billing_email = 'bill.${stamp}@example.com' WHERE id = '${pid}'`);
+    await X.confirmTestIssuance(app.id, officer, 'Test identifiers TEST-0001 issued and checked, not real credentials');
+    const open = (await X.getChecklist(app.id)).items.filter((i) => !i.ok).map((i) => i.key);
+    ok(open.includes('two_factor') && (agr ? open.length === 1 : open.length === 2 && open.includes('agreement')), 'the checklist shows exactly what is still open (two-factor sign-in' + (agr ? '' : ' and the missing agreement') + ')');
+    ok(await fails(X.activate(app.id, officer), 409) && psql(`SELECT accreditation_status FROM platforms WHERE id = '${pid}'`) === 'pending', 'activation needs two-factor sign-in for every provider administrator');
+    psql(`UPDATE users SET totp_enabled = true WHERE id = '${uid}'`);
+    if (!agr) {
+      psql("INSERT INTO agreements (version, title, body_md, status) VALUES (9999, 'E2E agreement', 'text', 'active')");
+      psql(`INSERT INTO agreement_acceptances (platform_id, agreement_id, user_id, accepted_name) SELECT '${pid}', id, '${uid}', 'Applicant' FROM agreements WHERE status = 'active'`);
+    }
+    const e2eAgreement = !agr; // an agreement created only for this test must not gate the other partners in later checks
+    ok(await fails(X.activate(app.id, assessor), 403) && await fails(X.activate(app.id, decider), 403) && await fails(X.activate(app.id, owner), 403), 'the assessor, the decision-maker and the owner cannot activate');
+    await X.activate(app.id, officer);
+    ok(psql(`SELECT accreditation_status FROM platforms WHERE id = '${pid}'`) === 'active' && psql(`SELECT state FROM partner_applications WHERE id = '${app.id}'`) === 'activated' && psql(`SELECT count(*) FROM partner_activations WHERE application_id = '${app.id}'`) === '1', 'the activation officer activates; the provider turns on and the checklist is recorded');
+    if (e2eAgreement) psql("UPDATE agreements SET status = 'retired' WHERE version = 9999");
+    ok(await fails(X.activate(app.id, officer), 409) && psqlRefused(`UPDATE partner_activations SET activated_by_label = 'x' WHERE application_id = '${app.id}'`), 'activation happens once and its record is locked');
+    ok(await fails(S.reverseDecision(app.id, decider, 'Too late'), 409), 'an acceptance cannot be reversed after activation');
+    ok(psql(`SELECT outcome FROM partner_application_decisions WHERE application_id = '${app.id}' ORDER BY created_at LIMIT 1`) === 'accepted_with_conditions', 'the recorded decision is never changed');
+
+    console.log(' reversal');
+    const y = await prepare('B');
+    await toAwaiting(y);
+    const dy = await S.decide(y.app.id, decider, { outcome: 'accepted_with_conditions', reasons: 'Accept', conditions: [{ text: 'Gap', blocking: true }] });
+    ok(await fails(S.reverseDecision(y.app.id, decider, ' '), 422) && await fails(S.reverseDecision(y.app.id, assessor, 'Because'), 403), 'a reversal needs reasons and the decision position');
+    const rev = await S.reverseDecision(y.app.id, decider, 'New facts: the registration is not valid');
+    ok(rev.supersedes_id === dy.id && psql(`SELECT state FROM partner_applications WHERE id = '${y.app.id}'`) === 'declined' && psql(`SELECT count(*) FROM partner_application_decisions WHERE application_id = '${y.app.id}'`) === '2', 'a reversal is a new reasoned decision that points at the earlier one, which is kept');
+    ok(psql(`SELECT accreditation_status FROM platforms WHERE id = '${y.pid}'`) === 'pending', 'a reversed acceptance leaves the provider inactive');
+
+    console.log(' screens');
     await adm.goto(`${BASE}/admin/applications`);
-    ok(await see(adm, `td:has-text("Reviewed ${stamp}")`), 'the applications list shows the provider');
+    ok(await see(adm, `td:has-text("Reviewed A ${stamp}")`), 'the applications list shows the provider');
     await adm.goto(`${BASE}/admin/applications/${app.id}`);
-    ok(await see(adm, 'text=Assessment of version 1') && await see(adm, 'text=Close the C9 gap') && await see(adm, 'text=accepted with conditions'), 'the review screen shows the assessments, recommendations, decision and conditions');
+    ok(await see(adm, 'text=Assessment of version 1') && await see(adm, 'text=Close the C9 gap') && await see(adm, 'text=Activated by'), 'the review screen shows assessments, decision, conditions and the activation record');
+    ok(!(await see(adm, 'button:has-text("Record decision")')) && !(await see(adm, 'button:has-text("Activate provider")')), 'the owner administrator sees no assess, decide or activate forms');
+    await adm.goto(`${BASE}/admin/staff`);
+    ok(await see(adm, 'text=Application Assessor') && await see(adm, 'text=Authorization Decision-Maker') && await see(adm, 'text=Activation Officer'), 'the staff positions page lists the three positions');
     ok((await adm.request.get(`${BASE}/admin/applications/evidence/${ev.id}`)).status() === 200, 'staff download the private evidence');
-    ok((await anon.request.get(`${BASE}/admin/applications/${app.id}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/applications/evidence/${ev.id}`, { maxRedirects: 0 })).status() !== 200, 'the review screen and the evidence are closed to visitors');
+    ok((await anon.request.get(`${BASE}/admin/applications/${app.id}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/staff`, { maxRedirects: 0 })).status() !== 200, 'the review and staff screens are closed to visitors');
   }
 
   console.log('Knowledge distribution');
@@ -953,7 +1027,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');
   const cross = await page.request.get(`${BASE}/portal/batches/00000000-0000-0000-0000-000000000000`);
-  ok(cross.status() === 404, 'unknown batch → 404');
+  ok(cross.status() === 404, 'unknown batch → 404 (got ' + cross.status() + ' ' + cross.url() + ')');
 
   console.log('Demo data removal (Phase 0; runs last because it removes the demo partner)');
   {

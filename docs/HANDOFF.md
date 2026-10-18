@@ -5,7 +5,7 @@ Read this first in a new session, then only the sections of other docs that the 
 ## Where things stand
 - Branch: `claude/blissful-sagan-wp14xp`. Live app: Replit "US LIV" (https://us-project.replit.app); the owner pulls and republishes.
 - Partner gateway (docs/PARTNER-AUTHORIZATION.md): batches A, B, C, D done (see the progress line in docs/BUILD-PLAN.md, partner gateway section).
-- Batch E part 1 done (review screens, assessment, recommendation, separated decision; see BUILD-PLAN). Remaining in E: activation checklist and activation, trainer record (C3), named people. They need owner decisions P-2 (assessor and decision-maker, two different people), P-4 (2FA for partner admins; recommended yes), P-5 (trainer thresholds, or leave pending with a recorded assessor finding).
+- Batch E done (review, assessment, recommendation, separated decision, staff positions, trainer records, activation checklist and activation, reversal). Owner decisions: P-2 answered with positions (vacant accounts until people are appointed in Admin > Staff positions), P-4 yes, P-5 pending until thresholds suit the stage. Next: Batch F (applicant portal), needs the owner's approval of its scope.
 - Then F (applicant portal), G (public program page; P-6 fees), H (monitoring and renewal; P-11, P-12, P-13), I (partner roles).
 - Only the Training Completion Credential is live. Assessed qualification and professional certification are not enabled.
 

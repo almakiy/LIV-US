@@ -35,7 +35,7 @@ function inputHash({ criteria, version, findings, evidence }) {
   return crypto.createHash('sha256').update(JSON.stringify(norm)).digest('hex');
 }
 
-function needStaff(user) { if (!user || user.role !== 'super_admin') throw new ApplicationError('Only LIV staff can make this change.', 403); }
+const pos = require('./positions');
 
 async function lockApp(c, appId) {
   const { rows: [app] } = await c.query('SELECT * FROM partner_applications WHERE id = $1 FOR UPDATE', [appId]);
@@ -68,7 +68,7 @@ async function addRecommendation(c, app, assessment, user) {
 
 /** An assessor records one finding per criterion C1 to C9 against the submitted version. Only while in technical review. */
 async function recordAssessment(appId, user, { summary, findings }) {
-  needStaff(user);
+  await pos.require(user, 'assess');
   if (!findings || typeof findings !== 'object') throw new ApplicationError('Findings are required.');
   return tx(async (c) => {
     const app = await lockApp(c, appId);
@@ -96,7 +96,7 @@ async function recordAssessment(appId, user, { summary, findings }) {
 
 /** Recomputes the recommendation for the latest assessment. Adds a new row; the earlier one stays. Never touches a decision. */
 async function recalculate(appId, user) {
-  needStaff(user);
+  await pos.require(user, 'assess');
   return tx(async (c) => {
     const app = await lockApp(c, appId);
     const cur = await latest(c, app);
@@ -121,7 +121,7 @@ async function readyForDecision(c, app) {
  * recommendation is out of date, or if the outcome contradicts it. The decision moves the application state.
  */
 async function decide(appId, user, { outcome, reasons, conditions = [] }) {
-  needStaff(user);
+  await pos.require(user, 'decide');
   if (!DECISIONS.includes(outcome)) throw new ApplicationError('Choose a decision.');
   if (!String(reasons || '').trim()) throw new ApplicationError('The reasons for the decision are required.');
   return tx(async (c) => {
@@ -151,6 +151,24 @@ async function decide(appId, user, { outcome, reasons, conditions = [] }) {
   });
 }
 
+
+/** Reverses an acceptance before activation: a new, reasoned "declined" decision that points at the one it replaces. The earlier decision stays. */
+async function reverseDecision(appId, user, reasons) {
+  await pos.require(user, 'decide');
+  if (!String(reasons || '').trim()) throw new ApplicationError('The reasons for reversing the decision are required.');
+  return tx(async (c) => {
+    const app = await lockApp(c, appId);
+    if (app.state !== 'accepted_pending_activation') throw new ApplicationError(`A decision can be reversed only while the application is waiting for activation (it is ${app.state.replace(/_/g, ' ')}).`, 409);
+    const { rows: assessors } = await c.query('SELECT 1 FROM partner_assessments WHERE application_id = $1 AND assessor_user_id = $2 LIMIT 1', [app.id, user.id]);
+    if (assessors.length) throw new ApplicationError('You recorded an assessment of this application, so you cannot decide it.', 403);
+    const { rows: [prev] } = await c.query('SELECT * FROM partner_application_decisions WHERE application_id = $1 ORDER BY created_at DESC, id LIMIT 1', [app.id]);
+    const { rows: [d] } = await c.query(`INSERT INTO partner_application_decisions (application_id, recommendation_id, outcome, reasons, criteria_version, version, decided_by, decided_by_label, supersedes_id)
+      VALUES ($1,$2,'declined',$3,$4,$5,$6,$7,$8) RETURNING *`, [app.id, prev.recommendation_id, String(reasons).trim().slice(0, 4000), prev.criteria_version, prev.version, user.id, user.email, prev.id]);
+    await event(c, app, 'declined', user, `Reversed: ${String(reasons).trim().slice(0, 300)}`);
+    return d;
+  });
+}
+
 /** Everything the review screen needs. */
 async function review(appId) {
   const { rows: [app] } = await q('SELECT a.*, p.company_name, p.country FROM partner_applications a JOIN platforms p ON p.id = a.platform_id WHERE a.id = $1', [appId]);
@@ -171,4 +189,4 @@ async function review(appId) {
     findings: findings.rows, recommendations: recs.rows, decisions: decisions.rows, conditions: conditions.rows, latest: cur };
 }
 
-module.exports = { CRITERIA, RESULTS, DECISIONS, recommend, inputHash, recordAssessment, recalculate, readyForDecision, decide, review };
+module.exports = { CRITERIA, RESULTS, DECISIONS, recommend, inputHash, recordAssessment, recalculate, readyForDecision, decide, reverseDecision, review };

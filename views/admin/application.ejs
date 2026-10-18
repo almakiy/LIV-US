@@ -22,7 +22,7 @@
 <p class="small muted">Each download is logged.</p>
 <% } else { %><p class="muted">No evidence uploaded.</p><% } %>
 
-<% if (moves.length) { %>
+<% if (moves.length && can.assess) { %>
 <form class="card mt" method="post" action="/admin/applications/<%= app.id %>/move"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Next step</h3>
   <div class="row"><div class="field"><label for="mv-to">Move to</label><select id="mv-to" name="to"><% moves.forEach(to => { %><option value="<%= to %>"><%= label(to) %></option><% }) %></select></div>
   <div class="field"><label for="mv-reason">Reason *</label><input id="mv-reason" name="reason" maxlength="500" required></div></div>
@@ -40,11 +40,11 @@
   <% recs.forEach((r, i) => { %><br><%= usDateTime(r.created_at) %> · <strong><%= label(r.outcome) %></strong><%= i === 0 && idx === 0 ? (last && last.current ? ' (matches the current application)' : ' (out of date: recalculate or reassess)') : '' %><% }) %></p>
 </div>
 <% }) %>
-<% if (assessments.length && !['declined','withdrawn','closed','accepted_pending_activation'].includes(app.state)) { %>
+<% if (can.assess && assessments.length && !['activated','declined','withdrawn','closed','accepted_pending_activation'].includes(app.state)) { %>
 <form method="post" action="/admin/applications/<%= app.id %>/recalculate" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Recalculate recommendation</button> <span class="small muted">Adds a new recommendation. The earlier one and any decision stay as they are.</span></form>
 <% } %>
 
-<% if (app.state === 'technical_review') { %>
+<% if (app.state === 'technical_review' && can.assess) { %>
 <form class="card mt" method="post" action="/admin/applications/<%= app.id %>/assessment"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Record an assessment of version <%= app.current_version %></h3>
   <p class="small muted">One finding per criterion, each with a reason. "Met" needs evidence you reviewed. Unreviewed evidence is "needs information", not a failure. The person who records the assessment cannot take the decision.</p>
   <% CRITERIA.forEach(c => { %><fieldset class="mt"><legend><strong><%= c %></strong> <%= titleOf(c) %></legend>
@@ -59,7 +59,7 @@
 <% decisions.forEach(d => { const ks = conditions.filter((k) => k.decision_id === d.id); %>
 <div class="card mt"><strong><%= label(d.outcome) %></strong> · <%= d.decided_by_label %> · <%= usDateTime(d.created_at) %> · version <%= d.version %>, criteria <%= d.criteria_version %><p><%= d.reasons %></p>
   <% if (ks.length) { %><ul><% ks.forEach(k => { %><li><%= k.blocking ? 'Blocking' : 'Non-blocking' %>: <%= k.text %><%= k.due_date ? ' (due ' + usDate(k.due_date) + ')' : '' %></li><% }) %></ul><% } %></div><% }) %>
-<% if (app.state === 'awaiting_decision') { %>
+<% if (app.state === 'awaiting_decision' && can.decide) { %>
 <form class="card mt" method="post" action="/admin/applications/<%= app.id %>/decision"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Record the decision</h3>
   <p class="small muted">Latest recommendation: <strong><%= last && last.recommendation ? label(last.recommendation.outcome) : 'none' %></strong><%= last && !last.current ? ' (out of date, the server will refuse a decision)' : '' %>. The server refuses a decision from anyone who recorded an assessment of this application. Accepting does not activate the provider.</p>
   <div class="field"><label for="d-out">Decision *</label><select id="d-out" name="outcome" required><option value="">Choose</option><option value="accepted">Accept (pending activation)</option><option value="accepted_with_conditions">Accept with conditions</option><option value="declined">Decline</option></select></div>
@@ -69,6 +69,39 @@
     <div class="field"><label for="cb<%= i %>">Blocking activation?</label><select id="cb<%= i %>" name="condition_blocking"><option value="yes">Yes</option><option value="no">No</option></select></div>
     <div class="field"><label for="cd<%= i %>">Due date</label><input id="cd<%= i %>" type="date" name="condition_due"></div></div><% } %>
   <button class="btn">Record decision</button></form>
+<% } %>
+
+<h2 class="mt" id="activation">Activation</h2>
+<p class="small muted">Acceptance does not turn the provider on. Activation is a separate step by the Activation Officer, and only when every item below is complete. Payment never activates. Trainer thresholds are not yet defined (P-5): a trainer record is an evidence document plus the assessor's finding.</p>
+<div class="table-wrap"><table><tr><th></th><th>Item</th><th>Status</th></tr>
+<% act.items.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div>
+<% if (act.activation) { %><div class="alert success mt">Activated by <%= act.activation.activated_by_label %> on <%= usDateTime(act.activation.created_at) %>.</div><% } %>
+
+<% if (act.trainers.length) { %><h3 class="mt">Trainer records</h3><div class="table-wrap"><table><tr><th>Scope</th><th>Trainer</th><th>Evidence</th><th>Finding</th><th>By</th></tr>
+<% act.trainers.forEach(t => { %><tr><td class="small"><%= t.scope_title %></td><td><%= t.trainer_name %></td><td class="small"><%= evName(t.evidence_id) %></td><td class="small"><%= t.finding %></td><td class="small"><%= t.recorded_by_label %></td></tr><% }) %></table></div><% } %>
+<% if (can.assess && !['activated','declined','withdrawn','closed'].includes(app.state)) { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/trainer"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Add a trainer record (C3)</h3>
+  <% if (!act.scopes.length) { %><p class="small muted">Record the provider's authorized scope first (Training providers, then the provider page).</p><% } %>
+  <div class="row"><div class="field"><label for="tr-s">Scope *</label><select id="tr-s" name="scope_id" required><% act.scopes.forEach(s => { %><option value="<%= s.id %>"><%= s.title %> (<%= s.status %>)</option><% }) %></select></div>
+  <div class="field"><label for="tr-n">Trainer name *</label><input id="tr-n" name="trainer_name" maxlength="200" required></div>
+  <div class="field"><label for="tr-e">C3 evidence *</label><select id="tr-e" name="evidence_id" required><% evidence.filter(e => e.criterion === 'C3' && e.version).forEach(e => { %><option value="<%= e.id %>"><%= e.filename %></option><% }) %></select></div></div>
+  <div class="field"><label for="tr-f">Assessor's finding *</label><textarea id="tr-f" name="finding" rows="2" maxlength="4000" required></textarea></div>
+  <button class="btn">Add trainer record</button></form>
+<% } %>
+
+<% const closedIds = new Set(act.closures.map(c => c.condition_id)); if (conditions.length) { %><h3 class="mt">Conditions</h3><div class="table-wrap"><table><tr><th>Condition</th><th>Type</th><th>Due</th><th>Status</th></tr>
+<% conditions.forEach(k => { %><tr><td><%= k.text %></td><td class="small"><%= k.blocking ? 'Blocking' : 'Non-blocking' %></td><td class="small"><%= k.due_date ? usDate(k.due_date) : '—' %></td>
+<td class="small"><% if (closedIds.has(k.id)) { %>Closed: <%= (act.closures.find(c => c.condition_id === k.id) || {}).note %><% } else if (can.assess && !act.activation) { %>
+<form method="post" action="/admin/applications/<%= app.id %>/conditions/<%= k.id %>/close" class="row" style="gap:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><input name="note" placeholder="How it was verified" maxlength="2000" required aria-label="How the condition was verified"><button class="btn sm secondary">Close</button></form><% } else { %>Open<% } %></td></tr><% }) %></table></div><% } %>
+
+<% if (can.activate && app.state === 'accepted_pending_activation') { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/test-issuance"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Confirm the test issuance</h3>
+  <div class="field"><label for="ti">What was checked *</label><input id="ti" name="note" maxlength="2000" required placeholder="Test identifiers used, never presented as real credentials"></div><button class="btn secondary">Confirm</button></form>
+<form class="mt" method="post" action="/admin/applications/<%= app.id %>/activate" data-confirm="Activate this provider?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn gold">Activate provider</button></form>
+<% } %>
+<% if (can.decide && app.state === 'accepted_pending_activation') { %>
+<form class="card mt" method="post" action="/admin/applications/<%= app.id %>/reverse" data-confirm="Reverse the acceptance? The application becomes declined."><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Reverse the acceptance</h3>
+  <div class="field"><label for="rv">Reasons *</label><textarea id="rv" name="reasons" rows="2" maxlength="4000" required></textarea></div><button class="btn secondary">Reverse (decline)</button></form>
 <% } %>
 
 <h2 class="mt">History</h2>

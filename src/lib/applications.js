@@ -8,7 +8,7 @@ const files = require('./files');
 
 class ApplicationError extends Error { constructor(msg, status = 422) { super(msg); this.status = status; } }
 
-const FINAL = ['declined', 'withdrawn', 'closed'];
+const FINAL = ['activated', 'declined', 'withdrawn', 'closed'];
 // Who may move an application from one state to another. 'system' moves happen inside submit().
 const TRANSITIONS = {
   draft: { submitted: 'applicant' },
@@ -147,7 +147,7 @@ async function withdraw(appId, platformId, user, reason) {
 
 /** LIV staff move (screens and role checks come in Batch E; callers must pass a staff user). */
 async function staffTransition(appId, user, to, reason) {
-  if (!user || user.role !== 'super_admin') throw new ApplicationError('Only LIV staff can make this change.', 403);
+  await require('./positions').require(user, 'assess');
   if (!String(reason || '').trim()) throw new ApplicationError('A reason is required.');
   return tx(async (c) => {
     const { rows: [app] } = await c.query('SELECT * FROM partner_applications WHERE id = $1 FOR UPDATE', [appId]);

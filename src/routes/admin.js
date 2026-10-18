@@ -96,6 +96,11 @@ r.get('/platforms/:id', wrap(async (req, res, next) => {
 r.post('/platforms/:id/status', wrap(async (req, res, next) => {
   const to = req.body.status;
   if (!UUID_RE.test(req.params.id) || !['active', 'suspended', 'pending'].includes(to)) return next();
+  if (to === 'active') {
+    // A provider with an application in progress is turned on only by the activation checklist, never by this button.
+    const { rows: [open] } = await q(`SELECT 1 FROM partner_applications WHERE platform_id = $1 AND state NOT IN ('activated','declined','withdrawn','closed')`, [req.params.id]);
+    if (open) { flash(req, 'error', 'This provider has an application in progress. It is activated from the application page, after the activation checklist is complete.'); return res.redirect(req.get('referer')?.includes('/admin/platforms/') ? `/admin/platforms/${req.params.id}` : '/admin/platforms'); }
+  }
   const { rows: [p] } = await q('UPDATE platforms SET accreditation_status=$1 WHERE id=$2 RETURNING company_name', [to, req.params.id]);
   if (!p) return next();
   await audit({ user: req.user, platformId: req.params.id, action: `platform.status.${to}`, target: p.company_name, metadata: { note: String(req.body.note || '').slice(0, 300) } });

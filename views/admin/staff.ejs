@@ -1,0 +1,19 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Staff positions</h1></div>
+<p class="small muted">Assessing, deciding and activating are three separate positions, each with its own account. Until a person is appointed, the position's account is vacant and cannot sign in. The server checks the position on every action, so the owner administrator account (which holds no position) cannot assess, decide or activate. One person cannot hold two of these positions.</p>
+<% if (temp) { %><div class="alert success"><strong>Temporary password (shown once, share it securely; the person must change it at first sign-in):</strong><div class="keybox mt"><%= temp %></div></div><% } %>
+<% rows.forEach(r => { %>
+<div class="card mt"><h3><%= r.title %> <span class="badge <%= r.vacant ? 'b-pending' : 'b-active' %>"><%= r.vacant ? 'vacant' : 'filled' %></span></h3>
+  <p class="small"><%= r.description %></p>
+  <p class="small muted">Can: <%= [r.can_assess && 'assess', r.can_decide && 'decide', r.can_activate && 'activate'].filter(Boolean).join(', ') %> · Account: <strong><%= r.email %></strong><% if (!r.vacant) { %> · <%= r.full_name %> · two-factor <%= r.totp_enabled ? 'on' : 'off' %><% } %></p>
+  <% if (r.vacant) { %>
+  <form method="post" action="/admin/staff/<%= r.user_id %>/appoint"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="row"><div class="field"><label for="n-<%= r.code %>">Full name *</label><input id="n-<%= r.code %>" name="full_name" maxlength="200" required></div>
+    <div class="field"><label for="e-<%= r.code %>">Email (becomes the sign-in) *</label><input id="e-<%= r.code %>" type="email" name="email" maxlength="255" required></div></div>
+    <button class="btn">Appoint</button></form>
+  <% } else { %>
+  <form method="post" action="/admin/staff/<%= r.user_id %>/release" data-confirm="Release this position? The person loses access immediately."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Release position</button></form>
+  <% } %>
+</div>
+<% }) %>
+<%- include('../partials/app-end') %>

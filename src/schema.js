@@ -634,7 +634,7 @@ CREATE TABLE IF NOT EXISTS partner_criteria_sets (
 CREATE TABLE IF NOT EXISTS partner_applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
-  state VARCHAR(30) NOT NULL DEFAULT 'draft' CHECK (state IN ('draft','submitted','completeness_check','info_requested','technical_review','corrective_action','awaiting_decision','accepted_pending_activation','declined','withdrawn','closed')),
+  state VARCHAR(30) NOT NULL DEFAULT 'draft' CHECK (state IN ('draft','submitted','completeness_check','info_requested','technical_review','corrective_action','awaiting_decision','accepted_pending_activation','activated','declined','withdrawn','closed')),
   criteria_version VARCHAR(20) NOT NULL REFERENCES partner_criteria_sets(version),
   draft JSONB NOT NULL DEFAULT '{}'::jsonb,   -- the applicant's working copy; editable only while the applicant holds the application
   current_version INT NOT NULL DEFAULT 0,     -- last submitted version (0 = never submitted)
@@ -644,7 +644,11 @@ CREATE TABLE IF NOT EXISTS partner_applications (
   closed_at TIMESTAMPTZ
 );
 -- One open application per partner; declined, withdrawn and closed are final and a new application is a new record.
-CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_applications_open ON partner_applications(platform_id) WHERE state NOT IN ('declined','withdrawn','closed');
+-- 'activated' was added in Batch E: older databases get the wider list, and the open-application index is rebuilt to match.
+ALTER TABLE partner_applications DROP CONSTRAINT IF EXISTS partner_applications_state_check;
+ALTER TABLE partner_applications ADD CONSTRAINT partner_applications_state_check CHECK (state IN ('draft','submitted','completeness_check','info_requested','technical_review','corrective_action','awaiting_decision','accepted_pending_activation','activated','declined','withdrawn','closed'));
+DROP INDEX IF EXISTS idx_partner_applications_open;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_applications_open ON partner_applications(platform_id) WHERE state NOT IN ('activated','declined','withdrawn','closed');
 CREATE TABLE IF NOT EXISTS partner_application_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
@@ -762,6 +766,69 @@ DROP TRIGGER IF EXISTS partner_decisions_lock ON partner_application_decisions;
 CREATE TRIGGER partner_decisions_lock BEFORE UPDATE OR DELETE ON partner_application_decisions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_conditions_lock ON partner_application_conditions;
 CREATE TRIGGER partner_conditions_lock BEFORE UPDATE OR DELETE ON partner_application_conditions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Staff positions (Batch E). A position carries the permission; a person holds it through an account. Until people are
+-- appointed, each position has a vacant account that cannot sign in. Assessing, deciding and activating are separate
+-- positions, and the server checks the position, not only the screen. Accounts without a position (the owner admin) cannot do these three things.
+CREATE TABLE IF NOT EXISTS staff_positions (
+  code VARCHAR(40) PRIMARY KEY,
+  title VARCHAR(120) NOT NULL,
+  description TEXT NOT NULL,
+  can_assess BOOLEAN NOT NULL DEFAULT false,
+  can_decide BOOLEAN NOT NULL DEFAULT false,
+  can_activate BOOLEAN NOT NULL DEFAULT false
+);
+INSERT INTO staff_positions (code, title, description, can_assess, can_decide, can_activate) VALUES
+  ('application_assessor', 'Application Assessor', 'Reviews applications against the criteria, records findings, trainer records and condition checks. Cannot decide or activate.', true, false, false),
+  ('authorization_decision_maker', 'Authorization Decision-Maker', 'Decides accept, accept with conditions or decline, and may reverse a decision before activation. Cannot assess or activate.', false, true, false),
+  ('activation_officer', 'Activation Officer', 'Confirms the activation checklist and the test issuance, then activates the provider. Cannot assess or decide.', false, false, true)
+ON CONFLICT (code) DO NOTHING;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS staff_position VARCHAR(40) REFERENCES staff_positions(code);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS vacant BOOLEAN NOT NULL DEFAULT false;
+
+-- Trainer record per scope (criterion C3): an evidence document plus the assessor's finding. No thresholds yet (P-5).
+CREATE TABLE IF NOT EXISTS partner_scope_trainers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scope_id UUID NOT NULL REFERENCES partner_scopes(id) ON DELETE CASCADE,
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  trainer_name VARCHAR(200) NOT NULL CHECK (length(btrim(trainer_name)) > 0),
+  evidence_id UUID NOT NULL REFERENCES partner_application_evidence(id),
+  finding TEXT NOT NULL CHECK (length(btrim(finding)) > 0),
+  recorded_by UUID NOT NULL REFERENCES users(id),
+  recorded_by_label VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS partner_condition_closures (
+  condition_id UUID PRIMARY KEY REFERENCES partner_application_conditions(id) ON DELETE CASCADE,
+  note TEXT NOT NULL CHECK (length(btrim(note)) > 0),
+  closed_by UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS partner_activation_confirmations (
+  application_id UUID NOT NULL REFERENCES partner_applications(id) ON DELETE CASCADE,
+  item VARCHAR(30) NOT NULL CHECK (item IN ('test_issuance')),
+  note TEXT NOT NULL CHECK (length(btrim(note)) > 0),
+  confirmed_by UUID NOT NULL REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  PRIMARY KEY (application_id, item)
+);
+CREATE TABLE IF NOT EXISTS partner_activations (
+  application_id UUID PRIMARY KEY REFERENCES partner_applications(id) ON DELETE CASCADE,
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  checklist JSONB NOT NULL,
+  activated_by UUID NOT NULL REFERENCES users(id),
+  activated_by_label VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+-- A reversal of an acceptance (before activation) is a new decision that points at the one it replaces.
+ALTER TABLE partner_application_decisions ADD COLUMN IF NOT EXISTS supersedes_id UUID REFERENCES partner_application_decisions(id);
+DROP TRIGGER IF EXISTS partner_trainers_lock ON partner_scope_trainers;
+CREATE TRIGGER partner_trainers_lock BEFORE UPDATE OR DELETE ON partner_scope_trainers FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_closures_lock ON partner_condition_closures;
+CREATE TRIGGER partner_closures_lock BEFORE UPDATE OR DELETE ON partner_condition_closures FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_confirmations_lock ON partner_activation_confirmations;
+CREATE TRIGGER partner_confirmations_lock BEFORE UPDATE OR DELETE ON partner_activation_confirmations FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_activations_lock ON partner_activations;
+CREATE TRIGGER partner_activations_lock BEFORE UPDATE OR DELETE ON partner_activations FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},
