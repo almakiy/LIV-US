@@ -235,7 +235,7 @@ An audit opens whenever indicators show a contradiction, a sudden change, repeat
 | P-12 | Time allowed for notifying material change | Batch H |
 | P-13 | Learner-protection arrangements on suspension or closure | Batch H |
 | P-14 | Retention periods for applications and evidence | Batch D |
-| P-19 | Thresholds of the audit indicators in §10.1 (counts and periods). Proposal in §10.1, awaiting owner approval; the principle (audit on indicators) is decided | Batch H |
+| P-19 | **Approved by the owner October 18:** the audit indicator thresholds in §10.1 (5 times, 3 batches, 3 complaints, 90 days, 5 and 10 working days) | Batch H |
 | P-15 to P-17 | Partnership levels Bronze, Silver, Gold: promotion thresholds, badge wording, Gold obligations. Proposal in `docs/PARTNER-LEVELS.md`, awaiting owner approval | Batch H |
 | — | Public opening of the application (`PUBLIC_APPLY`): recommended to stay off until Batches E and F and P-7 are done | Opening |
 

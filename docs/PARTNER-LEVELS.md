@@ -5,7 +5,7 @@ Status (October 18, 2026): **proposal.** The owner approved the idea and the nam
 ## 1. What a level is, and is not
 - A level is a **commercial partnership level**: the size of the commitment, the scope and a record with LIV. Every provider meets the same authorization criteria and is under the same surveillance rules, whatever its level.
 - Billing plan and level are the same thing: **Bronze = Starter plan, Silver = Professional, Gold = Enterprise.** Plan codes in the price catalog keep their internal names.
-- **Never on the credential.** Learners' certificates, the verification page and the public register's provider facts are identical for every level. The badge appears on the provider's own marketing and profile page.
+- **Where the level shows.** The public register lists each authorized provider by name with its level and authorized scope (owner decision, October 18). The badge appears on the provider's own marketing and profile page. Whether a level seal also appears on the learner's certificate is decision **P-20**; until it is decided, certificates carry no level.
 - Licence of the badge: use only as supplied; withdrawn the day authorization is suspended or the level is lost.
 
 ## 2. Entry: everyone starts at Bronze
@@ -80,7 +80,7 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | Extra obligations to qualify and to keep the level | None beyond the common rules | Prepaid Silver plan; clean surveillance record; two clean sample reviews | Prepaid Gold plan; named quality officer; annual data return; evidence of the wider footprint; four clean sample reviews; two clean surveillance reviews in a row |
 | Badge | Bronze | Silver | Gold |
 
-**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the learner's certificate and the public verification page; the ban on assessing or certifying one's own learners for a Professional Certification.
+**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the facts on the verification page and the claims a certificate makes; the ban on assessing or certifying one's own learners for a Professional Certification.
 
 ## 10. Volume is never a limit, and a spike changes no level
 - No level caps the certificates a provider may issue. A Bronze provider that issues 250 certificates in one month keeps issuing; the 100 included certificates are used first, the rest are billed monthly in arrears at the Bronze per-certificate rates.
@@ -88,3 +88,17 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 - The renewal best-price check tells the provider when another level would have cost less; it can ask for that level once §3 is met.
 - A sudden jump against the provider's own history is a risk signal (`PARTNER-AUTHORIZATION.md` §10): LIV samples that batch against its training evidence. Issued certificates stay valid unless the sample shows the records do not match the training; those certificates are then revoked through the existing revocation process.
 - **P-18 decided (owner, October 18):** no hold. An unusually large batch (proposed: more than five times the provider's average monthly issuance, or more than half of its annual included allowance in one batch) is flagged and sampled, and issues without delay. Indicator-triggered audits are in `PARTNER-AUTHORIZATION.md` §10.1.
+
+## 11. Planned additions (owner, October 18, 2026; designs later)
+
+1. **Public register:** each authorized provider is listed by name, with its level, country and authorized scope.
+2. **Level benefits in certificate templates.** Template variants and use of the LIV logo on the provider's own materials are offered by level and created at the provider's request (for example a Gold provider asking for a particular template). Each one is designed when requested, applies only to certificates issued after it is approved, and never to historical certificates (their PDFs are not regenerated or changed). Standard templates stay free; custom design is priced in `FEES.md` §3 ($300 setup), and whether a level includes some of it is for the owner to set.
+3. **Seals.** A family of coloured seals carrying the LIV logo, with a different emblem by level and by field (for example safety, quality, project governance), for use on certificates, digital badges and provider marks. Design is later. Fields use neutral emblems; the rules for wording around a seal ("authorized", never "accredited" or "approved by") follow the claims review (D-C).
+4. **Logo licence.** Use of the LIV logo and seals by providers follows a licence (P-16): approved artwork only, no alteration, withdrawal on suspension, and no use that implies accreditation.
+
+Open decisions:
+| # | Decision |
+|---|---|
+| P-20 | Whether the learner's certificate shows a level seal (or only a field emblem and the LIV seal). A level seal on certificates makes the provider's commercial level visible to every employer who reads them; the choice shapes how certificates are read, so it is decided before any seal is designed |
+| P-21 | "Attendance" certificates: LIV issues only the Training Completion Credential. An attendance-only document would be a different record with a different claim, its own label and its own verification text; it is decided on its own, not as a template variant of completion |
+| P-22 | Which template variants and how much custom design each level includes |
