@@ -69,7 +69,7 @@ r.post('/certificates', wrap(async (req, res) => {
     const { rows } = await q('SELECT * FROM certificates WHERE batch_id = $1 ORDER BY created_at', [out.batch.id]);
     res.status(201).json({ batch_id: out.batch.id, certificates: rows.map(certJson) });
   } catch (e) {
-    if (e.status === 409) return res.status(409).json({ error: e.message });
+    if (e.status === 409 || e.status === 422) return res.status(e.status).json({ error: e.message });
     if (e.code === '23505' && idem) return res.status(409).json({ error: 'A request with this Idempotency-Key is already being processed.' });
     throw e;
   }

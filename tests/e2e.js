@@ -61,6 +61,10 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   }
 
   console.log('Provider login + CSV issuance');
+  // Issuance needs an authorized scope covering each course (Batch B); LIV records the demo partner's scopes here.
+  for (const t of ['Confined Space Entry', 'Working at Heights', 'Hazard Communication', 'Occupational Safety', 'First Aid', 'Safety', 'Hold test', 'Forklift Safety']) {
+    psql(`INSERT INTO partner_scopes (platform_id, title, granted_on, decision_note) SELECT id, '${t}', '2026-01-01', 'E2E' FROM platforms WHERE company_name LIKE 'Demo Safety%' AND NOT EXISTS (SELECT 1 FROM partner_scopes s WHERE s.platform_id = platforms.id AND s.title = '${t}')`);
+  }
   await page.goto(BASE + '/login');
   await page.fill('input[name=email]', 'demo@trainingco.example');
   await page.fill('input[name=password]', 'ChangeMe-Demo-2026');
@@ -742,6 +746,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(`${BASE}/admin/platforms/${demoId}`);
     await adm.fill('input[name=title]', scopeTitle);
     await adm.selectOption('select[name=scheme_id]', hseId);
+    await adm.fill('input[name=granted_on]', '2026-01-01');
     await adm.fill('input[name=decision_note]', 'E2E review reference');
     await adm.click('button:has-text("Add scope")');
     ok(await see(adm, `text=Authorized scope added: ${scopeTitle}`), 'admin records an authorized scope with its basis');
@@ -760,6 +765,26 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.request.post(`${BASE}/admin/scopes/${scopeId}/status`, { form: { _csrf: csrfA, status: 'suspended', reason: 'E2E' } });
     ok(!(await (await anon.request.get(`${BASE}/partners/${slugP}`)).text()).includes(scopeTitle), 'a suspended scope leaves the public register');
     ok((await (await anon.request.get(sc.verify_url)).text()).includes('scope suspended'), 'verification shows that the scope is suspended');
+    console.log('Issuance protection (Batch B)');
+    ok(psql(`SELECT issued_partner_status || '|' || issued_scope_status || '|' || issued_scope_granted_on FROM certificates WHERE cert_number = '${sc.cert_number}'`) === 'active|active|2026-01-01', 'a new credential records the partner and scope status at issuance');
+    const person = (n) => ({ first_name: 'Scope', last_name: `Case${n}`, email: `case${n}.${stamp}@example.com` });
+    const refused = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(1), course_name: scopeTitle, completion_date: '2026-10-02' }] });
+    ok(refused.status() === 422 && (await refused.text()).includes('not covered by an active authorized scope'), 'issuance under a suspended scope is refused');
+    const outside = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(2), course_name: `Unlisted Course ${stamp}`, completion_date: '2026-10-01' }] });
+    ok(outside.status() === 422, 'issuance for a course outside every scope is refused');
+    const ended = (days, title) => psql(`INSERT INTO partner_scopes (platform_id, title, granted_on, ends_on, decision_note) VALUES ('${demoId}', '${title}', '2026-01-01', CURRENT_DATE - ${days}, 'E2E ended scope') RETURNING id`);
+    ended(10, `Grace Ten ${stamp}`); ended(20, `Grace Twenty ${stamp}`);
+    const inGrace = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(3), course_name: `Grace Ten ${stamp}`, completion_date: psql('SELECT (CURRENT_DATE - 12)::text') }] });
+    ok(inGrace.status() === 201, 'a completion inside a scope that ended 10 days ago can still be issued (15-day maximum)');
+    const lateGrace = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(4), course_name: `Grace Twenty ${stamp}`, completion_date: psql('SELECT (CURRENT_DATE - 22)::text') }] });
+    ok(lateGrace.status() === 422, 'a scope that ended more than 15 days ago no longer allows issuance');
+    const afterEnd = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(5), course_name: `Grace Ten ${stamp}`, completion_date: psql('SELECT (CURRENT_DATE - 5)::text') }] });
+    ok(afterEnd.status() === 422, 'training completed after the scope ended is refused');
+    const before = psql(`SELECT accreditation_status FROM platforms WHERE id = '${demoId}'`);
+    psql(`UPDATE platforms SET accreditation_status = 'suspended' WHERE id = '${demoId}'`);
+    const susp = await api('POST', '/api/v1/certificates', { certificates: [{ ...person(6), course_name: 'Hazard Communication', completion_date: '2026-10-01' }] });
+    ok(susp.status() === 403 || susp.status() === 422, 'a suspended training provider cannot issue');
+    psql(`UPDATE platforms SET accreditation_status = '${before}' WHERE id = '${demoId}'`);
   }
 
   console.log('Knowledge distribution');

@@ -155,7 +155,11 @@ r.post('/issue/confirm', requireActivePlatform, wrap(async (req, res) => {
     return res.redirect('/portal/issue/review');
   }
   const [platform, tpl] = await Promise.all([loadPlatform(pid(req)), loadTemplate(pid(req), job.templateId)]);
-  const out = await issue({ rows: valid, platform, template: tpl, user: req.user, source: 'csv', fileName: job.fileName, totalRows: results.length });
+  let out;
+  try { out = await issue({ rows: valid, platform, template: tpl, user: req.user, source: 'csv', fileName: job.fileName, totalRows: results.length }); } catch (e) {
+    if (e.status === 422 || e.status === 409) { flash(req, 'error', e.message); return res.redirect('/portal/issue/review'); }
+    throw e;
+  }
   fs.rmSync(jobPath(req.session.issueJob), { force: true });
   delete req.session.issueJob;
   flash(req, 'success', `${out.certificates.length} certificate(s) issued${results.length - valid.length ? `, ${results.length - valid.length} row(s) skipped` : ''}.`);

@@ -37,6 +37,10 @@ if (cfg.isDeployed) {
       ['Michael', 'Johnson', 'michael.j@example.com', 'ISO 45001 Internal Auditor', '2026-09-03'],
       ['Elena', 'Garcia', 'elena.garcia@example.com', 'Fire Safety & Emergency Response', '2026-09-21'],
     ].map(([first_name, last_name, email, course_name, completion_date]) => ({ first_name, last_name, email, course_name, completion_date }));
+    // Demo authorized scopes (development data only) so the sample completions fall inside a scope.
+    for (const title of new Set(sample.map((x) => x.course_name))) {
+      await q(`INSERT INTO partner_scopes (platform_id, title, granted_on, decision_note) VALUES ($1,$2,'2026-01-01','Demo data')`, [p.id, title]);
+    }
     const rows = await validateRows(sample, p.id);
     const out = await issue({ rows, platform: p, template: tpl, source: 'csv', fileName: 'seed.csv', actorLabel: 'seed' });
     console.log(`Demo platform: ${demoEmail} / ${demoPass}`);

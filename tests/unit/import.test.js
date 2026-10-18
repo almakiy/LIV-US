@@ -56,7 +56,7 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
   ];
   const { validateRows: v } = require('../../src/lib/issuance');
   const db = require('../../src/db');
-  const orig = db.pool.query; db.pool.query = async () => ({ rows: [] }); // no existing certificates
+  const orig = db.pool.query; db.pool.query = async (sql) => ({ rows: /partner_scopes/.test(sql) ? [{ id: 's1', status: 'active' }] : [] }); // an active scope covers the course; no existing certificates
   try {
     const out = await v(rows, '00000000-0000-0000-0000-000000000000');
     assert.deepStrictEqual([out[0].errors, out[0].data.first_name, out[0].data.last_name, out[0].data.national_id], [[], 'Ahmed Mohammed Al', 'Ali', '1234567890']);
@@ -64,6 +64,9 @@ test('validateRows splits full_name, validates ID, keeps ID out of the clear in 
     assert.match(out[2].errors.join(), /national_id/);
     assert.match(out[3].errors.join(), /name is required/);
     assert.match(out[4].errors.join(), /last_name must use English/);
+    db.pool.query = async () => ({ rows: [] }); // no authorized scope at all
+    const noScope = await v([rows[0]], '00000000-0000-0000-0000-000000000000');
+    assert.match(noScope[0].errors.join(), /not covered by an active authorized scope/);
   } finally { db.pool.query = orig; }
   assert.strictEqual(idLast4('1234 567-890'), '7890');
   assert.strictEqual(normalizeId(' ab-12 '), 'AB12');

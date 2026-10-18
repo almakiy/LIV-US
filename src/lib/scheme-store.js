@@ -31,4 +31,19 @@ async function scopeForCourse(platformId, courseName) {
   return s || null;
 }
 
-module.exports = { SCHEME_STATUS, SCOPE_STATUS, RECORD_TYPES, seedSchemes, listSchemes, schemeBySlug, scopesFor, scopeForCourse };
+// Issuance eligibility (docs/PARTNER-AUTHORIZATION.md §7, owner decision P-8): a completion may be issued only when an active
+// scope covers the course, the training was completed inside the scope's validity, and the request comes no later than
+// SCOPE_GRACE_DAYS after the scope's end date. Checked when rows are validated and again inside the issuing transaction.
+const SCOPE_GRACE_DAYS = 15;
+async function scopeForIssue(platformId, courseName, completionDate, client) {
+  const run = client ? client.query.bind(client) : q;
+  const { rows: [s] } = await run(`SELECT id, scheme_id, title, status, granted_on, ends_on FROM partner_scopes
+      WHERE platform_id = $1 AND status = 'active'
+        AND lower(regexp_replace(title, '\\s+', ' ', 'g')) = lower(regexp_replace($2, '\\s+', ' ', 'g'))
+        AND granted_on <= $3::date
+        AND (ends_on IS NULL OR ($3::date <= ends_on AND ends_on >= CURRENT_DATE - $4::int))
+      ORDER BY ends_on DESC NULLS FIRST LIMIT 1`, [platformId, String(courseName || '').trim(), completionDate, SCOPE_GRACE_DAYS]);
+  return s || null;
+}
+
+module.exports = { SCHEME_STATUS, SCOPE_STATUS, RECORD_TYPES, seedSchemes, listSchemes, schemeBySlug, scopesFor, scopeForCourse, scopeForIssue, SCOPE_GRACE_DAYS };

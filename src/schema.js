@@ -594,6 +594,12 @@ ALTER TABLE certificates DROP CONSTRAINT IF EXISTS certificates_record_type_chec
 ALTER TABLE certificates ADD CONSTRAINT certificates_record_type_check CHECK (record_type IN ('training_completion','assessed_qualification','professional_certification'));
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS scheme_id UUID REFERENCES credential_schemes(id);
 ALTER TABLE certificates ADD COLUMN IF NOT EXISTS partner_scope_id UUID REFERENCES partner_scopes(id);
+-- Issuance-time evidence (docs/PARTNER-AUTHORIZATION.md §8): the partner's and the scope's status when the credential was issued.
+-- Written once at issuance and never updated; NULL on older records means "not recorded", never today's status.
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_partner_status VARCHAR(20);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_scope_status VARCHAR(20);
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_scope_granted_on DATE;
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS issued_scope_ends_on DATE;
 
 -- Knowledge authority: broader topics, more content types, jurisdiction.
 ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_category_check;
