@@ -3,9 +3,9 @@
 Status (October 18, 2026): **proposal.** The owner approved the idea and the names on October 18: **Bronze** (base), **Silver**, **Gold**. Every number below (months, counts) is a proposed starting value awaiting approval; none is applied. Nothing in this document changes the authorization criteria (`PARTNER-AUTHORIZATION.md` §3), which are the same for every level. Code and screens are built later (Batch H); until then levels are contract terms. Price effects are in `FEES-REVIEW.md` §9.
 
 ## 1. What a level is, and is not
-- A level is a **commercial partnership level**: the size of the commitment, the scope and a record with LIV. It is not a rating of training quality, and every provider meets the same criteria and is under the same surveillance rules, whatever its level.
+- A level is a **commercial partnership level**: the size of the commitment, the scope and a record with LIV. Every provider meets the same authorization criteria and is under the same surveillance rules, whatever its level.
 - Billing plan and level are the same thing: **Bronze = Starter plan, Silver = Professional, Gold = Enterprise.** Plan codes in the price catalog keep their internal names.
-- **Never on the credential.** Learners' certificates, the verification page and the public register's provider facts are identical for every level. The badge appears on the provider's own marketing and profile page, with the sentence: *"Partnership levels reflect commitment and track record with LIV, not the quality of training. Every LIV Authorized Training Provider meets the same authorization criteria."*
+- **Never on the credential.** Learners' certificates, the verification page and the public register's provider facts are identical for every level. The badge appears on the provider's own marketing and profile page.
 - Licence of the badge: use only as supplied; withdrawn the day authorization is suspended or the level is lost.
 
 ## 2. Entry: everyone starts at Bronze
@@ -58,7 +58,7 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | # | Decision |
 |---|---|
 | P-15 | The numbers in §3 (12, 24 and 6 months; 2 and 4 sample reviews; 24-month look-backs), the 90-day cure period, the 30-day decision target and the $150 extra review |
-| P-16 | Wording of the badge sentence and the badge licence terms (counsel) |
+| P-16 | Badge licence terms (counsel) |
 | P-17 | The additional obligations for Gold in §3 row 9 |
 
 ## 9. Side by side (summary of §1 to §6 and `FEES-REVIEW.md`; all values proposed)
@@ -66,7 +66,8 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | | **Bronze** | **Silver** | **Gold** |
 |---|---|---|---|
 | Billing plan | Starter | Professional | Enterprise |
-| Typical provider | One site or platform, up to about 250 certificates a year | A centre or small group, up to about 1,500 a year | Several sites or countries, or very high volume |
+| Fits best | One site or platform | A centre or small group, several scopes | Several sites or countries |
+| Volume where the plan costs least (an indication, **not a limit**) | up to about 475 certificates a year | about 475 to 1,535 | above about 1,535 |
 | How to reach it | Entry level for every new provider | Promotion after 12 months (6 by the evidence route) | Promotion after 12 months at Silver and 24 in total |
 | Intake fee (non-refundable) | $150 | $250 | $400 |
 | Assessment fee | $350 | $750 | $1,600 (multi-site quoted) |
@@ -79,4 +80,11 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | Extra obligations to qualify and to keep the level | None beyond the common rules | Prepaid Silver plan; clean surveillance record; two clean sample reviews | Prepaid Gold plan; named quality officer; annual data return; evidence of the wider footprint; four clean sample reviews; two clean surveillance reviews in a row |
 | Badge | Bronze | Silver | Gold |
 
-**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the learner's certificate and the public verification page; the ban on assessing or certifying one's own learners for a Professional Certification; the badge sentence in §1.
+**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the learner's certificate and the public verification page; the ban on assessing or certifying one's own learners for a Professional Certification.
+
+## 10. Volume is never a limit, and a spike changes no level
+- No level caps the certificates a provider may issue. A Bronze provider that issues 250 certificates in one month keeps issuing; the 100 included certificates are used first, the rest are billed monthly in arrears at the Bronze per-certificate rates.
+- Volume does not move a provider between levels, up or down. Promotion follows §3 only.
+- The renewal best-price check tells the provider when another level would have cost less; it can ask for that level once §3 is met.
+- A sudden jump against the provider's own history is a risk signal (`PARTNER-AUTHORIZATION.md` §10): LIV samples that batch against its training evidence. Issued certificates stay valid unless the sample shows the records do not match the training; those certificates are then revoked through the existing revocation process.
+- Open decision **P-18:** whether an unusually large batch (proposed: more than five times the provider's average monthly issuance, or more than half of its annual included allowance in one batch) is held for a document check before issuing. Recommended: no hold, flag and sample only, because the early-operation review and the sample reviews already test truth, and a hold delays honest providers.

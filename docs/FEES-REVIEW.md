@@ -161,7 +161,7 @@ Starter, Professional and Enterprise already scale the intake and assessment fee
    Effect: Professional with 1,200 certificates pays $4,850 a year instead of $5,200; Enterprise with 8,000 pays $21,000 instead of $24,000 (annual fee $6,000). A floor of **$1.50** applies until the real cost per certificate (storage, verification, support) is measured. Crossovers move to about 475 (Starter to Professional) and about 1,535 (Professional to Enterprise).
 2. **Higher entry cost for higher levels**, as already priced in §2.1: the wider review (more sites, trainers and scopes) is real work, and a large provider that intends to use the full scope accepts it.
 3. **Capability ladder (earned, not bought).** Level is set by verified capability and committed volume, and a provider cannot move up by paying:
-   - *Starter:* Training Completion Credential, one site or platform, scopes as approved.
+   - *Bronze (Starter plan):* Training Completion Credential, one site or platform, scopes as approved.
    - *Professional:* several scopes, sites or platforms; may apply for programme approval for an Assessed Qualification after a clean first surveillance.
    - *Enterprise:* multi-country or very high volume; may apply for exam-site authorization (separate fees, §8.1); named contact.
    - Moving up needs: minimum months active, a clean surveillance, no open major nonconformity, acceptable complaints. **The thresholds are pending owner decisions; nothing is invented here.** Moving down happens at renewal, never mid-year except by suspension.
