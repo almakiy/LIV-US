@@ -165,6 +165,31 @@ The inventory is read-only and is delivered as a report before any enforcement c
   - Issued credentials stay verifiable.
   - A learner-protection route is defined for learners in training at the time **[P-13]**.
 
+### 10.1 Audits triggered by indicators (owner decision, October 18, 2026)
+
+An audit opens whenever indicators show a contradiction, a sudden change, repeated errors by one provider, or many complaints about one provider. The same triggers apply to every provider and every level; nothing a provider pays changes whether an audit opens. The numbers below are proposed starting values **[P-19]**.
+
+**Indicators (detected by fixed rules, not by judgement):**
+| # | Indicator | Proposed trigger |
+|---|---|---|
+| 1 | Volume jump | One batch of more than 5 times the provider's average monthly issuance, or more than half of its annual included allowance |
+| 2 | Repeated errors by the same provider | 3 or more rejected or corrected batches within 90 days; or 3 or more corrections or re-issues after 30 days within 12 months |
+| 3 | Contradictions in the data | Completion before the start of the course or after the end of the authorized scope; the same person certified twice for the same course; one identity under several names; completions that do not fit the course length (for example a multi-day course with every completion on one day); a trainer, language, delivery mode or site that does not match the scope |
+| 4 | Complaints | 3 or more complaints about the same provider within 90 days, or one complaint alleging false records or a false certificate |
+| 5 | Verification anomalies | A cluster of failed or tampered-record verification attempts on one provider's certificates |
+| 6 | Unreported material change | A change of trainer, ownership, site or platform found without a notice |
+| 7 | Public claims | Marketing that claims accreditation, approval or recognition LIV has not granted, or misuses the badge |
+
+**Steps (each moves up only if the one before leaves the question open):**
+1. **Flag:** the system records the indicator on the provider's file. A staff assessor reviews it within 5 working days and, if needed, asks the provider for documents (answer within 10 working days).
+2. **Sample review:** the batch or batches are compared with the training evidence (attendance, completion records, trainer records).
+3. **Special review:** remote by default, on site only when needed. Fees as in `FEES.md` (charged to the provider only when the trigger was not LIV's own error).
+4. **Interim measure:** where records may be false, the Authorization Decision-Maker, a different person from the assessor, may pause new issuance in the affected scope while the review runs. This is a recorded decision with reasons, never a payment matter.
+
+**Outcomes:** closed with no finding; minor nonconformity with a dated corrective action; major nonconformity with scope suspension until closed; confirmed false records, when the affected certificates are revoked through the existing revocation process and authorization is suspended or withdrawn. A repeated or confirmed finding also freezes or lowers the partnership level (`PARTNER-LEVELS.md` §6). Certificates stay valid unless the review shows their records do not match the training.
+
+**Rules:** the provider is told the reasons and may answer and appeal; the complainant's identity is not disclosed to the provider; everyone involved declares interests as for applications; every step is written to the locked application and audit history. Built in Batch H.
+
 ## 11. Privacy and accessibility baseline (part of the design)
 - **Data minimization.** Collect only the evidence a criterion needs. The public register shows organization-level data only.
 - **Evidence storage.**
@@ -210,6 +235,7 @@ The inventory is read-only and is delivered as a report before any enforcement c
 | P-12 | Time allowed for notifying material change | Batch H |
 | P-13 | Learner-protection arrangements on suspension or closure | Batch H |
 | P-14 | Retention periods for applications and evidence | Batch D |
+| P-19 | Thresholds of the audit indicators in §10.1 (counts and periods). Proposal in §10.1, awaiting owner approval; the principle (audit on indicators) is decided | Batch H |
 | P-15 to P-17 | Partnership levels Bronze, Silver, Gold: promotion thresholds, badge wording, Gold obligations. Proposal in `docs/PARTNER-LEVELS.md`, awaiting owner approval | Batch H |
 | — | Public opening of the application (`PUBLIC_APPLY`): recommended to stay off until Batches E and F and P-7 are done | Opening |
 
