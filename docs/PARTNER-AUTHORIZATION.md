@@ -201,7 +201,7 @@ The inventory is read-only and is delivered as a report before any enforcement c
 | P-3 | Scope fields at launch (recommended: course and version, delivery mode, language; trainers per C3) | Batches D, E |
 | P-4 | Two-factor sign-in required for partner administrators as an activation condition (recommended: yes) | Batch E |
 | P-5 | Trainer and academic-lead thresholds per scope | Batch E |
-| P-6 | Fees per stage (application, assessment, any visit, renewal, issuance), currency, refunds | Batch G |
+| P-6 | Fees per stage (application, assessment, any visit, renewal, issuance), currency, refunds. **Proposal drafted October 18 in `docs/FEES-REVIEW.md`, awaiting owner approval; nothing applied** | Batch G |
 | P-7 | Partner Agreement text from counsel | Activation of any new partner |
 | P-8 | **Decided October 18:** a completion trained inside an active scope may be issued up to 15 days after the scope ends; never later | Batch B |
 | P-9 | Transition rule when the criteria version changes during a review | Batch D |
