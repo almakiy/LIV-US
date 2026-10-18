@@ -6,7 +6,7 @@ Read this first in a new session, then only the sections of other docs that the 
 - Branch: `claude/blissful-sagan-wp14xp`. Live app: Replit "US LIV" (https://us-project.replit.app); the owner pulls and republishes.
 - Partner gateway (docs/PARTNER-AUTHORIZATION.md): batches A, B, C, D done (see the progress line in docs/BUILD-PLAN.md, partner gateway section).
 - Batch E done (review, assessment, recommendation, separated decision, staff positions, trainer records, activation checklist and activation, reversal). Owner decisions: P-2 answered with positions (vacant accounts until people are appointed in Admin > Staff positions), P-4 yes, P-5 pending until thresholds suit the stage. Next: Batch F (applicant portal), needs the owner's approval of its scope.
-- Platform currency is the US dollar (owner decision). Fee proposals, planned prices for later credentials and the provider-level evaluation are drafted in docs/FEES-REVIEW.md, awaiting owner approval; nothing is applied (P-6).
+- Platform currency is the US dollar (owner decision). Fee proposals, planned prices for later credentials and the provider-level evaluation are drafted in docs/FEES-REVIEW.md, awaiting owner approval; nothing is applied (P-6). Partnership levels Bronze/Silver/Gold are decided in principle; criteria and durations are drafted in docs/PARTNER-LEVELS.md (P-15 to P-17).
 - Then F (applicant portal), G (public program page; P-6 fees), H (monitoring and renewal; P-11, P-12, P-13), I (partner roles).
 - Only the Training Completion Credential is live. Assessed qualification and professional certification are not enabled.
 

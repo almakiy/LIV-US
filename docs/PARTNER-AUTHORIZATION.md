@@ -210,6 +210,7 @@ The inventory is read-only and is delivered as a report before any enforcement c
 | P-12 | Time allowed for notifying material change | Batch H |
 | P-13 | Learner-protection arrangements on suspension or closure | Batch H |
 | P-14 | Retention periods for applications and evidence | Batch D |
+| P-15 to P-17 | Partnership levels Bronze, Silver, Gold: promotion thresholds, badge wording, Gold obligations. Proposal in `docs/PARTNER-LEVELS.md`, awaiting owner approval | Batch H |
 | — | Public opening of the application (`PUBLIC_APPLY`): recommended to stay off until Batches E and F and P-7 are done | Opening |
 
 ## 13. Acceptance scenarios for later batches

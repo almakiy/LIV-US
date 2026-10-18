@@ -180,8 +180,12 @@ Starter, Professional and Enterprise already scale the intake and assessment fee
 - Level-specific rates cut revenue from the largest providers by up to about 12% on certificates; if reviewer time grows with volume, the floor and the annual fee must carry it. Re-check after the first year of actual numbers.
 - Three levels plus separate site and programme approvals add complexity; implement the levels as price-catalog data (the `plan` field already exists) and the capability rules as eligibility checks in Batch H, not as a new engine.
 
+### 9.5 Update, October 18: names and rules adopted by the owner
+
+The owner chose **Bronze (base), Silver, Gold** as the names, accepting that the label itself is a commercial incentive, and approved the guardrails of §9.3 and the basis of the level on the prepaid commitment, not on certificates issued. Entry, promotion criteria, durations and governance are in `PARTNER-LEVELS.md`. The sentence "do not use medal names" in §9.3 is withdrawn; the rest stands.
+
 ## 10. What needs the owner
 
 1. Approval or changes to §2 (application, assessment, titles, trainers), §8 (planned prices) and §9.2 (level rates and the capability ladder).
 2. The thresholds for moving between levels (months active, surveillance result, complaint level).
-3. Whether contracts use Starter / Professional / Enterprise or Level 1 / 2 / 3.
+3. ~~Naming~~ Decided: Bronze / Silver / Gold. Remaining: the level thresholds in `PARTNER-LEVELS.md` §8.
