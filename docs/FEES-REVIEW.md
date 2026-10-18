@@ -102,3 +102,86 @@ The report gives only one comparable (PMI courseware US$39 to 99 per learner for
 3. Rule: unpaid intake keeps the application at the completeness check; payment never moves it forward by itself and never activates a provider.
 4. The refund tiers in §2.1 are written into the partner agreement text (counsel, P-7).
 5. The public fee page (Batch G) shows only fees the owner has approved, with `PUBLIC_FEES` still off until then.
+
+## 7. Platform currency (owner decision, October 18, 2026)
+
+**The US dollar is the platform currency.** Every fee, invoice, price-catalog row and payment is in USD; a local-currency amount may be shown as an approximation only. The code already works this way (invoices default to USD and card checkout uses USD), so no code change is needed. Tax and bank charges are unchanged from `FEES.md` §9 and §10.
+
+## 8. Planned prices for the credentials not yet live (planning only, all inactive)
+
+Only the Training Completion Credential is live. The rows below fix the fee logic now so later phases do not need a new debate; none is entered in the catalog as active, none is public, and each is re-checked when its scheme is approved. **Caution:** the report benchmarks provider and centre fees only; it has no candidate exam prices. The candidate values therefore rest on the owner-approved exam ladder in `FEES.md` §5 and on cost logic, and must be compared with public US exam fees before approval.
+
+### 8.1 Assessed Professional Qualification (phase: examinations)
+
+| Item | Planned fee | Basis |
+|---|---|---|
+| Exam attempt, per level | Foundation **$90**, Practitioner **$150**, Advanced **$250** | `FEES.md` §5, approved |
+| Resit | **60%** of the exam fee | `FEES.md` §5 |
+| Reschedule inside 7 days | **$30** | `FEES.md` §5 |
+| Appeal of a result | **$100**, refunded if upheld | `FEES.md` §5 |
+| Programme approval (course plus assessment design) | **$450** per programme | Same review effort as a scope expansion (§2.3) |
+| Programme listing | **$150** per programme per year | `FEES.md` §7 |
+| Exam-site authorization (a partner that hosts exams) | Intake **$250**, assessment **$750**, annual **$1,200** per site | Centre approval fees in the report: NOCN £300 + £400 + £850 a year, Highfield £450 |
+| Exam voucher bundles bought by a partner | **10%** off at 25 or more, **15%** off at 100 or more, same year | Partners resell vouchers inside course prices |
+
+### 8.2 Professional Certification (phase: later; target reference ISO/IEC 17024, no claim of conformity)
+
+| Item | Planned fee | Basis |
+|---|---|---|
+| Eligibility and application review | **$100**, non-refundable | Document review of experience and training before any exam |
+| Exam attempt | **$250** (practitioner level) to **$350** (advanced level), set per scheme | Above the assessed-qualification ladder because eligibility, independence and surveillance cost more |
+| Recertification every 3 years (CPD log review, no new exam) | **$150** | Replaces the $75 placeholder in `FEES.md` §5, which would not cover a real review |
+| Reinstatement of a lapsed certification | **$75** plus the recertification fee | |
+| Appeal, resit, reschedule, regional band for candidates | As §8.1 | Band B (about 65% of list) applies to candidate fees only |
+
+Training and certification stay separate: no provider assesses or certifies its own learners for a Professional Certification, whatever its level. Exam-site authorization is a separate authorization, never part of a level.
+
+### 8.3 External Pathway
+
+LIV issues nothing and charges **nothing** for third-party credentials. No commission, referral fee or listing fee from a certificate-owning body is accepted; it would compromise impartiality and breach `FEES.md` §1.
+
+## 9. Evaluation: Bronze, Silver, Gold levels for providers
+
+**Verdict: the commercial idea is sound and mostly already built; adopt it with three guardrails, and do not use medal names.** Peer schemes tier providers the same way, but by commitment and volume, not by quality: SHRM General Provider is Bronze 1 to 10 programmes at US$500, Silver 11 to 20 at US$600, Gold 21 or more at US$800 (per course, two years); HRCI, NASBA and PMI scale fees by programme count, method or country.
+
+### 9.1 What already exists
+
+Starter, Professional and Enterprise already scale the intake and assessment fees (§2.1), the annual fee, the included certificates and the per-certificate bands. The cost curve already rewards growth: Professional is cheaper than Starter above about 475 certificates a year, and Enterprise is cheaper than Professional above about 1,500. Keep these three; add what the idea contributes below.
+
+### 9.2 Additions recommended
+
+1. **Level-specific certificate rates** (beyond the included allowance), so a higher level pays less per certificate:
+
+| Rate per certificate | Starter | Professional | Enterprise |
+|---|---|---|---|
+| First 1,000 beyond the allowance | $4.00 | $3.50 | $3.25 |
+| Next 4,000 | $3.00 | $2.75 | $2.50 |
+| Above 5,000 | $2.00 | $2.00 | $1.75 |
+
+   Effect: Professional with 1,200 certificates pays $4,850 a year instead of $5,200; Enterprise with 8,000 pays $21,000 instead of $24,000 (annual fee $6,000). A floor of **$1.50** applies until the real cost per certificate (storage, verification, support) is measured. Crossovers move to about 475 (Starter to Professional) and about 1,535 (Professional to Enterprise).
+2. **Higher entry cost for higher levels**, as already priced in §2.1: the wider review (more sites, trainers and scopes) is real work, and a large provider that intends to use the full scope accepts it.
+3. **Capability ladder (earned, not bought).** Level is set by verified capability and committed volume, and a provider cannot move up by paying:
+   - *Starter:* Training Completion Credential, one site or platform, scopes as approved.
+   - *Professional:* several scopes, sites or platforms; may apply for programme approval for an Assessed Qualification after a clean first surveillance.
+   - *Enterprise:* multi-country or very high volume; may apply for exam-site authorization (separate fees, §8.1); named contact.
+   - Moving up needs: minimum months active, a clean surveillance, no open major nonconformity, acceptable complaints. **The thresholds are pending owner decisions; nothing is invented here.** Moving down happens at renewal, never mid-year except by suspension.
+4. **Best-price check at renewal.** Before invoicing, the system compares last year's volume with the other levels and tells the provider if another level would cost less. It costs LIV a little revenue and earns trust; US consumer-protection practice favours it.
+5. **Multi-year agreements** (10% for two years, 15% for three, already in `FEES.md` §8) are the loyalty tool; the price lock stays inside the agreement term.
+
+### 9.3 Guardrails
+
+1. **Level is a commercial scope, not a quality rating.** The public register shows the provider and its authorized scope only, not a level, and no level appears in marketing as "better". A medal label would read as a rating of quality and invite a misleading-claim finding; if the owner still wants names, use **Level 1, Level 2, Level 3** in contracts.
+2. **Money never buys a capability.** Each capability needs its own approval (scheme, programme, site). A higher level makes a provider eligible to apply, nothing more; the fees pay for the review, and the decision follows the criteria.
+3. **Independence is level-proof.** No level lets a provider assess or certify its own learners for a Professional Certification.
+4. **No private discounts.** The level rates and the discount categories are published; the founding-partner category stays the only launch concession.
+
+### 9.4 Weak points
+
+- Level-specific rates cut revenue from the largest providers by up to about 12% on certificates; if reviewer time grows with volume, the floor and the annual fee must carry it. Re-check after the first year of actual numbers.
+- Three levels plus separate site and programme approvals add complexity; implement the levels as price-catalog data (the `plan` field already exists) and the capability rules as eligibility checks in Batch H, not as a new engine.
+
+## 10. What needs the owner
+
+1. Approval or changes to §2 (application, assessment, titles, trainers), §8 (planned prices) and §9.2 (level rates and the capability ladder).
+2. The thresholds for moving between levels (months active, surveillance result, complaint level).
+3. Whether contracts use Starter / Professional / Enterprise or Level 1 / 2 / 3.
