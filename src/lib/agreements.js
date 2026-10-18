@@ -4,8 +4,8 @@ const { q } = require('../db');
 
 const PLACEHOLDER = '[PLACEHOLDER';
 const hasPlaceholder = (body) => String(body || '').includes(PLACEHOLDER);
-const STARTER_TITLE = 'Authorized Education Partner Agreement';
-const STARTER_BODY = `# Authorized Education Partner Agreement
+const STARTER_TITLE = 'Authorized Training Provider Agreement';
+const STARTER_BODY = `# Authorized Training Provider Agreement
 
 ${['Parties and definitions', 'Authorized scope', 'Partner obligations (trainers, curricula, methods, records)', 'Completion reports and credentials', 'Use of the LIV name and marks', 'Fees and payment', 'Reviews, audits and surveillance', 'Impartiality, complaints and appeals', 'Suspension and withdrawal', 'Data protection', 'Limitation of liability', 'Governing law and disputes', 'General provisions'].map((h, i) => `## ${i + 1}. ${h}\n\n${PLACEHOLDER}: text to be supplied by counsel.]\n`).join('\n')}`;
 

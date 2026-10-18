@@ -6,7 +6,7 @@ const RECORD_TYPES = {
   training_completion: {
     label: 'Training Completion Credential', heading: 'CERTIFICATE', subheading: 'OF TRAINING COMPLETION', title: 'Certificate of Training Completion',
     statement: 'has successfully completed the training course', shortStatement: 'has successfully completed',
-    disclosure: 'Records completion of training delivered by an Authorized Education Partner. It is not a professional qualification or certification.',
+    disclosure: 'Records completion of training delivered by an Authorized Training Provider. It is not a professional qualification or certification.',
     issuer: 'liv', expires: false, assessed: false, available: true,
   },
   assessed_qualification: {

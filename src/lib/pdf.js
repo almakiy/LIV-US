@@ -74,7 +74,7 @@ function signatory(template, partnerName) {
 }
 
 /** One short, official statement of LIV's role, as printed on certificates (keep in sync with the website copy). */
-const accreditationNote = () => `Issued by ${cfg.brand} on the basis of the completion report of an Authorized Education Partner.`; // legacy function name, see docs/LEGACY-NAMING.md
+const accreditationNote = () => `Issued by ${cfg.brand} on the basis of the completion report of an Authorized Training Provider.`; // legacy function name, see docs/LEGACY-NAMING.md
 
 // ---- Themes: each draws the certificate content; security layers are added around it by renderCertificate.
 // ctx = { doc, data, sig, color, qr, name, config, kind } (no partner data reaches the drawing functions)

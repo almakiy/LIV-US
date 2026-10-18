@@ -46,7 +46,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   const legacy = await pr.get(BASE + '/accreditation', { maxRedirects: 0 });
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
-  ok(partnersHtml.includes('Authorized Education Partner') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
+  ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
   const pSlug = (partnersHtml.match(/href="\/partners\/([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
@@ -120,7 +120,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   await pub.goto(verifyUrl);
   ok(await see(pub, '.sb-valid'), `${certNum} shows VALID via QR link`);
   { const vt = await pub.textContent('body');
-    ok(vt.includes('Education provider') && vt.includes('Demo Safety Training Co.') && vt.includes('LIV Authorized Education Partner'), 'verification record shows the education provider and its LIV authorization');
+    ok(vt.includes('Education provider') && vt.includes('Demo Safety Training Co.') && vt.includes('LIV Authorized Training Provider'), 'verification record shows the education provider and its LIV authorization');
     ok(vt.includes('Training Completion Credential'), 'verification record states the record type'); }
   ok(!(await pub.content()).includes(`@example.com`), 'trainee email not exposed publicly');
   await shot(pub, '06-verify-valid');

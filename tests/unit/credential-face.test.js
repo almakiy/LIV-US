@@ -1,4 +1,4 @@
-// Regression: the certificate face is LIV's credential identity. No design may draw the Education Partner's name,
+// Regression: the certificate face is LIV's credential identity. No design may draw the training provider's name,
 // logo or brand color on a newly issued credential (owner decision, Oct 8, 2026).
 const test = require('node:test');
 const assert = require('node:assert');

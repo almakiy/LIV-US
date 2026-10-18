@@ -112,7 +112,7 @@ Owner checklist for Phase 0 (no code; I prepare step-by-step instructions):
 **Done when:** end-to-end checks cover the LinkedIn link, catalog check, policy pages and article image; a search of public views finds "accredit" only in the disclaimers. **Depends on:** Phase 0 (0.1 for uploaded images). **Owner inputs:** D-1.x, policy texts from counsel.
 
 ### Phase 2 — Email and the full partner gateway
-Partner gateway plan (owner-approved split, October 18): batches A–I; **Batch A done** — `PARTNER-AUTHORIZATION.md` (criteria, application states, activation, scope rules, issuance-time evidence, existing-partner inventory, privacy and accessibility baseline, pending decisions P-1 to P-14). Next: Batch B after P-1, P-8 and P-10.
+Partner gateway plan (owner-approved split, October 18): batches A–I; **Batch A done** — `PARTNER-AUTHORIZATION.md` (criteria, application states, activation, scope rules, issuance-time evidence, existing-partner inventory, privacy and accessibility baseline, pending decisions P-1 to P-14). Owner decisions October 18: trial data removed (no existing partners; P-1 and P-10 dropped); P-8 = 15-day maximum after scope end; partners renamed **LIV Authorized Training Provider (ATP)**. Next: Batch B.
 
 **Goal:** LIV communicates officially and onboards a partner end to end without manual steps.
 

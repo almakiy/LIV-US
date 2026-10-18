@@ -1,8 +1,8 @@
 <%- include('../partials/head') %>
 <section class="hero" style="padding:56px 0 64px"><div class="container">
-  <span class="eyebrow"><%= brand %> Education Partner Program</span>
-  <h1>Become an Authorized Education Partner</h1>
-  <p>Authorized Education Partners deliver education within a scope approved by <%= brand %>. <%= brand %> owns the credential schemes, sets the assessment requirements and keeps the authoritative record that employers can verify.</p>
+  <span class="eyebrow"><%= brand %> Authorized Training Provider Program</span>
+  <h1>Become a LIV Authorized Training Provider (ATP)</h1>
+  <p>Authorized Training Providers deliver education within a scope approved by <%= brand %>. <%= brand %> owns the credential schemes, sets the assessment requirements and keeps the authoritative record that employers can verify.</p>
   <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Apply to become a partner</a><% } else { %><a class="btn gold lg" href="/contact">Request Information</a><% } %><a class="btn ghost lg" href="/credentials">Credential types</a></div>
 </div></section>
 <section class="section white"><div class="container">
@@ -19,7 +19,7 @@
     <div class="card"><div class="step-n">3</div><h3>Authorization</h3><p class="muted small">On approval, your authorized scope is recorded and reporting is enabled in the Partner Portal.</p></div>
     <div class="card"><div class="step-n">4</div><h3>Surveillance</h3><p class="muted small">Periodic reviews keep your authorization active. Authorization can be suspended or withdrawn.</p></div>
   </div>
-  <h2 style="margin-top:48px">Authorized Education Partners</h2>
+  <h2 style="margin-top:48px">Authorized Training Providers</h2>
   <% if (partners.length) { %><div class="table-wrap"><table><tr><th>Partner</th><th>Country</th><th>Status</th></tr>
   <% partners.forEach(p => { %><tr><td><a href="/partners/<%= p.slug %>"><%= p.company_name %></a></td><td><%= p.country || '' %></td><td><span class="badge b-active">Authorized</span></td></tr><% }) %></table></div>
   <% } else { %><p class="muted">The register will list partners once they are authorized.</p><% } %>

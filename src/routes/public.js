@@ -17,18 +17,18 @@ const verifyLimiter = limiter(1, 30);
 r.get('/', (req, res) => res.render('public/home', { title: 'Professional Credentials & Verification' }));
 r.get('/about', (req, res) => res.render('public/about', { title: 'About Us' }));
 
-// Education Partner Program and public register of Authorized Education Partners. /accreditation is the legacy URL.
+// Authorized Training Provider Program and public register of Authorized Training Providers. /accreditation is the legacy URL.
 r.get('/accreditation', (req, res) => res.redirect(301, '/partners'));
 r.get('/partners', wrap(async (req, res) => {
   const { rows: partners } = await q(`SELECT company_name, country, public_slug AS slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL ORDER BY company_name`);
-  res.render('public/partners', { title: 'Education Partner Program', description: 'Become an Authorized Education Partner and see the public register of partners.', partners });
+  res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners });
 }));
 r.get('/partners/:slug', wrap(async (req, res, next) => {
   const { rows: [p] } = await q(`SELECT id, company_name, country, website FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
   const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
   const scopes = await schemeStore.scopesFor(p.id, { activeOnly: true });
-  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Education Partner of ${cfg.brand}.`, p: { ...p, website }, scopes });
+  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, scopes });
 }));
 
 // Credential types and credential families.
@@ -46,7 +46,7 @@ r.get('/fees', wrap(async (req, res, next) => {
   const { rows: products } = await q(`SELECT * FROM billing_products WHERE active ORDER BY sort`);
   const { rows: prices } = await q(`SELECT pr.*, p.code FROM billing_prices pr JOIN billing_products p ON p.id = pr.product_id WHERE (pr.valid_to IS NULL OR pr.valid_to >= CURRENT_DATE) AND pr.valid_from <= CURRENT_DATE ORDER BY pr.min_qty`);
   const { PLANS, PLAN_DEFAULTS } = require('../lib/billing-catalog');
-  res.render('public/fees', { title: 'Fees', description: 'Published fees for Authorized Education Partners, credentials and verification.', products, prices, money: require('../lib/billing').money, PLANS, PLAN_DEFAULTS });
+  res.render('public/fees', { title: 'Fees', description: 'Published fees for Authorized Training Providers, credentials and verification.', products, prices, money: require('../lib/billing').money, PLANS, PLAN_DEFAULTS });
 }));
 
 r.get('/verify', verifyLimiter, (req, res) => {
@@ -87,7 +87,7 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   res.attachment(`${c.cert_number}.pdf`).type(file.type).send(file.content);
 }));
 
-r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Education Partner', form: {}, error: null }));
+r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Training Provider', form: {}, error: null }));
 r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), limiter(15, 10), wrap(async (req, res) => {
   const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'password', 'agree'].map((k) => [k, String(req.body[k] || '').trim()]));
   f.email = f.email.toLowerCase();
@@ -96,12 +96,12 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) error = 'Please enter a valid email.';
   else if (f.password.length < 10) error = 'Password must be at least 10 characters.';
   else if (refusedPassword(f.password)) error = 'That is a published development password; choose another one.';
-  else if (!f.agree) error = 'You must accept the Education Partner Program terms.';
+  else if (!f.agree) error = 'You must accept the Authorized Training Provider Program terms.';
   if (!error) {
     const { rows } = await q('SELECT 1 FROM users WHERE email = $1', [f.email]);
     if (rows.length) error = 'An account with this email already exists. Please log in.';
   }
-  if (error) return res.status(400).render('public/apply', { title: 'Apply to become an Authorized Education Partner', form: { ...f, password: '' }, error });
+  if (error) return res.status(400).render('public/apply', { title: 'Apply to become an Authorized Training Provider', form: { ...f, password: '' }, error });
   const hash = await bcrypt.hash(f.password, 12);
   const user = await tx(async (c) => {
     const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email) VALUES ($1,$2,$3,$4) RETURNING id`,

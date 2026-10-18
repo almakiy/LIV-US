@@ -37,7 +37,7 @@ r.post('/login', limiter(15, 20), wrap(async (req, res) => {
   if (refusedPassword(password)) {
     await audit({ user: u, platformId: u.platform_id, action: 'user.login_refused_dev_password', target: u.email }).catch(() => {});
     return res.status(403).render('public/login', { title: 'Log in', email, next: safeNext(req.body.next) || '',
-      error: 'This account still uses a development password that is published in the documentation, so it cannot sign in on this server. LIV administrators: set the ADMIN_RESET_PASSWORD secret and restart the app. Education Partners: ask LIV to reset your password.' });
+      error: 'This account still uses a development password that is published in the documentation, so it cannot sign in on this server. LIV administrators: set the ADMIN_RESET_PASSWORD secret and restart the app. Training Providers: ask LIV to reset your password.' });
   }
   if (u.totp_enabled) {
     // Password correct, second factor pending: no signed-in session yet.

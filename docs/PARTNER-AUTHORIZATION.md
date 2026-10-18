@@ -1,4 +1,6 @@
-# Authorized Education Partners: criteria, application states and activation
+# Authorized Training Providers: criteria, application states and activation
+
+Terminology (owner decision, October 18, 2026): partners are **LIV Authorized Training Providers (ATP)**; always written with LIV's name so no link to other bodies' programs is implied.
 
 Status (October 18, 2026): Batch A of the partner-gateway plan, approved by the owner. This document only; no code has changed. It turns the reviewed recommendations into rules that later batches (B to I) implement and test. Values marked **[P-n]** are pending owner decisions (§12). No names, fees or thresholds are invented here.
 
@@ -194,16 +196,16 @@ The inventory is read-only and is delivered as a report before any enforcement c
 ## 12. Pending owner decisions
 | # | Decision | Needed for |
 |---|---|---|
-| P-1 | Notice period and start date for blocking out-of-scope issuance for existing partners, after the inventory | Batch B |
+| P-1 | **Not needed (October 18):** the trial partner and its records were removed; no existing partners | — |
 | P-2 | Named assessor(s) and decision-maker(s); at least two people | Batch E |
 | P-3 | Scope fields at launch (recommended: course and version, delivery mode, language; trainers per C3) | Batches D, E |
 | P-4 | Two-factor sign-in required for partner administrators as an activation condition (recommended: yes) | Batch E |
 | P-5 | Trainer and academic-lead thresholds per scope | Batch E |
 | P-6 | Fees per stage (application, assessment, any visit, renewal, issuance), currency, refunds | Batch G |
 | P-7 | Partner Agreement text from counsel | Activation of any new partner |
-| P-8 | Policy for late issuance requests after a scope ends | Batch B |
+| P-8 | **Decided October 18:** a completion trained inside an active scope may be issued up to 15 days after the scope ends; never later | Batch B |
 | P-9 | Transition rule when the criteria version changes during a review | Batch D |
-| P-10 | Look-back window for the existing-partner inventory | Inventory (before Batch B) |
+| P-10 | **Not needed (October 18):** no existing partners | — |
 | P-11 | Periodic review interval | Batch H |
 | P-12 | Time allowed for notifying material change | Batch H |
 | P-13 | Learner-protection arrangements on suspension or closure | Batch H |

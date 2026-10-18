@@ -2,7 +2,7 @@
 <div class="container section" style="max-width:900px">
   <h1>Fees</h1>
   <p class="muted">Fees pay for work, never for outcomes. Amounts are in US dollars and exclude taxes where they apply. The partner agreement governs; LIV may change fees with notice. Items marked "later" are not yet available.</p>
-  <% const groups = [['accreditation', 'Education partner application, review and authorization'], ['certificate', 'Certificates'], ['verification', 'Verification'], ['candidate', 'Candidates and examinations'], ['course', 'Courses and curricula'], ['resource', 'Resources']]; %>
+  <% const groups = [['accreditation', 'Training provider application, review and authorization'], ['certificate', 'Certificates'], ['verification', 'Verification'], ['candidate', 'Candidates and examinations'], ['course', 'Courses and curricula'], ['resource', 'Resources']]; %>
   <% groups.forEach(([cat, label]) => { const list = products.filter(p => p.category === cat); if (!list.length) return; %>
     <h2 class="mt"><%= label %></h2>
     <div class="table-wrap"><table><tr><th>Service</th><th>Fee</th></tr>

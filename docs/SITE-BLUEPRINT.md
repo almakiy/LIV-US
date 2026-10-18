@@ -15,7 +15,7 @@ Repository: `almakiy/LIV-US`, branch `claude/blissful-sagan-wp14xp`. Live app: R
   |---|---|
   | Employers and regulators | Verify a credential in seconds |
   | Credential holders | Find, share and prove their credential |
-  | Education partners | Apply, issue credentials, manage billing |
+  | Training providers | Apply, issue credentials, manage billing |
   | Professionals and researchers | Read the Knowledge Hub, contribute research |
   | LIV staff | Run issuance, partners, content, quality records |
 
@@ -32,7 +32,7 @@ Repository: `almakiy/LIV-US`, branch `claude/blissful-sagan-wp14xp`. Live app: R
 ### Guardrails (must hold in every proposal)
 1. No invented claims, accreditations, approvals, recognitions or regulatory statuses. No present ISO/IEC 17024 accreditation or conformity claim. The current edition is ISO/IEC 17024:2026; any gap analysis uses it.
 2. Historical credential PDFs are never regenerated, altered or invalidated.
-3. New credentials carry LIV identity only; the education partner appears on the verification record, never on the credential face.
+3. New credentials carry LIV identity only; the training provider appears on the verification record, never on the credential face.
 4. No automatic AI publication; a named human reviewer publishes every Knowledge Hub item.
 5. The HSE Governance scheme stays IN DEVELOPMENT; its title, rules and fees are not defined on the site.
 6. The wording of the public claims statements is under owner review (decision D-C). Proposals may suggest wording but must not change it.
@@ -68,7 +68,7 @@ Repository: `almakiy/LIV-US`, branch `claude/blissful-sagan-wp14xp`. Live app: R
 | `/` | Home |
 | `/verify`, `/verify/:id`, `/verify/:id/pdf` | Verify a credential (search, result, PDF) |
 | `/credentials`, `/credentials/:slug` | Credential classes and schemes (scheme pages show "in development" where true) |
-| `/partners`, `/partners/:slug` | Public register of authorized education partners, with scope |
+| `/partners`, `/partners/:slug` | Public register of authorized training providers, with scope |
 | `/knowledge`, `/knowledge/:slug` | Knowledge Hub list and article |
 | `/about`, `/contact`, `/fees`, `/apply` | About, contact, fee page (flag), partner application (flag, off) |
 | `/rss.xml`, `/sitemap.xml`, `/robots.txt` | Feeds and indexing |
@@ -82,7 +82,7 @@ Home
 ├── Verify                  verify by ID or QR · bulk verification for employers · report a suspected fake
 ├── Credentials             credential classes · schemes (status shown honestly) · how credentials work
 │   └── Scheme page         purpose · body of knowledge · eligibility · assessment · validity · fees · policies (only when approved)
-├── Education Partners      the program · how authorization works · criteria · fees · apply · public register
+├── Training Providers      the program · how authorization works · criteria · fees · apply · public register
 │   └── Register entry      partner · country · authorized scope · dates · status
 ├── Knowledge Hub           guides · reference frameworks · research digests · tools/templates · glossary
 │   ├── Collections         by monthly theme (editorial calendar)
@@ -94,7 +94,7 @@ Home
 └── Contact                 enquiry routing: verification, partners, holders, media
 Footer: policies · register · verify · RSS · LinkedIn · legal identity (LIV LLC, Virginia)
 ```
-Navigation target: **Verify · Credentials · Education Partners · Knowledge · Standards & Policies · Regions · About**, with the "Verify a Credential" button kept in the utility bar.
+Navigation target: **Verify · Credentials · Training Providers · Knowledge · Standards & Policies · Regions · About**, with the "Verify a Credential" button kept in the utility bar.
 
 ## 4. Page blueprints (visitor experience)
 Each page lists its sections in order. Existing pages are improved in place.
@@ -104,7 +104,7 @@ Each page lists its sections in order. Existing pages are improved in place.
    - One sentence on what LIV does.
    - Two actions: "Verify a credential" and "Become an Education Partner".
 2. **Verification strip.** Inline credential ID field with a link to bulk verification.
-3. **What we do.** Three cards: credentials, education partner authorization, knowledge.
+3. **What we do.** Three cards: credentials, training provider authorization, knowledge.
 4. **Credential classes.** Training Completion Credential, and the classes in development, each with an accurate status.
 5. **Latest from the Knowledge Hub.** Three newest released items, from scheduled release.
 6. **Public register teaser.** Count of authorized partners and a search link.
@@ -144,7 +144,7 @@ Each page lists its sections in order. Existing pages are improved in place.
   - status and version.
 - **Unapproved content stays off the page.** Sections without approved content are not shown. The scheme shows "In development" and a "notify me" option.
 
-### 4.4 Education Partners
+### 4.4 Training Providers
 - **Program overview.** Who can apply, benefits, and responsibilities.
 - **"How authorization works".** The steps in §5, shown as a timeline.
 - **Criteria, fees, agreement summary and apply button.** The button links to the application once Phase 2 opens it.
@@ -198,8 +198,8 @@ Each page lists its sections in order. Existing pages are improved in place.
 - People.
 - Annual transparency report: figures on issuance, verification and complaints, published once there is an operating year.
 
-## 5. How Education Partners are authorized
-"Authorization" is LIV's term for approving a training provider to deliver training that leads to LIV credentials, within a defined scope. Partners are "Authorized Education Partners", not "accredited". LIV issues the credential; the partner delivers the training and reports completions.
+## 5. How Training Providers are authorized
+"Authorization" is LIV's term for approving a training provider to deliver training that leads to LIV credentials, within a defined scope. Partners are "Authorized Training Providers", not "accredited". LIV issues the credential; the partner delivers the training and reports completions.
 
 ### 5.1 The process (target)
 | Step | What happens | Records | Status |
