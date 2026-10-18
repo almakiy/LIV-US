@@ -233,7 +233,7 @@ Each page lists its sections in order. Existing pages are improved in place.
 
 ## 6. Design system and quality standards
 - **Visual identity.**
-  - LIV seal, colors and typography from `public/static/brand/`.
+  - LIV seal, colors and typography from `public/brand/` (served at `/static/brand/`).
   - Three certificate designs: Executive, Classic and Modern.
   - Design changes are previewed before they are applied.
 - **Accessibility:** WCAG 2.1 AA (contrast, keyboard navigation, focus states, alt text, form labels).
