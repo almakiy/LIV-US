@@ -1,0 +1,12 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Authorization application</h1></div>
+<div class="card">
+  <p>Apply to become a LIV Authorized Training Provider. You will describe your organization, your trainers and how you deliver, and upload supporting documents. You can save a draft and return at any time.</p>
+  <ul>
+    <li>All text is written in English.</li>
+    <li>Documents are PDF, PNG or JPEG files, up to 10 MB each.</li>
+    <li>Paying a fee does not authorize you. Authorization depends on the review and a separate activation step.</li>
+  </ul>
+  <form method="post" action="/portal/application/start"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Start the application</button></form>
+</div>
+<%- include('../partials/app-end') %>

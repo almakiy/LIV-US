@@ -968,6 +968,58 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok((await anon.request.get(`${BASE}/admin/applications/${app.id}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/staff`, { maxRedirects: 0 })).status() !== 200, 'the review and staff screens are closed to visitors');
   }
 
+  console.log('Applicant portal (Batch F)');
+  {
+    const A = require('../src/lib/applications');
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const form = { legal_name: 'Portal Test Training LLC', country: 'Jordan', representative_name: 'Lina Haddad', representative_email: `lina.${stamp}@example.com`,
+      academic_lead: 'Sami Nasser, academic lead, 8 years in safety training', domain_requested: 'Workplace safety awareness', delivery_modes: 'live_online',
+      delivery_setting: 'Live online platform with recorded attendance', trainers: 'Two trainers; CVs attached', completion_rules: 'Full attendance and a short quiz', interests: 'None' };
+    await page.goto(`${BASE}/portal/application`);
+    ok(await see(page, 'button:has-text("Start the application")'), 'a provider with no application sees how to start one');
+    await page.click('button:has-text("Start the application")');
+    ok(await at(page, /\/portal\/application\/[0-9a-f-]{36}$/), 'starting opens the application page');
+    const appUrl = page.url(); const appId = appUrl.split('/').pop();
+    await page.fill('#legal_name', 'شركة الاختبار');
+    await page.click('button:has-text("Save draft")');
+    ok(await see(page, '#error-summary') && await see(page, 'text=write in English'), 'Arabic text is refused with a clear error and the entry stays as typed');
+    ok((await page.inputValue('#legal_name')) === 'شركة الاختبار' && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === '', 'nothing refused was saved');
+    await page.fill('#legal_name', form.legal_name);
+    await page.click('button:has-text("Save draft")');
+    ok(await see(page, 'text=Draft saved') && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === form.legal_name, 'a valid draft is saved');
+    await page.click('button:has-text("Submit")');
+    ok(await see(page, 'text=Upload at least one C1') && psql(`SELECT current_version FROM partner_applications WHERE id = '${appId}'`) === '0', 'submitting without the required documents is refused');
+    const csrf = await page.inputValue('input[name=_csrf]');
+    const up = (criterion, name, buffer, mimeType = 'application/pdf') => page.request.post(`${appUrl}/evidence`, { multipart: { _csrf: csrf, criterion, file: { name, mimeType, buffer } }, maxRedirects: 0 });
+    await up('C1', 'fake.pdf', Buffer.from('not a pdf at all'));
+    ok(psql(`SELECT count(*) FROM partner_application_evidence WHERE application_id = '${appId}'`) === '0', 'a file is checked by content, not by name');
+    await up('C1', 'registration.pdf', Buffer.from('%PDF-1.4\n% registration\n'));
+    await up('C3', 'trainers.pdf', Buffer.from('%PDF-1.4\n% trainers\n'));
+    ok(psql(`SELECT count(*) FROM partner_application_evidence WHERE application_id = '${appId}'`) === '2', 'documents upload against a criterion');
+    const evId = psql(`SELECT id FROM partner_application_evidence WHERE application_id = '${appId}' AND criterion = 'C1'`);
+    ok((await page.request.get(`${appUrl}/evidence/${evId}`)).status() === 200, 'the provider downloads its own document');
+    const sub = await page.request.post(`${appUrl}/submit`, { form: { _csrf: csrf, ...form }, maxRedirects: 0 });
+    ok(sub.status() === 302 && psql(`SELECT state || ':' || current_version FROM partner_applications WHERE id = '${appId}'`) === 'completeness_check:1', 'a complete application is submitted as a locked version and moves to the completeness check');
+    await page.goto(appUrl);
+    ok(await see(page, 'text=Completeness check') && await page.locator('#legal_name').isDisabled(), 'the submitted version is read-only');
+    const edit = await page.request.post(`${appUrl}/save`, { form: { _csrf: csrf, ...form, legal_name: 'Changed LLC' }, maxRedirects: 0 });
+    ok(psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === form.legal_name, 'the draft cannot be changed while LIV holds the application');
+    const reviewer = { id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Reviewer F', 'revf.${stamp}@example.com', 'x', 'application_assessor') RETURNING id`).split('\n')[0], email: `revf.${stamp}@example.com`, role: 'super_admin' };
+    await A.staffTransition(appId, reviewer, 'info_requested', 'Please add the trading license of the second trainer');
+    await page.goto(appUrl);
+    ok(await see(page, 'text=Message from LIV') && await see(page, 'text=Please add the trading license') && await page.locator('#legal_name').isEnabled(), 'a request from LIV is shown and the form opens for correction');
+    ok(!(await page.content()).includes('Reviewer F') && !(await page.content()).includes('revf.'), 'the reviewer\'s identity and notes are not shown to the provider');
+    const [oPid, oUid] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email) VALUES ('Other Applicant ${stamp}', 'oa.${stamp}@example.com') RETURNING id)
+      INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Other', 'oa.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
+    const other = await A.createDraft(oPid, { id: oUid, email: 'oa', role: 'platform_admin' });
+    const otherEv = await A.addEvidence(other.id, oPid, { id: oUid, email: 'oa', role: 'platform_admin' }, { criterion: 'C1', filename: 'o.pdf', buffer: Buffer.from('%PDF-1.4\n% o\n') });
+    const status = async (method, url, opts) => (await page.request[method](url, { maxRedirects: 0, ...opts })).status();
+    ok(await status('get', `${BASE}/portal/application/${other.id}`) === 404 && await status('get', `${BASE}/portal/application/${other.id}/evidence/${otherEv.id}`) === 404, 'one provider cannot open another provider\'s application or document by link');
+    ok(await status('post', `${BASE}/portal/application/${other.id}/save`, { form: { _csrf: csrf, ...form } }) === 404 && await status('post', `${BASE}/portal/application/${other.id}/submit`, { form: { _csrf: csrf, ...form } }) === 404, 'nor save or submit it');
+    ok(await status('get', `${appUrl}/evidence/${otherEv.id}`) === 404, 'a document of another application is not served under your own application');
+    ok((await anon.request.get(appUrl, { maxRedirects: 0 })).status() !== 200, 'the application page is closed to visitors');
+  }
+
   console.log('Knowledge distribution');
   {
     const slugA = psql("SELECT slug FROM articles WHERE status = 'published' LIMIT 1");

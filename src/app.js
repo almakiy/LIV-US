@@ -112,6 +112,7 @@ app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
 app.use('/portal', require('./routes/portal'));
+app.use('/portal/application', require('./routes/portal-application'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));

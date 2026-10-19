@@ -108,3 +108,6 @@ Open decisions:
 - It is removed while the provider's authorization is suspended or withdrawn, and not shown for a provider that has no level.
 - Historical certificates are unchanged: the PDF carries no level, and the badge comes from the live page, so it follows the provider's level today.
 - The provider's status at issuance and today (Batch C) stays as it is; the level is an added small element.
+
+## 12. Parked (owner, October 19, 2026): certificate design
+Everything about how a certificate looks or which document types exist is **on hold** until the owner reopens it: template variants by level, custom design pricing by level (P-22), the family of coloured seals and emblems by level and field, attendance certificates as a record type (P-21), and any change to the learner's certificate face. Nothing here is built or priced. The decided parts that do not touch the certificate stay: the level badge on the provider's page, the register and the verification page (P-20), and the logo licence (P-16). Historical certificates are never changed.
