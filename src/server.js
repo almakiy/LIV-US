@@ -15,6 +15,9 @@ async function start() {
 
 start().finally(() => {
   app.listen(cfg.port, () => console.log(`${cfg.brand} certification platform on ${cfg.baseUrl} (port ${cfg.port})`));
+  // Unsubmitted application drafts with no activity for 180 days are closed (the period is pending decision P-14).
+  const sweep = () => require('./lib/applications').closeStaleDrafts().then((n) => n && console.log(`[applications] closed ${n} stale draft(s)`)).catch(() => {});
+  setTimeout(sweep, 30 * 1000).unref(); setInterval(sweep, 24 * 3600 * 1000).unref();
   // Files written before the durable store existed are copied into the database (byte for byte, nothing is re-rendered).
   files.backfill().then((n) => n && console.log(`[files] copied ${n} file(s) from disk into the database`))
     .catch((e) => console.warn(`[files] copy from disk skipped: ${e.message}`));

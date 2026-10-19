@@ -89,10 +89,12 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
 
 r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Training Provider', form: {}, error: null }));
 r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), limiter(15, 10), wrap(async (req, res) => {
-  const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'password', 'agree'].map((k) => [k, String(req.body[k] || '').trim()]));
+  const f = Object.fromEntries(['company_name', 'website', 'country', 'full_name', 'email', 'phone', 'password', 'agree'].map((k) => [k, String(req.body[k] || '').trim()]));
   f.email = f.email.toLowerCase();
   let error = null;
-  if (!f.company_name || !f.full_name || !f.email || !f.password) error = 'Please fill in all required fields.';
+  if (!f.company_name || !f.full_name || !f.email || !f.phone || !f.password) error = 'Please fill in all required fields.';
+  else if (['company_name', 'full_name', 'country'].some((k) => require('../lib/application-form').hasNonLatin(f[k]))) error = 'Please write the organization name, your name and the country in English (Latin letters). Names keep their own spelling in Latin letters; nothing is translated or converted.';
+  else if (!/^[+\d][\d\s().-]{5,29}$/.test(f.phone)) error = 'Please enter a phone number with digits, for example +962 7 0000 0000.';
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email)) error = 'Please enter a valid email.';
   else if (f.password.length < 10) error = 'Password must be at least 10 characters.';
   else if (refusedPassword(f.password)) error = 'That is a published development password; choose another one.';
@@ -104,8 +106,8 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   if (error) return res.status(400).render('public/apply', { title: 'Apply to become an Authorized Training Provider', form: { ...f, password: '' }, error });
   const hash = await bcrypt.hash(f.password, 12);
   const user = await tx(async (c) => {
-    const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email) VALUES ($1,$2,$3,$4) RETURNING id`,
-      [f.company_name, f.website || null, f.country || null, f.email]);
+    const { rows: [p] } = await c.query(`INSERT INTO platforms (company_name, website, country, contact_email, contact_phone) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [f.company_name, f.website || null, f.country || null, f.email, f.phone]);
     const { rows: [u] } = await c.query(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ($1,'platform_admin',$2,$3,$4) RETURNING id, email`,
       [p.id, f.full_name, f.email, hash]);
     await c.query(`INSERT INTO certificate_templates (platform_id, name, design, signatory_name, signatory_title, security_config) VALUES ($1,'Default Executive','executive',$2,'Training Director',$3)`, [p.id, f.full_name, RECOMMENDED]);
@@ -115,8 +117,8 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
   req.session.regenerate((err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Please log in.' });
     req.session.userId = user.id;
-    flash(req, 'success', 'Application received. Our team will review your application shortly — you can set up your profile and templates meanwhile.');
-    res.redirect('/portal');
+    flash(req, 'success', 'Your account is ready. Complete the application in short stages, and come back to it any time.');
+    res.redirect('/portal/application');
   });
 }));
 

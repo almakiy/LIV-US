@@ -42,3 +42,21 @@ test('readiness lists what is missing and says nothing about acceptance', () => 
   const r = F.readiness(F.clean({ legal_name: 'X Ltd' }), ['C1']);
   assert.ok(r.some((m) => /C3/.test(m.message)) && !r.some((m) => /C1 \(/.test(m.message)));
 });
+
+test('stages cover every field once and track completion on their own', () => {
+  const keys = F.STAGES.flatMap((s) => s.fields);
+  assert.deepStrictEqual([...keys].sort(), F.FIELDS.map((f) => f.key).sort());
+  assert.strictEqual(new Set(keys).size, keys.length);
+  const done = F.stageStatus(F.clean(full()), ['C1', 'C3']);
+  assert.deepStrictEqual(done, { org: true, training: true, policies: true, documents: true, review: false });
+  const part = F.stageStatus(F.clean({ legal_name: 'X' }), ['C1']);
+  assert.strictEqual(part.org, false); assert.strictEqual(part.documents, false);
+});
+
+test('a stage is checked on its own fields only', () => {
+  const stage = F.STAGES.find((s) => s.key === 'training');
+  const part = F.clean({ academic_lead: 'Sami' }, stage.fields);
+  assert.deepStrictEqual(Object.keys(part).sort(), [...stage.fields].sort());
+  assert.deepStrictEqual(F.validate(part, { only: stage.fields }), [], 'incomplete is fine on a draft save');
+  assert.ok(F.validate(F.clean({ academic_lead: 'سامي' }, stage.fields), { only: stage.fields }).length === 1);
+});

@@ -64,7 +64,7 @@ draft → submitted → completeness_check → [info_requested ↺] → technica
 
 Every transition writes an event (who, when, from, to, reason) to the application history and the audit log. Transitions are checked on the server, not only hidden in the interface.
 
-### 4.1 Staged application (owner request, October 19, 2026; proposal, to build as F2)
+### 4.1 Staged application (owner request, October 19, 2026; built as F2)
 
 A long form discourages applicants, so the application is split into short stages. Each stage saves on its own, any stage can be left and resumed later, and only submission checks that required items are complete.
 
@@ -84,6 +84,18 @@ Rules:
 - An unsubmitted draft is kept; after a period of inactivity (proposed 180 days, with reminders at 30 and 90 days) it is closed after notice. The period depends on retention (P-14).
 - Account email is not verified until the email foundation (task 2.1) exists; that task is recommended before `PUBLIC_APPLY` is switched on.
 - No stage changes what is required: the 17 fields, the English-only rule and the evidence rules are the same.
+
+**Built (October 19):** the six stages in the portal (stage 1 is the `/apply` sign-up with a phone number, English-only names), stage-by-stage saving with progress, optional fields folded away, sign-up details prefilled, "Submit and pay" at the end, the application fee invoiced from the price catalog at the Bronze (Starter) price (`ACC_APPLICATION`), review past the completeness check blocked until that invoice is paid, and the daily sweep that closes unsubmitted drafts after 180 days. Reminders at 30 and 90 days wait for the email foundation (task 2.1).
+
+**Lessons from a peer's onboarding** (the CPD Certification Service's reply to an enquiry, shared by the owner on October 19):
+1. An automatic acknowledgement within about an hour, addressed to the person, that says what happens next. Needs the email foundation (2.1), which moves up in priority.
+2. A short first contact, then a "tell us more" step while the team reviews. This matches the staged form: detail is asked after the account exists, never before.
+3. A named team that follows up. LIV needs a partner-relations contact for enquiries and applicants. Suggested as a fourth position with no assess, decide or activate permission, so that the people who review do not also sell.
+4. The benefits are listed in plain words in the first message. LIV's list, using only what exists: register listing, partner portal and API, verifiable credentials, level badge, logo licence, support. Statistics are used only when LIV has real figures; none are claimed before.
+5. Published service targets. Proposed for LIV: acknowledgement automatic; first human contact within 2 working days; completeness check within 5 working days of the fee; decision within 30 days of a complete file.
+6. Guidance packages that coach a provider through its own approval are not copied: coaching an applicant is a conflict of interest for an authorizing body (`FEES.md` §1). Public templates and plain guidance for every applicant are fine.
+7. Ideas for later, not decided: learner enquiries forwarded to providers from the register; positioning of "certificates included" against peers that promise unlimited certificates to members (to be checked against LIV's real cost per verified certificate before any change to `FEES-REVIEW.md` §9).
+8. Their footer shows company registration, address, confidentiality and privacy statements; LIV's email footer text comes from counsel.
 
 ## 5. Decision, conditions and impartiality
 - **Separation of roles.**

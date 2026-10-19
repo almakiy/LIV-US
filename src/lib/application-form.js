@@ -26,15 +26,26 @@ const FIELDS = [
   { key: 'interests', label: 'Declared interests (ownership, employment, referral or other links with LIV; write "None" if there are none)', type: 'textarea', max: 1000, required: true, criterion: 'C9' },
 ];
 const REQUIRED_EVIDENCE = ['C1', 'C3'];
+
+// The application is filled in stages (docs/PARTNER-AUTHORIZATION.md §4.1). Each stage saves on its own; only submission checks completeness.
+const STAGES = [
+  { key: 'org', title: 'Organization', minutes: 5, hint: 'Who you are and who speaks for the organization.', fields: ['legal_name', 'trading_name', 'country', 'registration_number', 'website', 'representative_name', 'representative_title', 'representative_email'] },
+  { key: 'training', title: 'Training', minutes: 10, hint: 'What you teach, how, and who teaches it.', fields: ['academic_lead', 'domain_requested', 'delivery_modes', 'delivery_setting', 'trainers', 'completion_rules'] },
+  { key: 'policies', title: 'Policies and declarations', minutes: 5, hint: 'How learners and records are protected, and any interests to declare.', fields: ['learner_protection', 'records', 'interests'] },
+  { key: 'documents', title: 'Documents', minutes: 5, hint: 'Supporting files for each criterion. Legal and trainer documents are needed.', fields: [] },
+  { key: 'review', title: 'Review and submit', minutes: 2, hint: 'Check what is missing, pay the application fee and submit.', fields: [] },
+];
+const stageKeys = (stage) => (STAGES.find((s) => s.key === stage) || {}).fields || [];
 const CRITERIA_TITLES = {
   C1: 'Legal entity and accountability', C2: 'Training management', C3: 'Trainer eligibility', C4: 'Course content', C5: 'Delivery',
   C6: 'Completion and learning assessment', C7: 'Learner protection', C8: 'Records and data', C9: 'Integrity and marketing',
 };
 
 /** Reads the form body into the stored shape: trimmed strings and a list of delivery modes. Unknown keys are dropped. */
-function clean(body = {}) {
+function clean(body = {}, only = null) {
   const out = {};
   for (const f of FIELDS) {
+    if (only && !only.includes(f.key)) continue;
     if (f.type === 'checkboxes') out[f.key] = [].concat(body[f.key] || []).filter((m) => MODES[m]);
     else out[f.key] = String(body[f.key] ?? '').trim().slice(0, f.max);
   }
@@ -42,9 +53,10 @@ function clean(body = {}) {
 }
 
 /** Errors for a draft save (language and format only) or a submission (also completeness). evidence: criteria that have a file. */
-function validate(form, { submit = false, evidence = [] } = {}) {
+function validate(form, { submit = false, evidence = [], only = null } = {}) {
   const errors = [];
   for (const f of FIELDS) {
+    if (only && !only.includes(f.key)) continue;
     const v = form[f.key];
     if (f.type === 'checkboxes') { if (submit && f.required && !v?.length) errors.push({ field: f.key, message: `${f.label}: choose at least one.` }); continue; }
     if (!v) { if (submit && f.required) errors.push({ field: f.key, message: `${f.label}: this is required.` }); continue; }
@@ -52,7 +64,7 @@ function validate(form, { submit = false, evidence = [] } = {}) {
     else if (f.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) errors.push({ field: f.key, message: `${f.label}: enter a valid email address.` });
     else if (f.type === 'url' && !/^https?:\/\/\S+\.\S+$/i.test(v)) errors.push({ field: f.key, message: `${f.label}: enter a full address starting with http:// or https://.` });
   }
-  if (submit) for (const c of REQUIRED_EVIDENCE) if (!evidence.includes(c)) errors.push({ field: `evidence_${c}`, message: `Upload at least one ${c} (${CRITERIA_TITLES[c]}) document before submitting.` });
+  if (submit && !only) for (const c of REQUIRED_EVIDENCE) if (!evidence.includes(c)) errors.push({ field: `evidence_${c}`, message: `Upload at least one ${c} (${CRITERIA_TITLES[c]}) document before submitting.` });
   return errors;
 }
 
@@ -61,4 +73,15 @@ function readiness(form, evidence) {
   return validate(form, { submit: true, evidence }).filter((e) => !/write in English|valid email|full address/.test(e.message));
 }
 
-module.exports = { FIELDS, MODES, CRITERIA_TITLES, REQUIRED_EVIDENCE, hasNonLatin, clean, validate, readiness };
+/** Which stages are complete: every required field of the stage is filled (and, for documents, C1 and C3 are uploaded). */
+function stageStatus(form, evidence = []) {
+  const done = {};
+  for (const st of STAGES) {
+    if (st.key === 'documents') done[st.key] = REQUIRED_EVIDENCE.every((c) => evidence.includes(c));
+    else if (st.key === 'review') done[st.key] = false;
+    else done[st.key] = validate(form, { submit: true, only: st.fields }).length === 0;
+  }
+  return done;
+}
+
+module.exports = { STAGES, stageKeys, stageStatus, FIELDS, MODES, CRITERIA_TITLES, REQUIRED_EVIDENCE, hasNonLatin, clean, validate, readiness };

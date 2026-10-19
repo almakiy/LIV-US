@@ -17,6 +17,7 @@ const see = (p, sel) => p.locator(sel).first().waitFor({ timeout: 20000 }).then(
 const at = (p, re) => p.waitForURL(re, { timeout: 20000 }).then(() => true).catch(() => false);
 let browserRef = null; // for the failure report
 const psql = (sql) => execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`).toString().trim();
+const markFeePaid = (appId, platformId) => { const inv = psql(`INSERT INTO invoices (platform_id, status, number, total_cents, amount_paid_cents) VALUES ('${platformId}', 'paid', 'T-' || substr(md5(random()::text), 1, 8), 0, 0) RETURNING id`).split('\n')[0]; psql(`UPDATE partner_applications SET fee_invoice_id = '${inv}' WHERE id = '${appId}'`); };
 const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}" -tAc "${sql.replace(/"/g, '\\"')}"`, { stdio: 'pipe' }); return false; } catch { return true; } };
 
 (async () => {
@@ -196,10 +197,14 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   await ap.fill('input[name=company_name]', `Gulf Safety Academy ${stamp}`);
   await ap.fill('input[name=full_name]', 'Applicant Admin');
   await ap.fill('input[name=email]', `applicant.${stamp}@example.com`);
+  await ap.fill('input[name=phone]', '+962 7 0000 0000');
   await ap.fill('input[name=password]', 'Applicant-Pass-2026');
   await ap.check('input[name=agree]');
-  await ap.click('button:has-text("Submit application")');
-  ok(await at(ap, /\/portal$/) && await see(ap, 'text=Authorization status'), 'applicant lands in portal with pending banner');
+  await ap.click('button:has-text("Create my account")');
+  ok(await at(ap, /\/portal\/application$/) && await see(ap, 'button:has-text("Start the application")'), 'sign-up creates the account and opens the staged application');
+  ok(psql(`SELECT contact_phone FROM platforms WHERE company_name = 'Gulf Safety Academy ${stamp}'`) === '+962 7 0000 0000', 'the contact phone is kept');
+  await ap.goto(BASE + '/portal');
+  ok(await see(ap, 'text=Authorization status'), 'the dashboard shows the pending banner');
   await ap.goto(BASE + '/portal/issue/review');
   await ap.goto(BASE + '/portal/issue');
   ok(await see(ap, 'text=pending'), 'pending platform sees status');
@@ -860,6 +865,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
       const ev = await A.addEvidence(app.id, pid, applicant, { criterion: 'C1', filename: 'reg.pdf', buffer: pdf('reg') });
       const ev3 = await A.addEvidence(app.id, pid, applicant, { criterion: 'C3', filename: 'trainer.pdf', buffer: pdf('trainer') });
       await A.submit(app.id, pid, applicant);
+      markFeePaid(app.id, pid);
       await A.staffTransition(app.id, assessor, 'technical_review', 'Complete');
       return { app, pid, uid, ev, ev3 };
     };
@@ -968,46 +974,62 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok((await anon.request.get(`${BASE}/admin/applications/${app.id}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/staff`, { maxRedirects: 0 })).status() !== 200, 'the review and staff screens are closed to visitors');
   }
 
-  console.log('Applicant portal (Batch F)');
+  console.log('Applicant portal, staged application and fee (Batches F and F2)');
   {
     const A = require('../src/lib/applications');
-    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
-    const form = { legal_name: 'Portal Test Training LLC', country: 'Jordan', representative_name: 'Lina Haddad', representative_email: `lina.${stamp}@example.com`,
-      academic_lead: 'Sami Nasser, academic lead, 8 years in safety training', domain_requested: 'Workplace safety awareness', delivery_modes: 'live_online',
-      delivery_setting: 'Live online platform with recorded attendance', trainers: 'Two trainers; CVs attached', completion_rules: 'Full attendance and a short quiz', interests: 'None' };
+    const store = require('../src/lib/billing-store');
+    const stage = (appId, step, fields) => page.request.post(`${BASE}/portal/application/${appId}/save`, { form: { _csrf: csrf, step, go: 'stay', ...fields }, maxRedirects: 0 });
+    let csrf = '';
+    const org = { legal_name: 'Portal Test Training LLC', country: 'Jordan', representative_name: 'Lina Haddad', representative_email: `lina.${stamp}@example.com` };
+    const training = { academic_lead: 'Sami Nasser, academic lead, 8 years in safety training', domain_requested: 'Workplace safety awareness', delivery_modes: 'live_online',
+      delivery_setting: 'Live online platform with recorded attendance', trainers: 'Two trainers; CVs attached', completion_rules: 'Full attendance and a short quiz' };
     await page.goto(`${BASE}/portal/application`);
-    ok(await see(page, 'button:has-text("Start the application")'), 'a provider with no application sees how to start one');
+    ok(await see(page, 'button:has-text("Start the application")') && await see(page, 'text=Review and submit'), 'a provider with no application sees the stages and how to start');
     await page.click('button:has-text("Start the application")');
-    ok(await at(page, /\/portal\/application\/[0-9a-f-]{36}$/), 'starting opens the application page');
+    ok(await at(page, /\/portal\/application\/[0-9a-f-]{36}$/), 'starting opens the application at the first stage');
     const appUrl = page.url(); const appId = appUrl.split('/').pop();
+    csrf = await page.inputValue('input[name=_csrf]');
+    ok((await page.inputValue('#legal_name')).length > 0 && (await page.inputValue('#representative_email')).includes('@'), 'the first stage starts from the sign-up details instead of asking again');
     await page.fill('#legal_name', 'شركة الاختبار');
-    await page.click('button:has-text("Save draft")');
-    ok(await see(page, '#error-summary') && await see(page, 'text=write in English'), 'Arabic text is refused with a clear error and the entry stays as typed');
-    ok((await page.inputValue('#legal_name')) === 'شركة الاختبار' && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === '', 'nothing refused was saved');
-    await page.fill('#legal_name', form.legal_name);
-    await page.click('button:has-text("Save draft")');
-    ok(await see(page, 'text=Draft saved') && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === form.legal_name, 'a valid draft is saved');
-    await page.click('button:has-text("Submit")');
-    ok(await see(page, 'text=Upload at least one C1') && psql(`SELECT current_version FROM partner_applications WHERE id = '${appId}'`) === '0', 'submitting without the required documents is refused');
-    const csrf = await page.inputValue('input[name=_csrf]');
-    const up = (criterion, name, buffer, mimeType = 'application/pdf') => page.request.post(`${appUrl}/evidence`, { multipart: { _csrf: csrf, criterion, file: { name, mimeType, buffer } }, maxRedirects: 0 });
+    await page.click('button:has-text("Save and continue")');
+    ok(await see(page, '#error-summary') && await see(page, 'text=write in English'), 'Arabic text is refused with a clear error');
+    ok((await page.inputValue('#legal_name')) === 'شركة الاختبار' && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === '', 'the entry stays as typed and nothing refused was saved');
+    await page.fill('#legal_name', org.legal_name);
+    await page.click('button:has-text("Save and continue")');
+    ok(await at(page, /step=training$/) && psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === org.legal_name, 'a valid stage saves and moves on to the next one');
+    await stage(appId, 'org', org);
+    await stage(appId, 'training', training);
+    ok(psql(`SELECT draft->>'legal_name' || '|' || (draft->>'academic_lead' IS NOT NULL)::text FROM partner_applications WHERE id = '${appId}'`) === `${org.legal_name}|true`, 'each stage saves on its own and keeps the others');
+    await page.goto(`${appUrl}?step=policies`);
+    ok(await see(page, 'summary:has-text("Add more details")'), 'optional fields are folded under "Add more details"');
+    await stage(appId, 'policies', { interests: 'None' });
+    const sub0 = await page.request.post(`${appUrl}/submit`, { form: { _csrf: csrf }, maxRedirects: 0 });
+    ok(sub0.status() === 422 && psql(`SELECT current_version FROM partner_applications WHERE id = '${appId}'`) === '0', 'submitting without the required documents is refused');
+    await page.goto(`${appUrl}?step=review`);
+    ok(await see(page, 'text=Upload at least one C1') && await see(page, 'text=Application fee:'), 'the review stage lists what is missing and states the fee');
+    const up = (criterion, name, buffer) => page.request.post(`${appUrl}/evidence`, { multipart: { _csrf: csrf, criterion, file: { name, mimeType: 'application/pdf', buffer } }, maxRedirects: 0 });
     await up('C1', 'fake.pdf', Buffer.from('not a pdf at all'));
     ok(psql(`SELECT count(*) FROM partner_application_evidence WHERE application_id = '${appId}'`) === '0', 'a file is checked by content, not by name');
     await up('C1', 'registration.pdf', Buffer.from('%PDF-1.4\n% registration\n'));
     await up('C3', 'trainers.pdf', Buffer.from('%PDF-1.4\n% trainers\n'));
-    ok(psql(`SELECT count(*) FROM partner_application_evidence WHERE application_id = '${appId}'`) === '2', 'documents upload against a criterion');
     const evId = psql(`SELECT id FROM partner_application_evidence WHERE application_id = '${appId}' AND criterion = 'C1'`);
-    ok((await page.request.get(`${appUrl}/evidence/${evId}`)).status() === 200, 'the provider downloads its own document');
-    const sub = await page.request.post(`${appUrl}/submit`, { form: { _csrf: csrf, ...form }, maxRedirects: 0 });
-    ok(sub.status() === 302 && psql(`SELECT state || ':' || current_version FROM partner_applications WHERE id = '${appId}'`) === 'completeness_check:1', 'a complete application is submitted as a locked version and moves to the completeness check');
-    await page.goto(appUrl);
-    ok(await see(page, 'text=Completeness check') && await page.locator('#legal_name').isDisabled(), 'the submitted version is read-only');
-    const edit = await page.request.post(`${appUrl}/save`, { form: { _csrf: csrf, ...form, legal_name: 'Changed LLC' }, maxRedirects: 0 });
-    ok(psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === form.legal_name, 'the draft cannot be changed while LIV holds the application');
+    ok(psql(`SELECT count(*) FROM partner_application_evidence WHERE application_id = '${appId}'`) === '2' && (await page.request.get(`${appUrl}/evidence/${evId}`)).status() === 200, 'documents upload per criterion and the provider can download its own');
+    await page.goto(`${appUrl}?step=review`);
+    ok(await see(page, 'button:has-text("Submit and pay")'), 'when everything required is complete, the review stage offers "Submit and pay"');
+    await page.click('button:has-text("Submit and pay")');
+    ok(await at(page, /\/portal\/billing\/invoices\/[0-9a-f-]{36}$/), 'submitting takes the provider to the application fee invoice');
+    const invId = psql(`SELECT fee_invoice_id FROM partner_applications WHERE id = '${appId}'`);
+    ok(psql(`SELECT state || ':' || current_version FROM partner_applications WHERE id = '${appId}'`) === 'completeness_check:1' && psql(`SELECT status || ':' || total_cents FROM invoices WHERE id = '${invId}'`) === 'open:50000', 'a locked version is submitted and the application fee is invoiced at the Bronze (Starter) price');
+    await stage(appId, 'org', { ...org, legal_name: 'Changed LLC' });
+    ok(psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === org.legal_name, 'the draft cannot be changed while LIV holds the application');
     const reviewer = { id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Reviewer F', 'revf.${stamp}@example.com', 'x', 'application_assessor') RETURNING id`).split('\n')[0], email: `revf.${stamp}@example.com`, role: 'super_admin' };
-    await A.staffTransition(appId, reviewer, 'info_requested', 'Please add the trading license of the second trainer');
+    ok(await A.staffTransition(appId, reviewer, 'technical_review', 'Complete').then(() => false, (e) => e.status === 409 && /fee/.test(e.message)), 'the review cannot start until the application fee is received');
+    await store.recordPayment(invId, { amount_cents: 50000, method: 'bank_transfer', reference: 'e2e' });
+    await A.staffTransition(appId, reviewer, 'technical_review', 'Complete');
+    ok(psql(`SELECT state FROM partner_applications WHERE id = '${appId}'`) === 'technical_review', 'once the fee is paid the review starts; payment decided nothing else');
+    await A.staffTransition(appId, reviewer, 'corrective_action', 'Please add the trading license of the second trainer');
     await page.goto(appUrl);
-    ok(await see(page, 'text=Message from LIV') && await see(page, 'text=Please add the trading license') && await page.locator('#legal_name').isEnabled(), 'a request from LIV is shown and the form opens for correction');
+    ok(await see(page, 'text=Message from LIV') && await see(page, 'text=Please add the trading license') && await page.locator('#legal_name').isEnabled(), 'a request from LIV is shown and the stages open for correction');
     ok(!(await page.content()).includes('Reviewer F') && !(await page.content()).includes('revf.'), 'the reviewer\'s identity and notes are not shown to the provider');
     const [oPid, oUid] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email) VALUES ('Other Applicant ${stamp}', 'oa.${stamp}@example.com') RETURNING id)
       INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Other', 'oa.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
@@ -1015,9 +1037,12 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     const otherEv = await A.addEvidence(other.id, oPid, { id: oUid, email: 'oa', role: 'platform_admin' }, { criterion: 'C1', filename: 'o.pdf', buffer: Buffer.from('%PDF-1.4\n% o\n') });
     const status = async (method, url, opts) => (await page.request[method](url, { maxRedirects: 0, ...opts })).status();
     ok(await status('get', `${BASE}/portal/application/${other.id}`) === 404 && await status('get', `${BASE}/portal/application/${other.id}/evidence/${otherEv.id}`) === 404, 'one provider cannot open another provider\'s application or document by link');
-    ok(await status('post', `${BASE}/portal/application/${other.id}/save`, { form: { _csrf: csrf, ...form } }) === 404 && await status('post', `${BASE}/portal/application/${other.id}/submit`, { form: { _csrf: csrf, ...form } }) === 404, 'nor save or submit it');
+    ok(await status('post', `${BASE}/portal/application/${other.id}/save`, { form: { _csrf: csrf, step: 'org', ...org } }) === 404 && await status('post', `${BASE}/portal/application/${other.id}/submit`, { form: { _csrf: csrf } }) === 404, 'nor save or submit it');
     ok(await status('get', `${appUrl}/evidence/${otherEv.id}`) === 404, 'a document of another application is not served under your own application');
     ok((await anon.request.get(appUrl, { maxRedirects: 0 })).status() !== 200, 'the application page is closed to visitors');
+    psql(`UPDATE partner_applications SET updated_at = now() - interval '200 days' WHERE id = '${other.id}'`);
+    ok(await A.closeStaleDrafts(180) >= 1 && psql(`SELECT state FROM partner_applications WHERE id = '${other.id}'`) === 'closed', 'a draft with no activity for 180 days is closed');
+    ok(psql(`SELECT state FROM partner_applications WHERE id = '${appId}'`) === 'corrective_action', 'a submitted application is never closed by the sweep');
   }
 
   console.log('Knowledge distribution');

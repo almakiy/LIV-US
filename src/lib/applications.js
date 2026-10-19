@@ -155,6 +155,11 @@ async function staffTransition(appId, user, to, reason) {
     if (allowedBy(app.state, to) !== 'staff') throw new ApplicationError(`LIV staff cannot move an application from ${app.state} to ${to}.`, 409);
     // The decision itself is recorded by assessment.decide(), by a different person from the assessor; never as a plain move.
     if (app.state === 'awaiting_decision') throw new ApplicationError('Record the decision on the decision form.', 409);
+    if (to === 'technical_review' && app.state === 'completeness_check') {
+      // Review past the completeness check starts when the application fee is received. The fee pays for the work; it never affects the decision.
+      const { rows: [inv] } = await c.query('SELECT status FROM invoices WHERE id = $1', [app.fee_invoice_id]);
+      if (!inv || inv.status !== 'paid') throw new ApplicationError('The application fee has not been received yet, so the review cannot start.', 409);
+    }
     if (to === 'awaiting_decision') {
       const blocked = await require('./assessment').readyForDecision(c, app);
       if (blocked) throw new ApplicationError(blocked, 409);
@@ -192,7 +197,17 @@ async function readEvidence(evidenceId, user, { platformId, staff = false } = {}
   return { content: f.content, type: ev.content_type, filename: ev.filename };
 }
 
+
+/** Closes drafts that have seen no activity for the given days (default 180), after notice by email once that exists. Returns the count. */
+async function closeStaleDrafts(days = 180) {
+  return tx(async (c) => {
+    const { rows } = await c.query(`SELECT * FROM partner_applications WHERE state = 'draft' AND current_version = 0 AND updated_at < now() - ($1::int * interval '1 day') FOR UPDATE`, [days]);
+    for (const app of rows) await event(c, app, 'closed', null, `Closed after ${days} days without activity`);
+    return rows.length;
+  });
+}
+
 module.exports = {
   ApplicationError, TRANSITIONS, FINAL, APPLICANT_HOLDS, MAX_EVIDENCE_BYTES, allowedBy, sniff,
-  event, createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
+  event, closeStaleDrafts, createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
 };

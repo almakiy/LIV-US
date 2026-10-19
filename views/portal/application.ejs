@@ -1,26 +1,7 @@
 <%- include('../partials/app-start') %>
-<% const st = STATE_TEXT[app.state] || [app.state, '']; const val = (k) => (form && form[k] != null ? form[k] : ''); const err = (k) => errors.find((e) => e.field === k); %>
-<div class="page-head"><h1>Authorization application</h1><span class="badge b-pending"><%= st[0] %></span></div>
-<p><%= st[1] %> <span class="small muted">Criteria set <%= app.criteria_version %><%= app.current_version ? ' · submitted version ' + app.current_version : '' %></span></p>
-
-<% if (errors.length) { %><div class="alert error" role="alert" tabindex="-1" id="error-summary"><strong>Please correct the following:</strong><ul><% errors.forEach(e => { %><li><a href="#<%= e.field %>"><%= e.message %></a></li><% }) %></ul></div><% } %>
-
-<% const asked = app.events.filter(e => SHOW_REASON.includes(e.to_state) && e.reason); if (asked.length) { const last = asked[asked.length - 1]; %>
-<div class="card mt"><h3>Message from LIV</h3><p><%= last.reason %></p><p class="small muted"><%= usDateTime(last.created_at) %></p></div><% } %>
-
-<% if (conditions.length) { %><div class="card mt"><h3>Conditions of acceptance</h3><ul>
-  <% conditions.forEach(k => { %><li><%= k.blocking ? 'Must be met before activation' : 'Non-blocking' %>: <%= k.text %><%= k.due_date ? ' (due ' + usDate(k.due_date) + ')' : '' %> <strong><%= k.closed ? '— closed' : '— open' %></strong></li><% }) %></ul></div><% } %>
-
-<% if (checklist.length) { %><div class="card mt"><h3>Activation</h3><p class="small muted">LIV activates your organization when every item is complete. Payment alone never activates.</p>
-  <div class="table-wrap"><table><tr><th></th><th>Item</th><th>Status</th></tr><% checklist.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div></div><% } %>
-
-<% if (editable && missing.length) { %><div class="card mt"><h3>Still missing before you can submit</h3><p class="small muted">This lists what is incomplete. It does not say whether the application will be accepted.</p><ul><% missing.forEach(m => { %><li><%= m.message %></li><% }) %></ul></div><% } %>
-
-<form class="card mt" method="post" action="/portal/application/<%= app.id %>/save" novalidate>
-  <input type="hidden" name="_csrf" value="<%= csrf %>">
-  <h3>Application form</h3>
-  <% if (!editable) { %><p class="small muted">This is the version you submitted. You can edit again only when LIV asks for more information.</p><% } else { %><p class="small muted">Write in English. Fields marked * are needed to submit.</p><% } %>
-  <% FIELDS.forEach(f => { const e = err(f.key); const dis = editable ? '' : 'disabled'; %>
+<% const st = STATE_TEXT[app.state] || [app.state, '']; const val = (k) => (form && form[k] != null ? form[k] : ''); const err = (k) => errors.find((e) => e.field === k);
+   const stage = STAGES.find((s) => s.key === step); const idx = STAGES.indexOf(stage);
+   const field = (f) => { const e = err(f.key); const dis = editable ? '' : 'disabled'; %>
   <div class="field">
     <label for="<%= f.key %>"><%= f.label %><%= f.required ? ' *' : '' %> <span class="small muted">(<%= f.criterion %>)</span></label>
     <% if (f.type === 'textarea') { %><textarea id="<%= f.key %>" name="<%= f.key %>" rows="3" maxlength="<%= f.max %>" <%= dis %> <%= e ? 'aria-invalid=true aria-describedby=' + f.key + '-err' : '' %>><%= val(f.key) %></textarea>
@@ -29,21 +10,65 @@
     <% if (f.help) { %><div class="hint"><%= f.help %></div><% } %>
     <% if (e) { %><div class="hint" id="<%= f.key %>-err" style="color:#a02020"><%= e.message %></div><% } %>
   </div>
-  <% }) %>
-  <% if (editable) { %><div class="row" style="gap:10px"><button class="btn secondary">Save draft</button>
-    <button class="btn" formaction="/portal/application/<%= app.id %>/submit" formnovalidate>Submit<%= app.current_version ? ' version ' + (app.current_version + 1) : '' %></button></div><% } %>
-</form>
+<% }; %>
+<div class="page-head"><h1>Authorization application</h1><span class="badge b-pending"><%= st[0] %></span></div>
+<p><%= st[1] %> <span class="small muted">Criteria set <%= app.criteria_version %><%= app.current_version ? ' · submitted version ' + app.current_version : '' %></span></p>
 
+<% const asked = app.events.filter(e => SHOW_REASON.includes(e.to_state) && e.reason); if (asked.length) { const last = asked[asked.length - 1]; %>
+<div class="card mt"><h3>Message from LIV</h3><p><%= last.reason %></p><p class="small muted"><%= usDateTime(last.created_at) %></p></div><% } %>
+
+<% if (fee.invoice) { %><div class="card mt"><h3>Application fee</h3><p>Invoice <strong><%= fee.invoice.number %></strong>: <%= fee.invoice.status === 'paid' ? 'paid. Thank you.' : 'open. LIV starts the review once it is paid.' %> <a href="/portal/billing/invoices/<%= fee.invoice.id %>">View<%= fee.invoice.status === 'open' ? ' and pay' : '' %></a></p></div><% } %>
+
+<% if (conditions.length) { %><div class="card mt"><h3>Conditions of acceptance</h3><ul>
+  <% conditions.forEach(k => { %><li><%= k.blocking ? 'Must be met before activation' : 'Non-blocking' %>: <%= k.text %><%= k.due_date ? ' (due ' + usDate(k.due_date) + ')' : '' %> <strong><%= k.closed ? '— closed' : '— open' %></strong></li><% }) %></ul></div><% } %>
+
+<% if (checklist.length) { %><div class="card mt"><h3>Activation</h3><p class="small muted">LIV activates your organization when every item is complete. Payment alone never activates.</p>
+  <div class="table-wrap"><table><tr><th></th><th>Item</th><th>Status</th></tr><% checklist.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div></div><% } %>
+
+<nav aria-label="Application stages" class="mt"><ol style="list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0">
+  <% STAGES.forEach((s, i) => { %><li><a class="btn sm <%= s.key === step ? '' : 'secondary' %>" href="/portal/application/<%= app.id %>?step=<%= s.key %>" <%= s.key === step ? 'aria-current=step' : '' %>><%= i + 1 %>. <%= s.title %><%= done[s.key] ? ' ✓' : '' %></a></li><% }) %></ol>
+  <p class="small muted">Stage <%= idx + 1 %> of <%= STAGES.length %> · about <%= stage.minutes %> minutes. <%= stage.hint %></p></nav>
+
+<% if (errors.length) { %><div class="alert error" role="alert" tabindex="-1" id="error-summary"><strong>Please correct the following:</strong><ul><% errors.forEach(e => { %><li><a href="#<%= e.field %>"><%= e.message %></a></li><% }) %></ul></div><% } %>
+
+<% if (step === 'org' || step === 'training' || step === 'policies') { const req = FIELDS.filter(f => stage.fields.includes(f.key) && f.required); const opt = FIELDS.filter(f => stage.fields.includes(f.key) && !f.required); %>
+<form class="card mt" method="post" action="/portal/application/<%= app.id %>/save" novalidate>
+  <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="step" value="<%= step %>">
+  <h3><%= stage.title %></h3>
+  <% if (!editable) { %><p class="small muted">This is the version you submitted. You can edit again only when LIV asks for more information.</p><% } else { %><p class="small muted">Write in English. Fields marked * are needed to submit; you can leave them now and come back.</p><% } %>
+  <% req.forEach(field) %>
+  <% if (opt.length) { %><details <%= opt.some(f => val(f.key) || err(f.key)) ? 'open' : '' %>><summary>Add more details (optional)</summary><div class="mt"><% opt.forEach(field) %></div></details><% } %>
+  <% if (editable) { %><div class="row mt" style="gap:10px"><button class="btn" name="go" value="next">Save and continue</button><button class="btn secondary" name="go" value="stay">Save</button></div><% } %>
+</form>
+<% } %>
+
+<% if (step === 'documents') { %>
 <h2 class="mt">Supporting documents</h2>
-<p class="small muted">PDF, PNG or JPEG, up to <%= MAX_MB %> MB each. Documents are private to your organization and LIV staff. C1 (legal) and C3 (trainers) documents are needed to submit.</p>
+<p class="small muted">PDF, PNG or JPEG, up to <%= MAX_MB %> MB each. Documents are private to your organization and LIV staff. C1 (legal) and C3 (trainers) documents are needed to submit; the others help the review and are optional.</p>
 <% Object.entries(CRITERIA_TITLES).forEach(([c, t]) => { const files = app.evidence.filter(x => x.criterion === c); %>
-<div class="card mt"><h3><%= c %> · <%= t %></h3>
+<div class="card mt"><h3><%= c %> · <%= t %><%= (c === 'C1' || c === 'C3') ? ' *' : '' %></h3>
   <% if (files.length) { %><ul><% files.forEach(x => { %><li><a href="/portal/application/<%= app.id %>/evidence/<%= x.id %>"><%= x.filename %></a> <span class="small muted"><%= Math.ceil(x.bytes / 1024) %> KB · <%= x.version ? 'submitted in version ' + x.version : 'not yet submitted' %></span>
     <% if (editable && !x.version) { %><form method="post" action="/portal/application/<%= app.id %>/evidence/<%= x.id %>/remove" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Remove</button></form><% } %></li><% }) %></ul>
   <% } else { %><p class="muted">No document yet.</p><% } %>
   <% if (editable) { %><form method="post" action="/portal/application/<%= app.id %>/evidence" enctype="multipart/form-data" class="row" style="gap:8px"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="criterion" value="<%= c %>">
     <div class="field"><label for="file-<%= c %>" class="small">Add a document</label><input id="file-<%= c %>" type="file" name="file" accept="application/pdf,image/png,image/jpeg" required></div><button class="btn sm secondary">Upload</button></form><% } %></div>
 <% }) %>
+<p class="mt"><a class="btn" href="/portal/application/<%= app.id %>?step=review">Continue to review</a></p>
+<% } %>
+
+<% if (step === 'review') { %>
+<div class="card mt"><h3>Review and submit</h3>
+  <% if (editable) { %>
+    <% if (missing.length) { %><p>Still missing before you can submit:</p><ul><% missing.forEach(m => { %><li><%= m.message %></li><% }) %></ul>
+      <p class="small muted">This lists what is incomplete. It does not say whether the application will be accepted.</p>
+    <% } else { %><p>Everything required is complete.</p><% } %>
+    <% if (!app.fee_invoice_id && app.current_version === 0) { %>
+      <p><strong>Application fee:</strong> <%= fee.amount != null ? money(fee.amount) : 'not set up yet' %>, invoiced when you submit and paid by card or bank transfer. It pays for the review work and does not affect the decision. LIV starts the review once it is received.</p>
+    <% } %>
+    <% if (!missing.length) { %><form method="post" action="/portal/application/<%= app.id %>/submit"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn gold"><%= (!app.fee_invoice_id && app.current_version === 0) ? 'Submit and pay' : 'Submit version ' + (app.current_version + 1) %></button></form><% } %>
+  <% } else { %><p>The application is with LIV (<%= st[0] %>).</p><% } %>
+</div>
+<% } %>
 
 <h2 class="mt">Progress</h2>
 <div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th></tr>

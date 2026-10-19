@@ -705,6 +705,9 @@ DROP TRIGGER IF EXISTS partner_app_events_lock ON partner_application_events;
 CREATE TRIGGER partner_app_events_lock BEFORE UPDATE OR DELETE ON partner_application_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_app_evidence_lock ON partner_application_evidence;
 CREATE TRIGGER partner_app_evidence_lock BEFORE UPDATE OR DELETE ON partner_application_evidence FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Staged application (Batch F2): contact phone captured at sign-up; the application fee invoice is linked to the application.
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(40);
+ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS fee_invoice_id UUID REFERENCES invoices(id);
 -- Assessment, recommendation and decision (Batch E). Every row is locked once written (same trigger as above):
 -- a re-assessment is a new assessment, a recalculation is a new recommendation, and nothing is edited in place.
 -- input_hash fingerprints everything a recommendation was computed from; a decision is refused if it no longer matches.
