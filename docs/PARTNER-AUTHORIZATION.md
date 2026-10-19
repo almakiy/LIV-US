@@ -64,6 +64,27 @@ draft → submitted → completeness_check → [info_requested ↺] → technica
 
 Every transition writes an event (who, when, from, to, reason) to the application history and the audit log. Transitions are checked on the server, not only hidden in the interface.
 
+### 4.1 Staged application (owner request, October 19, 2026; proposal, to build as F2)
+
+A long form discourages applicants, so the application is split into short stages. Each stage saves on its own, any stage can be left and resumed later, and only submission checks that required items are complete.
+
+| Stage | Content | Time |
+|---|---|---|
+| 1. Create the account (public) | Organization name, country, contact full name, work email, phone, password. Creates a pending provider account with no powers and signs the user in. | about 1 minute |
+| 2. Organization | Legal and trading name, registration number, website, authorized representative (name, position, email; prefilled from stage 1) | about 5 minutes |
+| 3. Training | Academic lead, field and subjects, delivery modes, platform or site, trainers, completion rules | about 10 minutes |
+| 4. Policies and declarations | Learner protection, records, declared interests | about 5 minutes |
+| 5. Documents | Per-criterion documents; C1 and C3 are required | about 5 minutes |
+| 6. Review, pay and submit | Completeness list, the application fee, submission | about 2 minutes |
+
+Rules:
+- The account and the dashboard come first; the application is started from the dashboard, so a person can look around before committing.
+- Progress is shown as stages done; optional fields are collapsed under "Add more details"; every field has a short hint and an example.
+- Payment is the last step, after the applicant has seen the whole form. The fee for the application is invoiced when the applicant chooses to submit, paid by card or bank transfer. LIV review (the move past the completeness check) starts when the fee is received; the fee pays for the work and never affects the decision, and payment never activates a provider.
+- An unsubmitted draft is kept; after a period of inactivity (proposed 180 days, with reminders at 30 and 90 days) it is closed after notice. The period depends on retention (P-14).
+- Account email is not verified until the email foundation (task 2.1) exists; that task is recommended before `PUBLIC_APPLY` is switched on.
+- No stage changes what is required: the 17 fields, the English-only rule and the evidence rules are the same.
+
 ## 5. Decision, conditions and impartiality
 - **Separation of roles.**
   - The assessor and the decision-maker are different individual accounts. The server refuses a decision by the user who recorded the assessment.
