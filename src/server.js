@@ -18,6 +18,9 @@ start().finally(() => {
   // Unsubmitted application drafts with no activity for 180 days are closed (the period is pending decision P-14).
   const sweep = () => require('./lib/applications').closeStaleDrafts().then((n) => n && console.log(`[applications] closed ${n} stale draft(s)`)).catch(() => {});
   setTimeout(sweep, 30 * 1000).unref(); setInterval(sweep, 24 * 3600 * 1000).unref();
+  // Email worker: sends queued messages every 20 seconds (at most 10 per run), with retries. EMAIL_DRIVER=off keeps them queued.
+  const mail = () => require('./lib/email').processQueue().catch((e) => console.warn(`[email] ${e.message}`));
+  setTimeout(mail, 10 * 1000).unref(); setInterval(mail, 20 * 1000).unref();
   // Files written before the durable store existed are copied into the database (byte for byte, nothing is re-rendered).
   files.backfill().then((n) => n && console.log(`[files] copied ${n} file(s) from disk into the database`))
     .catch((e) => console.warn(`[files] copy from disk skipped: ${e.message}`));

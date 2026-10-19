@@ -85,7 +85,7 @@ Rules:
 - Account email is not verified until the email foundation (task 2.1) exists; that task is recommended before `PUBLIC_APPLY` is switched on.
 - No stage changes what is required: the 17 fields, the English-only rule and the evidence rules are the same.
 
-**Built (October 19):** the six stages in the portal (stage 1 is the `/apply` sign-up with a phone number, English-only names), stage-by-stage saving with progress, optional fields folded away, sign-up details prefilled, "Submit and pay" at the end, the application fee invoiced from the price catalog at the Bronze (Starter) price (`ACC_APPLICATION`), review past the completeness check blocked until that invoice is paid, and the daily sweep that closes unsubmitted drafts after 180 days. Reminders at 30 and 90 days wait for the email foundation (task 2.1).
+**Built (October 19):** the six stages in the portal (stage 1 is the `/apply` sign-up with a phone number, English-only names), stage-by-stage saving with progress, optional fields folded away, sign-up details prefilled, "Submit and pay" at the end, the application fee invoiced from the price catalog at the Bronze (Starter) price (`ACC_APPLICATION`), review past the completeness check blocked until that invoice is paid, and the daily sweep that closes unsubmitted drafts after 180 days. Email now exists (task 2.1); the 30 and 90 day draft reminders are not built yet.
 
 **Lessons from a peer's onboarding** (the CPD Certification Service's reply to an enquiry, shared by the owner on October 19):
 1. An automatic acknowledgement within about an hour, addressed to the person, that says what happens next. Needs the email foundation (2.1), which moves up in priority.

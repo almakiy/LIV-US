@@ -149,6 +149,8 @@ r.post('/:id/submit', wrap(async (req, res, next) => {
     if (!(e instanceof A.ApplicationError)) throw e;
     return back(e.message);
   }
+  const { rows: [pl] } = await q('SELECT company_name FROM platforms WHERE id = $1', [pid(req)]);
+  await require('../lib/email').queueToPlatform(pid(req), 'application_submitted', { company: pl.company_name, version: v.version, feeDue: first }, `submitted:${app.id}:${v.version}`);
   if (first) {
     await store.issueInvoice(draftInvoice, { dueDays: 14 });
     await q('UPDATE partner_applications SET fee_invoice_id = $2 WHERE id = $1', [app.id, draftInvoice]);

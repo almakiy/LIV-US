@@ -114,6 +114,7 @@ r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404)
     await audit({ user: u, platformId: p.id, action: 'platform.apply', target: f.company_name }, c);
     return u;
   });
+  await require('../lib/email').queue({ to: f.email, name: f.full_name, template: 'account_created', data: { name: f.full_name, company: f.company_name }, dedupeKey: `account_created:${user.id}` }).catch(() => {});
   req.session.regenerate((err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Please log in.' });
     req.session.userId = user.id;

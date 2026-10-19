@@ -28,6 +28,10 @@ module.exports = {
   // Billing. Fee schedule page stays hidden until the owner approves the fees. Stripe is not connected yet: these only enable the webhook receiver.
   publicFees: process.env.PUBLIC_FEES === 'true',
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  // Email: 'smtp' sends through SMTP_URL; 'log' only prints (development); 'off' keeps messages queued. Unset: log in development, off when deployed.
+  emailDriver: ['smtp', 'log', 'off', 'test'].includes(process.env.EMAIL_DRIVER) ? process.env.EMAIL_DRIVER : (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT === '1' ? 'off' : 'log'),
+  emailFrom: process.env.EMAIL_FROM || 'LIV Credentials <no-reply@livcredentials.org>',
+  smtpUrl: process.env.SMTP_URL || '',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '', // enables the "Pay by card" button (Stripe Checkout)
   legalAddress: process.env.LEGAL_ADDRESS || '',
   billingEmail: process.env.BILLING_EMAIL || '',

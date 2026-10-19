@@ -100,7 +100,7 @@ async function recordPayment(invoiceId, { amount_cents, method, reference = '', 
     const a = billing.afterPayment(Number(inv.total_cents), Number(inv.amount_paid_cents), amt);
     await c.query('UPDATE invoices SET amount_paid_cents = $2, status = $3::varchar, paid_at = CASE WHEN $3::varchar = \'paid\' THEN now() ELSE paid_at END WHERE id = $1', [invoiceId, a.amount_paid_cents, a.status]);
     return { duplicate: false, status: a.status, paid: a.amount_paid_cents };
-  });
+  }).then(async (r) => { if (r.status === 'paid') await require('./applications').onInvoicePaid(invoiceId).catch(() => {}); return r; });
 }
 
 /** Drafts are deleted; an open invoice with no payments is voided (its number stays on record). Discount credits it used are released. */

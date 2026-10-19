@@ -1,0 +1,13 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Email</h1></div>
+<p class="small muted">Driver: <strong><%= driver %></strong> · From: <%= from %>. Messages are queued and sent by a worker every 20 seconds, with up to 5 attempts. With the driver "off" they stay queued. Set EMAIL_DRIVER=smtp and SMTP_URL to send; the sending domain needs SPF, DKIM and DMARC records first.</p>
+<p class="small">Queued <strong><%= counts.queued || 0 %></strong> · sending <%= counts.sending || 0 %> · sent <%= counts.sent || 0 %> · failed <strong><%= counts.failed || 0 %></strong> · suppressed <%= counts.suppressed || 0 %></p>
+<div class="table-wrap"><table><tr><th>Created</th><th>To</th><th>Template</th><th>Status</th><th>Attempts</th><th>Error</th><th></th></tr>
+<% rows.forEach(m => { %><tr><td class="small"><%= usDateTime(m.created_at) %></td><td class="small"><%= m.to_email %></td><td class="small"><%= m.template %></td><td><span class="badge b-<%= m.status === 'sent' ? 'active' : m.status === 'failed' ? 'suspended' : 'pending' %>"><%= m.status %></span></td><td><%= m.attempts %></td><td class="small"><%= m.last_error || '' %></td>
+<td><% if (m.status === 'failed') { %><form method="post" action="/admin/email/<%= m.id %>/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Retry</button></form><% } %></td></tr><% }) %></table></div>
+<% if (!rows.length) { %><p class="muted">No messages yet.</p><% } %>
+<h2 class="mt">Suppression list</h2>
+<p class="small muted">Addresses that never receive email (a bounce, a complaint or a request). Messages to them are recorded as suppressed.</p>
+<% if (sup.length) { %><div class="table-wrap"><table><tr><th>Address</th><th>Reason</th><th>Since</th><th></th></tr><% sup.forEach(s => { %><tr><td><%= s.email %></td><td class="small"><%= s.reason %></td><td class="small"><%= usDate(s.created_at) %></td><td><form method="post" action="/admin/email/unsuppress"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="email" value="<%= s.email %>"><button class="btn sm secondary">Remove</button></form></td></tr><% }) %></table></div><% } else { %><p class="muted">Empty.</p><% } %>
+<form class="card mt" method="post" action="/admin/email/suppress"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label for="se">Add an address</label><input id="se" type="email" name="email" required></div><button class="btn secondary">Suppress</button></form>
+<%- include('../partials/app-end') %>

@@ -203,6 +203,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   await ap.click('button:has-text("Create my account")');
   ok(await at(ap, /\/portal\/application$/) && await see(ap, 'button:has-text("Start the application")'), 'sign-up creates the account and opens the staged application');
   ok(psql(`SELECT contact_phone FROM platforms WHERE company_name = 'Gulf Safety Academy ${stamp}'`) === '+962 7 0000 0000', 'the contact phone is kept');
+  ok(psql(`SELECT count(*) FROM email_outbox WHERE to_email = 'applicant.${stamp}@example.com' AND template = 'account_created'`) === '1', 'sign-up queues one welcome email to the applicant');
   await ap.goto(BASE + '/portal');
   ok(await see(ap, 'text=Authorization status'), 'the dashboard shows the pending banner');
   await ap.goto(BASE + '/portal/issue/review');
@@ -878,7 +879,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(await fails(A.staffTransition(app.id, decider, 'awaiting_decision', 'x'), 403) && await fails(S.recordAssessment(app.id, officer, { findings: findings(ev.id) }), 403), 'a position holder cannot do another position\'s work');
     const vac = psql("SELECT id FROM users WHERE staff_position = 'application_assessor' AND vacant LIMIT 1");
     ok(!!vac && await fails(S.recordAssessment(app.id, { id: vac, email: 'v', role: 'super_admin' }, { findings: findings(ev.id) }), 403), 'a vacant position account cannot act');
-    ok(psql("SELECT count(*) FROM users WHERE vacant AND password_hash LIKE '!vacant-%' AND email LIKE '%@positions.liv.invalid'") === '3', 'each position starts with a vacant account that cannot sign in');
+    ok(psql("SELECT count(*) FROM users WHERE vacant AND password_hash LIKE '!vacant-%' AND email LIKE '%@positions.liv.invalid'") === '4', 'each position starts with a vacant account that cannot sign in');
     const appointee = await P.appoint(vac, owner, { full_name: `Person ${stamp}`, email: `person.${stamp}@example.com` });
     ok(appointee.temp.length >= 12 && psql(`SELECT vacant::text || must_change_password::text FROM users WHERE id = '${vac}'`) === 'falsetrue', 'appointing a person fills the position with a temporary password they must change');
     ok(await fails(P.appoint(psql("SELECT id FROM users WHERE staff_position = 'activation_officer' AND vacant LIMIT 1"), owner, { full_name: ` person ${stamp}`, email: `p2.${stamp}@example.com` }), 409), 'one person cannot hold two separated positions');
@@ -969,7 +970,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(await see(adm, 'text=Assessment of version 1') && await see(adm, 'text=Close the C9 gap') && await see(adm, 'text=Activated by'), 'the review screen shows assessments, decision, conditions and the activation record');
     ok(!(await see(adm, 'button:has-text("Record decision")')) && !(await see(adm, 'button:has-text("Activate provider")')), 'the owner administrator sees no assess, decide or activate forms');
     await adm.goto(`${BASE}/admin/staff`);
-    ok(await see(adm, 'text=Application Assessor') && await see(adm, 'text=Authorization Decision-Maker') && await see(adm, 'text=Activation Officer'), 'the staff positions page lists the three positions');
+    ok(await see(adm, 'text=Application Assessor') && await see(adm, 'text=Authorization Decision-Maker') && await see(adm, 'text=Activation Officer') && await see(adm, 'text=Partner Relations Coordinator'), 'the staff positions page lists the four positions');
     ok((await adm.request.get(`${BASE}/admin/applications/evidence/${ev.id}`)).status() === 200, 'staff download the private evidence');
     ok((await anon.request.get(`${BASE}/admin/applications/${app.id}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/staff`, { maxRedirects: 0 })).status() !== 200, 'the review and staff screens are closed to visitors');
   }
@@ -1019,6 +1020,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await page.click('button:has-text("Submit and pay")');
     ok(await at(page, /\/portal\/billing\/invoices\/[0-9a-f-]{36}$/), 'submitting takes the provider to the application fee invoice');
     const invId = psql(`SELECT fee_invoice_id FROM partner_applications WHERE id = '${appId}'`);
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE template = 'application_submitted' AND platform_id = (SELECT platform_id FROM partner_applications WHERE id = '${appId}')`) >= '1', 'submitting queues a confirmation email');
     ok(psql(`SELECT state || ':' || current_version FROM partner_applications WHERE id = '${appId}'`) === 'completeness_check:1' && psql(`SELECT status || ':' || total_cents FROM invoices WHERE id = '${invId}'`) === 'open:50000', 'a locked version is submitted and the application fee is invoiced at the Bronze (Starter) price');
     await stage(appId, 'org', { ...org, legal_name: 'Changed LLC' });
     ok(psql(`SELECT draft->>'legal_name' FROM partner_applications WHERE id = '${appId}'`) === org.legal_name, 'the draft cannot be changed while LIV holds the application');
@@ -1027,7 +1029,9 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await store.recordPayment(invId, { amount_cents: 50000, method: 'bank_transfer', reference: 'e2e' });
     await A.staffTransition(appId, reviewer, 'technical_review', 'Complete');
     ok(psql(`SELECT state FROM partner_applications WHERE id = '${appId}'`) === 'technical_review', 'once the fee is paid the review starts; payment decided nothing else');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE template = 'application_fee_received' AND platform_id = (SELECT platform_id FROM partner_applications WHERE id = '${appId}')`) >= '1', 'a paid application fee queues a receipt email');
     await A.staffTransition(appId, reviewer, 'corrective_action', 'Please add the trading license of the second trainer');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE template = 'application_request' AND text_body LIKE '%trading license%'`) >= '1', 'a request for corrections is emailed to the applicant with its reason');
     await page.goto(appUrl);
     ok(await see(page, 'text=Message from LIV') && await see(page, 'text=Please add the trading license') && await page.locator('#legal_name').isEnabled(), 'a request from LIV is shown and the stages open for correction');
     ok(!(await page.content()).includes('Reviewer F') && !(await page.content()).includes('revf.'), 'the reviewer\'s identity and notes are not shown to the provider');
@@ -1043,6 +1047,39 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     psql(`UPDATE partner_applications SET updated_at = now() - interval '200 days' WHERE id = '${other.id}'`);
     ok(await A.closeStaleDrafts(180) >= 1 && psql(`SELECT state FROM partner_applications WHERE id = '${other.id}'`) === 'closed', 'a draft with no activity for 180 days is closed');
     ok(psql(`SELECT state FROM partner_applications WHERE id = '${appId}'`) === 'corrective_action', 'a submitted application is never closed by the sweep');
+  }
+
+  console.log('Email foundation (task 2.1)');
+  {
+    const E = require('../src/lib/email');
+    const sentTo = [];
+    const okDriver = { send: async (m) => { sentTo.push(m.to_email); return `msg-${m.id}`; } };
+    const badDriver = { send: async () => { throw new Error('connection refused'); } };
+    const to = `mail.${stamp}@example.com`;
+    const data = { name: 'Test Person', company: 'Mail Test LLC' };
+    const first = await E.queue({ to, name: 'Test Person', template: 'account_created', data, dedupeKey: `e2e:${stamp}` });
+    ok(first && first.status === 'queued' && await E.queue({ to, template: 'account_created', data, dedupeKey: `e2e:${stamp}` }) === null && psql(`SELECT count(*) FROM email_outbox WHERE to_email = '${to}'`) === '1', 'an event that fires twice queues one message');
+    ok(await E.queue({ to: 'not-an-address', template: 'account_created', data }) === null && await E.queue({ to, template: 'nope', data }).then(() => false, () => true), 'an invalid address is dropped and an unknown template is refused');
+    const out = await E.processQueue({ limit: 500, driver: okDriver });
+    ok(out.sent >= 1 && sentTo.includes(to) && psql(`SELECT status || ':' || attempts FROM email_outbox WHERE id = '${first.id}'`) === 'sent:1', 'the worker sends queued messages and records them as sent');
+    ok(psql(`SELECT (text_body <> '')::text || (html_body LIKE '%<html>%')::text FROM email_outbox WHERE id = '${first.id}'`) === 'truetrue', 'every message has a plain text and an HTML part');
+    const bad = await E.queue({ to: `fail.${stamp}@example.com`, template: 'application_fee_received', data });
+    for (let i = 1; i <= E.MAX_ATTEMPTS; i++) {
+      await E.processQueue({ limit: 500, driver: badDriver });
+      const st = psql(`SELECT status || ':' || attempts FROM email_outbox WHERE id = '${bad.id}'`);
+      if (i < E.MAX_ATTEMPTS) { ok(st === `queued:${i}` && psql(`SELECT (next_attempt_at > now())::text FROM email_outbox WHERE id = '${bad.id}'`) === 'true', `failure ${i}: kept for a later retry`); psql(`UPDATE email_outbox SET next_attempt_at = now() WHERE id = '${bad.id}'`); }
+      else ok(st === `failed:${E.MAX_ATTEMPTS}` && psql(`SELECT last_error FROM email_outbox WHERE id = '${bad.id}'`) === 'connection refused', 'after 5 failures the message is marked failed with its error');
+    }
+    ok(await E.retry(bad.id) === 1 && psql(`SELECT status || ':' || attempts FROM email_outbox WHERE id = '${bad.id}'`) === 'queued:0', 'an administrator can queue a failed message again');
+    await E.suppress(`fail.${stamp}@example.com`, 'bounce');
+    sentTo.length = 0;
+    await E.processQueue({ limit: 500, driver: okDriver });
+    ok(!sentTo.includes(`fail.${stamp}@example.com`) && psql(`SELECT status FROM email_outbox WHERE id = '${bad.id}'`) === 'suppressed', 'a message to a suppressed address is never sent');
+    const sup = await E.queue({ to: `fail.${stamp}@example.com`, template: 'account_created', data });
+    ok(sup.status === 'suppressed', 'a new message to a suppressed address is recorded as suppressed');
+    ok(await E.processQueue({ driver: null }).then((o) => o.sent === 0), 'with the driver off messages stay queued');
+    await adm.goto(`${BASE}/admin/email`);
+    ok(await see(adm, 'text=Suppression list') && await see(adm, `td:has-text("${to}")`), 'the admin email page shows the queue and the suppression list');
   }
 
   console.log('Knowledge distribution');

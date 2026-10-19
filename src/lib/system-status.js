@@ -66,6 +66,7 @@ async function collect() {
     { title: 'Payments and public pages', rows: [
       row('Stripe card payments', stripeMode(cfg.stripeSecretKey), 'info'),
       row('Stripe webhook secret', cfg.stripeWebhookSecret ? 'set' : 'not set', cfg.stripeSecretKey && !cfg.stripeWebhookSecret ? 'warn' : 'info', 'Needed to mark invoices paid automatically.'),
+      row('Email (EMAIL_DRIVER)', cfg.emailDriver + (cfg.emailDriver === 'smtp' ? (cfg.smtpUrl ? ', SMTP_URL set' : ', SMTP_URL missing') : ''), cfg.emailDriver === 'smtp' && cfg.smtpUrl ? 'ok' : deployed ? 'warn' : 'info', 'Applicants get no email until the driver is smtp with SMTP_URL set, and the sending domain has SPF, DKIM and DMARC records.'),
       row('Public fee page (PUBLIC_FEES)', cfg.publicFees ? 'on' : 'off'),
       row('Public partner application (PUBLIC_APPLY)', cfg.publicApply ? 'on' : 'off'),
     ] },

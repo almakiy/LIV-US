@@ -23,6 +23,8 @@ const FIELDS = [
   { key: 'completion_rules', label: 'How you decide a learner has completed a course', type: 'textarea', max: 2000, required: true, criterion: 'C6' },
   { key: 'learner_protection', label: 'Learner protection: enrollment terms, fees and refunds, complaints', type: 'textarea', max: 2000, criterion: 'C7' },
   { key: 'records', label: 'Records: how attendance and completion are kept, retention and access', type: 'textarea', max: 2000, criterion: 'C8' },
+  { key: 'policies_list', label: 'Your policies: list the ones you have (health and safety, equal opportunities, data protection, disability)', type: 'textarea', max: 2000, criterion: 'C7' },
+  { key: 'marketing_channels', label: 'Marketing channels: website, social media handles and any third-party channels', type: 'textarea', max: 2000, criterion: 'C9', help: 'Upload samples of your marketing materials as C9 documents.' },
   { key: 'interests', label: 'Declared interests (ownership, employment, referral or other links with LIV; write "None" if there are none)', type: 'textarea', max: 1000, required: true, criterion: 'C9' },
 ];
 const REQUIRED_EVIDENCE = ['C1', 'C3'];
@@ -31,7 +33,7 @@ const REQUIRED_EVIDENCE = ['C1', 'C3'];
 const STAGES = [
   { key: 'org', title: 'Organization', minutes: 5, hint: 'Who you are and who speaks for the organization.', fields: ['legal_name', 'trading_name', 'country', 'registration_number', 'website', 'representative_name', 'representative_title', 'representative_email'] },
   { key: 'training', title: 'Training', minutes: 10, hint: 'What you teach, how, and who teaches it.', fields: ['academic_lead', 'domain_requested', 'delivery_modes', 'delivery_setting', 'trainers', 'completion_rules'] },
-  { key: 'policies', title: 'Policies and declarations', minutes: 5, hint: 'How learners and records are protected, and any interests to declare.', fields: ['learner_protection', 'records', 'interests'] },
+  { key: 'policies', title: 'Policies and declarations', minutes: 5, hint: 'How learners and records are protected, and any interests to declare.', fields: ['learner_protection', 'records', 'policies_list', 'marketing_channels', 'interests'] },
   { key: 'documents', title: 'Documents', minutes: 5, hint: 'Supporting files for each criterion. Legal and trainer documents are needed.', fields: [] },
   { key: 'review', title: 'Review and submit', minutes: 2, hint: 'Check what is missing, pay the application fee and submit.', fields: [] },
 ];

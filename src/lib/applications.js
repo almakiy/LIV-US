@@ -165,8 +165,21 @@ async function staffTransition(appId, user, to, reason) {
       if (blocked) throw new ApplicationError(blocked, 409);
     }
     await event(c, app, to, user, reason);
-    return { id: app.id, state: app.state };
+    return { id: app.id, state: app.state, platformId: app.platform_id, reason: String(reason).trim() };
+  }).then(async (r) => {
+    // A request for information or a correction goes to the applicant by email. The reason is written for the applicant.
+    if (['info_requested', 'corrective_action'].includes(to)) {
+      const { rows: [pl] } = await q('SELECT company_name FROM platforms WHERE id = $1', [r.platformId]);
+      await require('./email').queueToPlatform(r.platformId, 'application_request', { company: pl?.company_name, reason: r.reason }, `request:${r.id}:${Date.now()}`);
+    }
+    return { id: r.id, state: r.state };
   });
+}
+
+/** Called when an invoice becomes paid: if it is an application fee, the applicant is told. */
+async function onInvoicePaid(invoiceId) {
+  const { rows: [a] } = await q('SELECT a.id, a.platform_id, p.company_name FROM partner_applications a JOIN platforms p ON p.id = a.platform_id WHERE a.fee_invoice_id = $1', [invoiceId]);
+  if (a) await require('./email').queueToPlatform(a.platform_id, 'application_fee_received', { company: a.company_name }, `fee:${invoiceId}`);
 }
 
 /** Applicant view: the application, its versions, evidence list (no file bytes) and history. */
@@ -209,5 +222,5 @@ async function closeStaleDrafts(days = 180) {
 
 module.exports = {
   ApplicationError, TRANSITIONS, FINAL, APPLICANT_HOLDS, MAX_EVIDENCE_BYTES, allowedBy, sniff,
-  event, closeStaleDrafts, createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
+  event, closeStaleDrafts, onInvoicePaid, createDraft, saveDraft, addEvidence, removeDraftEvidence, submit, withdraw, staffTransition, getOwn, readEvidence,
 };

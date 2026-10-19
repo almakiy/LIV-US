@@ -705,6 +705,32 @@ DROP TRIGGER IF EXISTS partner_app_events_lock ON partner_application_events;
 CREATE TRIGGER partner_app_events_lock BEFORE UPDATE OR DELETE ON partner_application_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_app_evidence_lock ON partner_application_evidence;
 CREATE TRIGGER partner_app_evidence_lock BEFORE UPDATE OR DELETE ON partner_application_evidence FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Email foundation (task 2.1): every message is queued, sent by a worker with retries, and kept for audit. Messages to a
+-- suppressed address are recorded as suppressed and never sent. A dedupe key makes a retried event send only once.
+CREATE TABLE IF NOT EXISTS email_outbox (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  to_email VARCHAR(255) NOT NULL,
+  to_name VARCHAR(200),
+  template VARCHAR(60) NOT NULL,
+  subject TEXT NOT NULL,
+  text_body TEXT NOT NULL,
+  html_body TEXT NOT NULL,
+  platform_id UUID REFERENCES platforms(id) ON DELETE SET NULL,
+  dedupe_key VARCHAR(200) UNIQUE,
+  status VARCHAR(12) NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','sending','sent','failed','suppressed')),
+  attempts INT NOT NULL DEFAULT 0,
+  next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_error TEXT,
+  provider_message_id TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_email_outbox_queue ON email_outbox(status, next_attempt_at);
+CREATE TABLE IF NOT EXISTS email_suppressions (
+  email VARCHAR(255) PRIMARY KEY,               -- lower case
+  reason VARCHAR(30) NOT NULL DEFAULT 'manual' CHECK (reason IN ('manual','bounce','complaint')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 -- Staged application (Batch F2): contact phone captured at sign-up; the application fee invoice is linked to the application.
 ALTER TABLE platforms ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(40);
 ALTER TABLE partner_applications ADD COLUMN IF NOT EXISTS fee_invoice_id UUID REFERENCES invoices(id);
@@ -784,6 +810,9 @@ INSERT INTO staff_positions (code, title, description, can_assess, can_decide, c
   ('application_assessor', 'Application Assessor', 'Reviews applications against the criteria, records findings, trainer records and condition checks. Cannot decide or activate.', true, false, false),
   ('authorization_decision_maker', 'Authorization Decision-Maker', 'Decides accept, accept with conditions or decline, and may reverse a decision before activation. Cannot assess or activate.', false, true, false),
   ('activation_officer', 'Activation Officer', 'Confirms the activation checklist and the test issuance, then activates the provider. Cannot assess or decide.', false, false, true)
+ON CONFLICT (code) DO NOTHING;
+INSERT INTO staff_positions (code, title, description, can_assess, can_decide, can_activate) VALUES
+  ('partner_relations', 'Partner Relations Coordinator', 'First contact for enquiries and applicants: answers questions, follows each application and keeps applicants informed. Cannot assess, decide or activate.', false, false, false)
 ON CONFLICT (code) DO NOTHING;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS staff_position VARCHAR(40) REFERENCES staff_positions(code);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS vacant BOOLEAN NOT NULL DEFAULT false;
