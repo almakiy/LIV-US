@@ -97,6 +97,32 @@ Rules:
 7. Ideas for later, not decided: learner enquiries forwarded to providers from the register; positioning of "certificates included" against peers that promise unlimited certificates to members (to be checked against LIV's real cost per verified certificate before any change to `FEES-REVIEW.md` §9).
 8. Their footer shows company registration, address, confidentiality and privacy statements; LIV's email footer text comes from counsel.
 
+### 4.2 Title (course) request: proposed fields for F2, compared with a peer (owner shared October 19, 2026)
+
+The owner shared the "Get CPD Ready" guide of the CPD Standards Office, a peer that accredits **each activity** and says a change of title may start a new assessment. It is a course-level questionnaire, while the application in §4.1 is provider-level. LIV's title request sits between them: a short suitability check inside an authorized scope, not an assessment of teaching quality.
+
+| Peer asks | LIV title request |
+|---|---|
+| Title (per activity; a title change may start a new assessment) | **Asked.** Title in English; a changed title is a new request |
+| At least five learning objectives | **Asked** (proposed minimum 3, written as what a learner can do) |
+| Audience by role, industry, seniority; prior skills and knowledge | **Asked** (audience, entry requirements) |
+| Detailed agenda or timings; duration | **Asked** (duration and agenda; they support completion checks and batch registration) |
+| Delivery | **Asked** (mode, language, platform or site; checked against the authorized scope) |
+| Authors, instructors and their qualifications | **Asked**, linked to the trainer records (C3) |
+| Materials list; sample material | **Asked** (list; a sample where the subject or risk calls for it) |
+| Completion rules | **Asked** (attendance and completion; no exam for the Training Completion Credential) |
+| How often materials are reviewed, who approves changes, change records | **Asked** (version control of the title) |
+| Welcome documents and registration information | **Asked** at provider level (learner terms published before enrollment, C7) |
+| Business policies: health and safety, equal opportunities, data protection, disability discrimination | **Moved to the provider application**, stage 4 (list of policies, C7 and C8) |
+| Marketing approach, channels, samples of marketing materials | **Moved to the provider application**, stage 4 (channels, C9), plus marketing samples as C9 documents; each title is also checked for wording that implies a professional status |
+| Value gap, collaboration, consolidation, evaluation of impact, feedback | **Not required.** These judge teaching design; LIV does not accredit teaching quality. They may be offered as optional information, never scored |
+
+Title request, 14 fields proposed: title; subfield within the scope; summary (what it covers and why it matters to the learner); learning objectives (3 or more); audience; entry requirements; duration; agenda; delivery mode, language and platform or site; responsible trainer (chosen from the trainer records); authors; materials list; completion rules; version and review arrangement. Review outcomes as in the memo: authorized, needs changes, needs wider review, needs scope expansion, refused with a reason.
+
+Proposed additions to the application (stage 4): a list of the provider's policies (health and safety, equal opportunities, data protection, disability), marketing channels (website, social handles, third-party channels), and C9 marketing samples.
+
+**Readiness guide.** The peer sends a free "get ready" guide to every enquirer. LIV can publish its own, generated from the real fields and open to everyone equally (Batch G). It must stay a guide to what is asked and how documents should look, never help to obtain the authorization, for the conflict-of-interest reason in `FEES.md` §1.
+
 ## 5. Decision, conditions and impartiality
 - **Separation of roles.**
   - The assessor and the decision-maker are different individual accounts. The server refuses a decision by the user who recorded the assessment.
