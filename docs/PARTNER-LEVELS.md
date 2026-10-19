@@ -5,7 +5,7 @@ Status (October 18, 2026): **proposal.** The owner approved the idea and the nam
 ## 1. What a level is, and is not
 - A level is a **commercial partnership level**: the size of the commitment, the scope and a record with LIV. Every provider meets the same authorization criteria and is under the same surveillance rules, whatever its level.
 - Billing plan and level are the same thing: **Bronze = Starter plan, Silver = Professional, Gold = Enterprise.** Plan codes in the price catalog keep their internal names.
-- **Where the level shows.** The public register lists each authorized provider by name with its level and authorized scope (owner decision, October 18). The badge appears on the provider's own marketing and profile page. Whether a level seal also appears on the learner's certificate is decision **P-20**; until it is decided, certificates carry no level.
+- **Where the level shows (owner decision, October 18):** the level seal has no place on the learner's certificate. It appears (1) on the provider's page on the LIV site and in the public register, with its name, country and authorized scope; (2) as a small badge beside the provider's name on the credential verification page; and (3) wherever the provider chooses to share it, under the logo licence (P-16).
 - Licence of the badge: use only as supplied; withdrawn the day authorization is suspended or the level is lost.
 
 ## 2. Entry: everyone starts at Bronze
@@ -80,7 +80,7 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 | Extra obligations to qualify and to keep the level | None beyond the common rules | Prepaid Silver plan; clean surveillance record; two clean sample reviews | Prepaid Gold plan; named quality officer; annual data return; evidence of the wider footprint; four clean sample reviews; two clean surveillance reviews in a row |
 | Badge | Bronze | Silver | Gold |
 
-**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the facts on the verification page and the claims a certificate makes; the ban on assessing or certifying one's own learners for a Professional Certification.
+**Identical at every level:** the authorization criteria C1 to C9; the surveillance rules (intensity follows risk, not level); trainer records and two-factor sign-in; the learner's certificate and the claims it makes; the ban on assessing or certifying one's own learners for a Professional Certification.
 
 ## 10. Volume is never a limit, and a spike changes no level
 - No level caps the certificates a provider may issue. A Bronze provider that issues 250 certificates in one month keeps issuing; the 100 included certificates are used first, the rest are billed monthly in arrears at the Bronze per-certificate rates.
@@ -99,6 +99,12 @@ Risk (volume jumps, anomalies, complaints, material changes) sets the intensity 
 Open decisions:
 | # | Decision |
 |---|---|
-| P-20 | Whether the learner's certificate shows a level seal (or only a field emblem and the LIV seal). A level seal on certificates makes the provider's commercial level visible to every employer who reads them; the choice shapes how certificates are read, so it is decided before any seal is designed |
+| P-20 | **Decided (owner, October 18):** no level seal on the learner's certificate; the level shows on the provider's page and register, as a small badge beside the provider's name on the verification page, and wherever the provider shares it |
 | P-21 | "Attendance" certificates: LIV issues only the Training Completion Credential. An attendance-only document would be a different record with a different claim, its own label and its own verification text; it is decided on its own, not as a template variant of completion |
 | P-22 | Which template variants and how much custom design each level includes |
+
+### Verification page badge: how it works (to build in Batch G)
+- It shows the provider's **current** level beside its name, from a stored level field set only by a promotion or demotion decision, never from the billing plan alone.
+- It is removed while the provider's authorization is suspended or withdrawn, and not shown for a provider that has no level.
+- Historical certificates are unchanged: the PDF carries no level, and the badge comes from the live page, so it follows the provider's level today.
+- The provider's status at issuance and today (Batch C) stays as it is; the level is an added small element.
