@@ -1082,6 +1082,81 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(await see(adm, 'text=Suppression list') && await see(adm, `td:has-text("${to}")`), 'the admin email page shows the queue and the suppression list');
   }
 
+  console.log('Title requests (F2)');
+  {
+    const T = require('../src/lib/titles');
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const mkStaff = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Title Staff ${n}', 'tt${n}.${stamp}@example.com', 'x', '${position}') RETURNING id`).split('\n')[0], email: `tt${n}.${stamp}@example.com`, role: 'super_admin' });
+    const reviewer = mkStaff(1, 'application_assessor'); const decider = mkStaff(2, 'authorization_decision_maker'); const decider2 = mkStaff(3, 'authorization_decision_maker');
+    const form = { subfield: 'General workplace safety', summary: 'Covers hazards and safe working practice.', objectives: 'Identify common hazards\nReport an incident\nUse protective equipment',
+      audience: 'Site supervisors', entry_requirements: 'None', duration: '8 hours over 2 days', agenda: 'Day 1 hazards; Day 2 reporting', delivery_modes: 'live_online',
+      delivery_language: 'English', delivery_setting: 'Online platform', responsible_trainer: 'Sami Nasser', authors: 'Sami Nasser, 8 years in safety training', materials: 'Slides and a handout',
+      completion_rules: 'Attend both days', review_arrangement: 'Reviewed yearly; changes are logged' };
+    const title = `Workplace Safety Awareness ${stamp}`;
+    await page.goto(`${BASE}/portal/titles`);
+    ok(await see(page, 'button:has-text("Start a request")'), 'an eligible provider can start a title request');
+    const csrf = await page.inputValue('input[name=_csrf]');
+    await page.fill('#nt', 'Certified Safety Professional');
+    await page.click('button:has-text("Start a request")');
+    ok(await see(page, 'text=implies an approval or professional status') && psql(`SELECT count(*) FROM partner_title_requests WHERE title = 'Certified Safety Professional'`) === '0', 'a title that implies a professional status is refused at once');
+    await page.fill('#nt', title);
+    await page.click('button:has-text("Start a request")');
+    ok(await at(page, /\/portal\/titles\/[0-9a-f-]{36}$/), 'a valid title opens the request form');
+    const url = page.url(); const id = url.split('/').pop();
+    const save = (path, f) => page.request.post(`${url}/${path}`, { form: { _csrf: csrf, ...f }, maxRedirects: 0 });
+    await save('save', { ...form, summary: 'ملخص الدورة' });
+    ok(psql(`SELECT form->>'summary' FROM partner_title_requests WHERE id = '${id}'`) === '', 'Arabic text is refused and not saved');
+    await save('submit', { ...form, objectives: 'One\nTwo' });
+    ok(psql(`SELECT revision FROM partner_title_requests WHERE id = '${id}'`) === '0', 'fewer than three objectives cannot be submitted');
+    await save('submit', form);
+    ok(psql(`SELECT status || ':' || revision FROM partner_title_requests WHERE id = '${id}'`) === 'submitted:1' && psql(`SELECT count(*) FROM partner_title_revisions WHERE request_id = '${id}'`) === '1', 'a complete request is submitted as a locked revision');
+    ok(psqlRefused(`UPDATE partner_title_revisions SET revision = 9 WHERE request_id = '${id}'`), 'submitted revisions are locked');
+    await save('save', { ...form, summary: 'Changed while with LIV' });
+    ok(psql(`SELECT form->>'summary' FROM partner_title_requests WHERE id = '${id}'`) === form.summary, 'the request cannot be edited while LIV holds it');
+    ok(await fails(T.review(id, decider, { recommendation: 'authorize', note: 'x' }), 403) && await fails(T.review(id, reviewer, { recommendation: 'authorize', note: ' ' }), 422), 'only the reviewer position reviews, and a finding is required');
+    await T.review(id, reviewer, { recommendation: 'changes', note: 'The agenda must show the breaks and the time of each session.' });
+    await page.goto(url);
+    ok(await see(page, 'text=Message from LIV') && await see(page, 'text=must show the breaks') && await page.locator('#agenda').isEnabled(), 'a returned request shows LIV\'s message and opens for changes');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE template = 'title_outcome' AND text_body LIKE '%must show the breaks%'`) >= '1', 'the provider is emailed the outcome and its reason');
+    await save('submit', { ...form, agenda: 'Day 1 09:00-12:00 hazards, break 10:30; Day 2 09:00-12:00 reporting' });
+    ok(psql(`SELECT status || ':' || revision FROM partner_title_requests WHERE id = '${id}'`) === 'submitted:2' && psql(`SELECT count(*) FROM partner_title_revisions WHERE request_id = '${id}'`) === '2', 'a corrected request is a new revision; the earlier one is kept');
+    await T.review(id, reviewer, { recommendation: 'authorize', note: 'Suitable for the authorized field; trainer on record.' });
+    ok(psql(`SELECT status FROM partner_title_requests WHERE id = '${id}'`) === 'awaiting_decision', 'recommending to authorize sends the request to the decision-maker');
+    await page.goto(url);
+    ok(!(await page.content()).includes('Recommendation:') && !(await page.content()).includes('Suitable for the authorized field'), 'the reviewer\'s internal recommendation is not shown to the provider');
+    ok(await fails(T.decide(id, reviewer, { outcome: 'authorized', reason: 'Mine' }), 403), 'the reviewer cannot decide');
+    psql(`UPDATE users SET staff_position = 'authorization_decision_maker' WHERE id = '${reviewer.id}'`);
+    ok(await fails(T.decide(id, reviewer, { outcome: 'authorized', reason: 'Mine' }), 403) && psql(`SELECT status FROM partner_title_requests WHERE id = '${id}'`) === 'awaiting_decision', 'even with the decision position, the person who reviewed cannot decide');
+    psql(`UPDATE users SET staff_position = 'application_assessor' WHERE id = '${reviewer.id}'`);
+    ok(psql(`SELECT count(*) FROM partner_scopes WHERE title = '${title}'`) === '0', 'nothing is authorized before the decision');
+    const d = await T.decide(id, decider, { outcome: 'authorized', reason: 'Meets the suitability check.' });
+    ok(d.scopeId && psql(`SELECT status FROM partner_scopes WHERE id = '${d.scopeId}'`) === 'active' && psql(`SELECT scope_id FROM partner_title_requests WHERE id = '${id}'`) === d.scopeId, 'authorizing creates an active authorized scope for the title');
+    ok(await fails(T.decide(id, decider2, { outcome: 'refused', reason: 'Again' }), 409), 'a decided request cannot be decided again');
+    ok(await fails(T.create(psql(`SELECT platform_id FROM partner_title_requests WHERE id = '${id}'`), { id: reviewer.id }, title.toLowerCase()), 409), 'the same title cannot be requested twice');
+    // A recommendation to refuse cannot become an authorization.
+    const second = await T.create(psql(`SELECT platform_id FROM partner_title_requests WHERE id = '${id}'`), { id: reviewer.id, email: reviewer.email }, `Advanced Hazard Control ${stamp}`);
+    await T.saveDraft(second.id, second.platform_id, reviewer, { ...form }); await T.submit(second.id, second.platform_id, reviewer);
+    await T.review(second.id, reviewer, { recommendation: 'refuse', note: 'The content is outside the provider\'s capability.' });
+    ok(await fails(T.decide(second.id, decider, { outcome: 'authorized', reason: 'Override' }), 409), 'a title the reviewer recommended to refuse cannot be authorized');
+    await T.decide(second.id, decider, { outcome: 'refused', reason: 'Outside capability.' });
+    ok(psql(`SELECT status FROM partner_title_requests WHERE id = '${second.id}'`) === 'refused' && psql(`SELECT count(*) FROM partner_scopes WHERE title LIKE 'Advanced Hazard Control%'`) === '0', 'a refusal grants nothing');
+    const third = await T.create(second.platform_id, { id: reviewer.id, email: reviewer.email }, `Offshore Rescue ${stamp}`);
+    await T.saveDraft(third.id, third.platform_id, reviewer, { ...form }); await T.submit(third.id, third.platform_id, reviewer);
+    await T.review(third.id, reviewer, { recommendation: 'scope_expansion', note: 'Hands-on rescue needs equipment outside the authorized delivery capability.' });
+    ok(psql(`SELECT status FROM partner_title_requests WHERE id = '${third.id}'`) === 'needs_scope_expansion' && await fails(T.saveDraft(third.id, third.platform_id, reviewer, { summary: 'x' }), 409), 'a title outside the capability is sent back for a scope expansion and is not editable');
+    const pendingPid = psql(`INSERT INTO platforms (company_name, contact_email) VALUES ('Not Yet ${stamp}', 'ny.${stamp}@example.com') RETURNING id`).split('\n')[0];
+    ok(await fails(T.create(pendingPid, { id: reviewer.id }, 'Any Title'), 409), 'a provider whose application is not accepted cannot request titles');
+    const [oPid2, oUid2] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email, accreditation_status) VALUES ('Other Titles ${stamp}', 'ot.${stamp}@example.com', 'active') RETURNING id)
+      INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Other', 'ot.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
+    const foreign = await T.create(oPid2, { id: oUid2, email: 'ot' }, `Foreign Title ${stamp}`);
+    const st = async (method, u, opts) => (await page.request[method](u, { maxRedirects: 0, ...opts })).status();
+    ok(await st('get', `${BASE}/portal/titles/${foreign.id}`) === 404 && await st('post', `${BASE}/portal/titles/${foreign.id}/save`, { form: { _csrf: csrf, ...form } }) === 404 && await st('post', `${BASE}/portal/titles/${foreign.id}/submit`, { form: { _csrf: csrf, ...form } }) === 404, 'one provider cannot open, save or submit another provider\'s title request');
+    ok((await anon.request.get(url, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/titles/${id}`, { maxRedirects: 0 })).status() !== 200, 'title requests are closed to visitors');
+    await adm.goto(`${BASE}/admin/titles/${id}`);
+    ok(await see(adm, `h1:has-text("${title}")`) && await see(adm, 'text=authorized'), 'the admin screen shows the request, its revisions and the decision');
+    ok(!(await see(adm, 'button:has-text("Record decision")')), 'the owner administrator sees no review or decision forms');
+  }
+
   console.log('Knowledge distribution');
   {
     const slugA = psql("SELECT slug FROM articles WHERE status = 'published' LIMIT 1");

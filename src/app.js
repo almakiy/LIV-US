@@ -113,11 +113,13 @@ app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
 app.use('/portal', require('./routes/portal'));
 app.use('/portal/application', require('./routes/portal-application'));
+app.use('/portal/titles', require('./routes/portal-titles'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));
 app.use('/admin', require('./routes/admin-applications'));
 app.use('/admin', require('./routes/admin-email'));
+app.use('/admin', require('./routes/admin-titles'));
 app.use('/admin', require('./routes/admin-schemes')); // after admin: it ends 'act as partner' mode before the super-admin check
 app.use('/admin', require('./routes/admin-system'));
 app.use('/api/v1/content', require('./routes/content-api'));

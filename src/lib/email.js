@@ -35,6 +35,10 @@ const TEMPLATES = {
   application_request: (d) => ({ subject: 'LIV needs more from you on your application', ...layout('A request from LIV', [
     `LIV reviewed the application for ${clip(d.company, 200)} and needs the following:`, clip(d.reason, 1500), 'Update the stages or documents and submit again.'],
   { label: 'Open your application', url: `${cfg.baseUrl}/portal/application` }) }),
+  title_outcome: (d) => ({ subject: `Your title request: ${clip(d.title, 120)}`, ...layout('An update on your title request', [
+    `LIV reviewed the title "${clip(d.title, 200)}". Outcome: ${clip(d.outcome, 60)}.`, clip(d.reason, 1500),
+    d.outcome === 'authorized' ? 'The title is now part of your authorized scope.' : 'Open the request to see what happens next.'],
+  { label: 'Open your title requests', url: `${cfg.baseUrl}/portal/titles` }) }),
   application_fee_received: (d) => ({ subject: 'Application fee received', ...layout('Thank you, the fee is received', [
     `LIV received the application fee for ${clip(d.company, 200)}. The completeness check is done within 5 working days.`, 'The fee pays for the review work. It does not affect the decision.'],
   { label: 'View your application', url: `${cfg.baseUrl}/portal/application` }) }),

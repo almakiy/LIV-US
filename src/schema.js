@@ -705,6 +705,48 @@ DROP TRIGGER IF EXISTS partner_app_events_lock ON partner_application_events;
 CREATE TRIGGER partner_app_events_lock BEFORE UPDATE OR DELETE ON partner_application_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_app_evidence_lock ON partner_application_evidence;
 CREATE TRIGGER partner_app_evidence_lock BEFORE UPDATE OR DELETE ON partner_application_evidence FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Title (course) requests (F2; docs/PARTNER-AUTHORIZATION.md §4.2). A provider asks to deliver a title for LIV credentials. Granting outcomes
+-- (authorize, refuse) are decided by the Authorization Decision-Maker, a different person from the reviewer; the other outcomes
+-- (changes, wider review, scope expansion) are returned by the reviewer. An authorized title becomes an authorized scope row.
+CREATE TABLE IF NOT EXISTS partner_title_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  status VARCHAR(24) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','submitted','awaiting_decision','needs_changes','needs_wider_review','needs_scope_expansion','authorized','refused','withdrawn')),
+  form JSONB NOT NULL DEFAULT '{}'::jsonb,
+  revision INT NOT NULL DEFAULT 0,
+  reviewer_id UUID REFERENCES users(id),
+  reviewer_label VARCHAR(200),
+  recommendation VARCHAR(20) CHECK (recommendation IN ('authorize','changes','wider_review','scope_expansion','refuse')),
+  review_note TEXT,
+  decided_by UUID REFERENCES users(id),
+  decided_by_label VARCHAR(200),
+  decision_reason TEXT,
+  decided_at TIMESTAMPTZ,
+  scope_id UUID REFERENCES partner_scopes(id),
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_title_open ON partner_title_requests(platform_id, lower(title)) WHERE status NOT IN ('refused','withdrawn');
+CREATE TABLE IF NOT EXISTS partner_title_revisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID NOT NULL REFERENCES partner_title_requests(id) ON DELETE CASCADE,
+  revision INT NOT NULL,
+  form JSONB NOT NULL,
+  submitted_by UUID REFERENCES users(id),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  UNIQUE (request_id, revision)
+);
+CREATE TABLE IF NOT EXISTS partner_title_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID NOT NULL REFERENCES partner_title_requests(id) ON DELETE CASCADE,
+  to_status VARCHAR(24) NOT NULL,
+  visible BOOLEAN NOT NULL DEFAULT true,       -- false for the reviewer's internal recommendation
+  actor_label VARCHAR(200),
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
 -- Email foundation (task 2.1): every message is queued, sent by a worker with retries, and kept for audit. Messages to a
 -- suppressed address are recorded as suppressed and never sent. A dedupe key makes a retried event send only once.
 CREATE TABLE IF NOT EXISTS email_outbox (
@@ -861,6 +903,10 @@ DROP TRIGGER IF EXISTS partner_confirmations_lock ON partner_activation_confirma
 CREATE TRIGGER partner_confirmations_lock BEFORE UPDATE OR DELETE ON partner_activation_confirmations FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_activations_lock ON partner_activations;
 CREATE TRIGGER partner_activations_lock BEFORE UPDATE OR DELETE ON partner_activations FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_title_revisions_lock ON partner_title_revisions;
+CREATE TRIGGER partner_title_revisions_lock BEFORE UPDATE OR DELETE ON partner_title_revisions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+DROP TRIGGER IF EXISTS partner_title_events_lock ON partner_title_events;
+CREATE TRIGGER partner_title_events_lock BEFORE UPDATE OR DELETE ON partner_title_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},

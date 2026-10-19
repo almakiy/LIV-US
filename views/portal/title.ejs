@@ -1,0 +1,22 @@
+<%- include('../partials/app-start') %>
+<% const val = (k) => (form && form[k] != null ? form[k] : ''); const err = (k) => errors.find((e) => e.field === k); %>
+<div class="page-head"><h1><%= t.title %></h1><span class="badge b-pending"><%= LABEL[t.status] %></span></div>
+<p><%= NEXT[t.status] %> <span class="small muted"><%= t.revision ? 'Revision ' + t.revision : '' %></span></p>
+<p class="small"><a href="/portal/titles">All titles</a></p>
+<% if (errors.length) { %><div class="alert error" role="alert" tabindex="-1" id="error-summary"><strong>Please correct the following:</strong><ul><% errors.forEach(e => { %><li><a href="#<%= e.field %>"><%= e.message %></a></li><% }) %></ul></div><% } %>
+<% const msgs = t.events.filter(e => ['needs_changes','needs_wider_review','needs_scope_expansion','refused','authorized'].includes(e.to_status) && e.note); if (msgs.length) { const m = msgs[msgs.length - 1]; %><div class="card mt"><h3>Message from LIV</h3><p><%= m.note %></p><p class="small muted"><%= usDateTime(m.created_at) %></p></div><% } %>
+<form class="card mt" method="post" action="/portal/titles/<%= t.id %>/save" novalidate><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% FIELDS.forEach(f => { const e = err(f.key); const dis = editable && f.key !== 'title' ? '' : 'disabled'; %>
+  <div class="field"><label for="<%= f.key %>"><%= f.label %><%= f.required ? ' *' : '' %></label>
+    <% if (f.type === 'textarea') { %><textarea id="<%= f.key %>" name="<%= f.key %>" rows="3" maxlength="<%= f.max %>" <%= dis %> <%= e ? 'aria-invalid=true aria-describedby=' + f.key + '-err' : '' %>><%= val(f.key) %></textarea>
+    <% } else if (f.type === 'checkboxes') { %><fieldset id="<%= f.key %>" <%= dis %>><legend class="small muted">Choose all that apply</legend><% Object.entries(f.options).forEach(([k, l]) => { %><label style="display:block"><input type="checkbox" name="<%= f.key %>" value="<%= k %>" <%= (val(f.key) || []).includes(k) ? 'checked' : '' %> <%= dis %>> <%= l %></label><% }) %></fieldset>
+    <% } else if (f.key === 'responsible_trainer' && t.trainers.length) { %><input id="<%= f.key %>" name="<%= f.key %>" list="trainer-list" value="<%= val(f.key) %>" maxlength="<%= f.max %>" <%= dis %>><datalist id="trainer-list"><% t.trainers.forEach(n => { %><option value="<%= n %>"><% }) %></datalist>
+    <% } else { %><input id="<%= f.key %>" type="text" name="<%= f.key %>" value="<%= val(f.key) %>" maxlength="<%= f.max %>" <%= dis %> <%= e ? 'aria-invalid=true aria-describedby=' + f.key + '-err' : '' %>><% } %>
+    <% if (f.help) { %><div class="hint"><%= f.help %></div><% } %><% if (e) { %><div class="hint" id="<%= f.key %>-err" style="color:#a02020"><%= e.message %></div><% } %></div>
+  <% }) %>
+  <% if (editable) { %><div class="row" style="gap:10px"><button class="btn secondary">Save draft</button><button class="btn" formaction="/portal/titles/<%= t.id %>/submit" formnovalidate>Submit<%= t.revision ? ' revision ' + (t.revision + 1) : '' %></button></div><% } %>
+</form>
+<h2 class="mt">History</h2>
+<div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= LABEL[e.to_status] || e.to_status %></td><td class="small"><%= ['needs_changes','needs_wider_review','needs_scope_expansion','refused','authorized'].includes(e.to_status) ? e.note : '' %></td></tr><% }) %></table></div>
+<% if (!['authorized','refused','withdrawn'].includes(t.status)) { %><form class="mt" method="post" action="/portal/titles/<%= t.id %>/withdraw" data-confirm="Withdraw this request?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Withdraw</button></form><% } %>
+<%- include('../partials/app-end') %>
