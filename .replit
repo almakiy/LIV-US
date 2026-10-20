@@ -1,0 +1,7 @@
+run = "npm start"
+entrypoint = "src/server.js"
+modules = ["nodejs-20"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
