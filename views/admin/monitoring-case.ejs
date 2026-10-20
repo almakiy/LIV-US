@@ -1,0 +1,18 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= k.case_no %></h1><span class="badge b-pending"><%= k.status %></span></div>
+<p class="small muted"><a href="/admin/monitoring">All cases</a> · <%= k.company_name %> · indicator: <%= k.text %><% if (k.owner) { %> · waiting for: <%= k.owner.replace(/_/g, ' ') %><% } %></p>
+<div class="card mt"><p>Opened <%= usDate(k.opened_at) %>. Response due <%= usDate(k.response_due) %> (5 working days). Escalation after <%= usDate(k.escalate_due) %> (10 working days).</p>
+  <p class="small muted">Figures recorded when the case opened: <%= JSON.stringify(k.detail) %></p></div>
+<% if (k.response) { %><div class="card mt"><h3>Provider response</h3><p><%= k.response %></p><p class="small muted"><%= usDate(k.responded_at) %></p></div><% } %>
+<h2 class="mt">History</h2><div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>By</th><th>Event</th><th>Note</th></tr>
+<% k.events.forEach(e => { %><tr><td class="small"><%= usDateTime(e.at) %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.event %></td><td class="small"><%= e.note %></td></tr><% }) %></table></div>
+<% if (k.status !== 'closed' && k.status !== 'open') { %>
+  <% const perm = k.status === 'responded' ? can.assess : can.decide; %>
+  <% if (perm) { %><form class="card mt" method="post" action="/admin/monitoring/<%= k.id %>/close"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Close the case</h3>
+    <p class="small muted">Record what was found and what happens next. Nothing here changes a credential or an authorization; a corrective action or a referral is a separate record.</p>
+    <div class="field"><label for="oc">Outcome *</label><select id="oc" name="outcome" required><option value="">Choose</option><% Object.keys(OUTCOMES).forEach(o => { %><option value="<%= o %>"><%= OUTCOMES[o] %></option><% }) %></select></div>
+    <div class="field"><label for="cn">Reasons *</label><textarea id="cn" name="note" rows="3" maxlength="4000" required></textarea></div><button class="btn">Close the case</button></form>
+  <% } else { %><p class="card mt small muted">This case waits for the <%= k.status === 'responded' ? 'Application Assessor' : 'Authorization Decision-Maker' %>. Your account's position cannot close it.</p><% } %>
+<% } else if (k.status === 'open') { %><p class="card mt small muted">Waiting for the provider's response. It can be closed after a response or after escalation.</p>
+<% } else { %><div class="card mt"><strong>Closed: <%= OUTCOMES[k.outcome] %></strong> by <%= k.closed_by_label %> on <%= usDate(k.closed_at) %><p><%= k.closing_note %></p></div><% } %>
+<%- include('../partials/app-end') %>

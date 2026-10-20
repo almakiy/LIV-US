@@ -7,7 +7,7 @@
     <dt>Contact</dt><dd><%= p.contact_email || '—' %></dd><dt>Applied</dt><dd><%= usDateTime(p.created_at) %></dd>
     <dt>Certificates</dt><dd><%= st.total %> (<%= st.revoked %> revoked)</dd>
   </dl></div>
-  <div class="table-wrap"><table><tr><th>User</th><th>Email</th><th>Last login</th><th>2FA</th><th></th></tr>
+  <div class="table-wrap" tabindex="0"><table><tr><th>User</th><th>Email</th><th>Last login</th><th>2FA</th><th></th></tr>
     <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td>
       <td><span class="badge <%= u.totp_enabled ? 'b-active' : 'b-pending' %>"><%= u.totp_enabled ? 'on' : 'off' %></span></td>
       <td class="right small">
@@ -22,7 +22,7 @@
 </dl></div>
 <h2 class="mt" id="scope">Authorized scope</h2>
 <p class="small muted">Courses or curricula this partner is authorized to deliver. A credential is linked to a scope when its course name matches the scope title exactly (case and spacing ignored). Active scopes are listed on the public register and on matching verification records.</p>
-<% if (scopes.length) { %><div class="table-wrap"><table><tr><th>Title</th><th>Family</th><th>Status</th><th>From</th><th>Until</th><th>Basis</th><th></th></tr>
+<% if (scopes.length) { %><div class="table-wrap" tabindex="0"><table><tr><th>Title</th><th>Family</th><th>Status</th><th>From</th><th>Until</th><th>Basis</th><th></th></tr>
 <% scopes.forEach(s => { %><tr><td><%= s.title %></td><td class="small"><%= s.scheme_name || '—' %></td><td><span class="badge b-<%= s.status === 'active' ? 'active' : 'suspended' %>"><%= SCOPE_STATUS[s.status] %></span></td><td class="small"><%= usDate(s.granted_on) %></td><td class="small"><%= s.ends_on ? usDate(s.ends_on) : '—' %></td><td class="small"><%= s.decision_note %></td>
 <td><form method="post" action="/admin/scopes/<%= s.id %>/status" class="row" style="gap:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="status"><% Object.entries(SCOPE_STATUS).forEach(([k, l]) => { %><option value="<%= k %>" <%= s.status === k ? 'selected' : '' %>><%= l %></option><% }) %></select><input name="reason" placeholder="Reason" maxlength="500"><button class="btn sm secondary">Update</button></form></td></tr><% }) %></table></div>
 <% } else { %><p class="muted">No authorized scope recorded yet.</p><% } %>

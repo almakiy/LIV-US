@@ -37,7 +37,8 @@ Fees pay for described services, never for acceptance, a level, a score or a ren
 
 ## 7. Status of the build (October 20, 2026)
 Built and tested: application (staged, English-only, fee at submission), review and separated decision, activation, positions, title and scope-expansion requests, trainer additions, email, levels (Bronze, Silver, Gold) with reviews, exceptions, public register with search and an application guide.
-Proposed and not built: the work queue and a small management report; the seal and template families (parked); partner roles inside a provider account (Batch I); renewals, surveillance records and material-change notices (Batch H remainder); sanctions screening record; retention schedule; accessibility testing.
+Built (Batch H, October 20): monitoring indicators and audit cases (thresholds as approved; the response and escalation periods are 5 and 10 working days), renewals, material-change notices, sanctions screening records, standards versions, the records retention schedule, reminders for drafts idle for 30 and 90 days, and automated WCAG 2.2 AA checks (axe-core) in the end-to-end suite. Pending decisions that the build leaves open: P-9 (applications already open keep their version), P-11 (renewal period: dates are set by hand), P-12 (categories and materiality of changes), P-14 (retention periods).
+Proposed and not built: the seal and template families (parked); a full manual accessibility audit (the automated check covers the pages listed in the end-to-end suite only).
 
 ## 8. Decisions waiting for the owner (collected at the end, as asked)
 See the final list in `docs/HANDOFF.md`.

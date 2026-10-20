@@ -1,7 +1,7 @@
 <%- include('../../partials/app-start') %>
 <div class="page-head"><h1>Nonconformities and corrective actions</h1><a class="btn" href="/admin/qms/actions/new">+ New nonconformity</a></div>
 <%- include('_nav') %>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Ref</th><th>Source</th><th>Description</th><th>Owner</th><th>Due</th><th>Status</th></tr>
   <% if (!rows.length) { %><tr><td colspan="6" class="muted center">Nothing recorded.</td></tr><% } %>
   <% rows.forEach(a => { %><tr><td><a href="/admin/qms/actions/<%= a.id %>"><%= a.ref_no %></a></td><td><%= SOURCES[a.source] %></td><td class="small"><%= a.description.slice(0, 90) %><%= a.description.length > 90 ? '…' : '' %></td><td><%= a.owner_name || '—' %></td>

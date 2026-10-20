@@ -2,7 +2,7 @@
 <div class="page-head"><h1>Complaints and appeals</h1><a class="btn" href="/admin/qms/cases/new">+ Log a case</a></div>
 <%- include('_nav') %>
 <p class="small muted">Acknowledge within 5 business days and decide within 30 days. Complaints sent through the public contact form (topic "Complaint" or "Appeal") are opened here automatically.</p>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Case</th><th>Type</th><th>Received</th><th>Summary</th><th>Status</th><th>Deadlines</th></tr>
   <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No cases recorded.</td></tr><% } %>
   <% rows.forEach(c => { %><tr><td><a href="/admin/qms/cases/<%= c.id %>"><%= c.case_no %></a></td><td><%= KINDS[c.kind] %></td><td><%= usDate(c.received_at) %></td>

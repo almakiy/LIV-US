@@ -1,6 +1,6 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1>Contact messages</h1></div>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Received</th><th>From</th><th>Topic</th><th>Message</th><th></th></tr>
   <% if (!rows.length) { %><tr><td colspan="5" class="muted center">No messages.</td></tr><% } %>
   <% rows.forEach(m => { %><tr style="<%= m.handled ? 'opacity:.55' : '' %>"><td style="white-space:nowrap"><%= usDateTime(m.created_at) %></td>

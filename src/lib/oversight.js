@@ -1,6 +1,8 @@
 // The work queue (who has to act, since when) and a small management report. Both read existing records only.
 // Work items never rely on one person's memory: each shows the position that owns it, and whether that position is vacant.
 const { q } = require('../db');
+const I = require('./indicators');
+const PR = require('./partner-records');
 
 const MAIN = 'main_account';
 const POSITION_TITLE = { application_assessor: 'Application Assessor', authorization_decision_maker: 'Authorization Decision-Maker', activation_officer: 'Activation Officer', partner_relations: 'Partner Relations Coordinator', [MAIN]: 'Main account' };
@@ -21,6 +23,9 @@ async function workQueue() {
     (r) => ({ kind: 'Exception', what: r.case_type.replace(/_/g, ' '), who: r.company_name || '', owner: MAIN, url: `/admin/exceptions/${r.id}` }));
   add((await q(`SELECT id, template, to_email, created_at AS since FROM email_outbox WHERE status = 'failed'`)).rows,
     (r) => ({ kind: 'Email failed', what: r.template, who: r.to_email, owner: MAIN, url: '/admin/email' }));
+  // Batch H: monitoring cases, renewals, material-change notices and sanctions matches. Each names its owner position.
+  (await I.openForQueue()).forEach((r) => items.push({ kind: 'Monitoring case', what: `${r.case_no}: ${r.status}`, who: r.company_name, owner: r.owner, age: days(r.since), url: `/admin/monitoring/${r.id}` }));
+  (await PR.openForQueue()).forEach((i) => items.push({ ...i, age: days(i.since) }));
   const { rows: vac } = await q(`SELECT staff_position FROM users WHERE staff_position IS NOT NULL AND vacant`);
   const vacant = new Set(vac.map((v) => v.staff_position));
   const { rows: waitingApplicant } = await q(`SELECT a.id, a.state, a.updated_at AS since, p.company_name FROM partner_applications a JOIN platforms p ON p.id = a.platform_id WHERE a.state IN ('info_requested','corrective_action')`);

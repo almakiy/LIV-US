@@ -5,22 +5,22 @@
 <% if (error) { %><div class="alert error"><%= error %></div><% } %>
 <form class="card" method="post" action="/portal/issue/upload" enctype="multipart/form-data">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
-  <div class="field"><label>Certificate template</label>
-    <select name="template_id" required><% templates.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.design %>)</option><% }) %></select>
+  <div class="field"><label for="f-template_id">Certificate template</label>
+    <select id="f-template_id" name="template_id" required><% templates.forEach(t => { %><option value="<%= t.id %>"><%= t.name %> (<%= t.design %>)</option><% }) %></select>
     <div class="hint"><a href="/portal/templates">Manage templates</a></div></div>
 
   <h3>Trainee list</h3>
-  <div class="field"><label>Option 1 — Upload a file</label><input type="file" name="csv" accept="<%= allowXlsx ? '.csv,.xlsx,text/csv' : '.csv,text/csv' %>">
+  <div class="field"><label for="f-csv">Option 1 — Upload a file</label><input id="f-csv" type="file" name="csv" accept="<%= allowXlsx ? '.csv,.xlsx,text/csv' : '.csv,text/csv' %>">
     <div class="hint"><% if (allowXlsx) { %>Accepted: <strong>CSV</strong> or <strong>Excel (.xlsx)</strong>. For Excel, the first sheet is used and the first row must contain the column headings. <% } else { %>Accepted: <strong>CSV</strong>. In Excel use Save As ▸ CSV UTF-8. <% } %>Max 5,000 rows / 5 MB.</div></div>
   <p class="muted small center" style="margin:6px 0">— or —</p>
-  <div class="field"><label>Option 2 — Link to Google Drive / Google Sheets</label>
-    <input type="url" name="source_url" placeholder="https://docs.google.com/spreadsheets/d/…  or  https://drive.google.com/file/d/…">
+  <div class="field"><label for="f-source_url">Option 2 — Link to Google Drive / Google Sheets</label>
+    <input id="f-source_url" type="url" name="source_url" placeholder="https://docs.google.com/spreadsheets/d/…  or  https://drive.google.com/file/d/…">
     <div class="hint">Set sharing to <strong>“Anyone with the link can view”</strong>. The file is read once to create your batch; nothing is changed in Google.</div></div>
 
   <div class="alert info small"><strong>English only.</strong> Names, course titles and other text must use the English (Latin) alphabet. Rows containing other scripts are flagged and can be skipped.</div>
 
   <details class="mt"><summary class="small"><strong>Columns the file should contain</strong></summary>
-    <div class="table-wrap mt"><table>
+    <div class="table-wrap mt" tabindex="0"><table>
       <tr><th>Column</th><th>Required</th><th>Notes</th></tr>
       <tr><td class="mono">serial_no</td><td>No</td><td>Your own number or reference for the trainee (kept for your records).</td></tr>
       <tr><td class="mono">full_name</td><td>Yes*</td><td>Trainee name. The last word is used as the family name. *Or use <span class="mono">first_name</span> + <span class="mono">last_name</span> instead.</td></tr>

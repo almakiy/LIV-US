@@ -19,6 +19,11 @@ const { pendingAgreement } = require('../lib/agreements');
 const { renderMarkdown } = require('../lib/content');
 const { putFile, getFile } = require('../lib/files');
 const { refusedPassword } = require('../lib/dev-defaults');
+const { recordRefusal, checkBatch } = require('../lib/indicators');
+
+// A refused upload is recorded for monitoring. A failure to record never blocks the provider's own message.
+const refuse = (platformId, source, fileName, reason) => recordRefusal(platformId, { source, fileName, reason }).catch((e) => console.warn(`[indicators] ${e.message}`));
+const checked = (platformId, batchId) => checkBatch(platformId, batchId).catch((e) => console.warn(`[indicators] ${e.message}`));
 
 const r = express.Router();
 r.use(requirePlatformAdmin);
@@ -149,7 +154,7 @@ r.post('/issue/confirm', requireActivePlatform, wrap(async (req, res) => {
   if (!job) return res.redirect('/portal/issue');
   const results = await validateRows(mappedRows(job), pid(req));
   const valid = results.filter((x) => !x.errors.length);
-  if (!valid.length) { flash(req, 'error', 'There are no valid rows to issue.'); return res.redirect('/portal/issue/review'); }
+  if (!valid.length) { await refuse(pid(req), 'csv', job.fileName, 'No valid rows'); flash(req, 'error', 'There are no valid rows to issue.'); return res.redirect('/portal/issue/review'); }
   if (valid.length < results.length && req.body.skip_invalid !== 'on') {
     flash(req, 'error', 'Some rows have errors. Tick "Skip invalid rows" or fix the file and re-upload.');
     return res.redirect('/portal/issue/review');
@@ -157,9 +162,10 @@ r.post('/issue/confirm', requireActivePlatform, wrap(async (req, res) => {
   const [platform, tpl] = await Promise.all([loadPlatform(pid(req)), loadTemplate(pid(req), job.templateId)]);
   let out;
   try { out = await issue({ rows: valid, platform, template: tpl, user: req.user, source: 'csv', fileName: job.fileName, totalRows: results.length }); } catch (e) {
-    if (e.status === 422 || e.status === 409) { flash(req, 'error', e.message); return res.redirect('/portal/issue/review'); }
+    if (e.status === 422 || e.status === 409) { await refuse(pid(req), 'csv', job.fileName, e.message); flash(req, 'error', e.message); return res.redirect('/portal/issue/review'); }
     throw e;
   }
+  await checked(pid(req), out.batch.id);
   fs.rmSync(jobPath(req.session.issueJob), { force: true });
   delete req.session.issueJob;
   flash(req, 'success', `${out.certificates.length} certificate(s) issued${results.length - valid.length ? `, ${results.length - valid.length} row(s) skipped` : ''}.`);

@@ -16,5 +16,5 @@
   <div class="field"><label for="do">Decision</label><select id="do" name="outcome" required><option value="">Choose</option><option value="authorized">Authorize</option><option value="refused">Refuse</option></select></div>
   <div class="field"><label for="dr">Reasons *</label><textarea id="dr" name="reason" rows="3" maxlength="4000" required></textarea></div><button class="btn">Record decision</button></form><% } %><% } %>
 <h2 class="mt">History</h2>
-<div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= label(e.to_status) %><%= e.visible ? '' : ' (internal)' %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.note %></td></tr><% }) %></table></div>
+<div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= label(e.to_status) %><%= e.visible ? '' : ' (internal)' %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.note %></td></tr><% }) %></table></div>
 <%- include('../partials/app-end') %>

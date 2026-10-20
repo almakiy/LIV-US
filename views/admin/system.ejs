@@ -4,7 +4,7 @@
 <% const label = { ok: 'OK', warn: 'Check', bad: 'Action needed', info: 'Info' }; const cls = { ok: 'b-active', warn: 'b-pending', bad: 'b-revoked', info: 'b-neutral' }; %>
 <% sections.forEach(s => { %>
 <h3 class="mt"><%= s.title %></h3>
-<div class="table-wrap"><table><tr><th style="width:30%">Item</th><th style="width:24%">Value</th><th style="width:12%">Status</th><th>Note</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th style="width:30%">Item</th><th style="width:24%">Value</th><th style="width:12%">Status</th><th>Note</th></tr>
 <% s.rows.forEach(r => { %><tr><td><%= r.item %></td><td><%= r.value %></td><td><span class="badge <%= cls[r.state] %>"><%= label[r.state] %></span></td><td class="small"><%= r.note %></td></tr><% }) %></table></div>
 <% }) %>
 <% if (durable) { %>
@@ -15,7 +15,7 @@
     <form method="post" action="/admin/system/integrity" style="flex:0 0 auto"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Check file integrity</button></form>
   </div>
   <% if (missingCount) { %><h3 class="mt">Records whose file is missing everywhere (<%= missingCount %>)</h3>
-  <div class="table-wrap"><table><tr><th>Record</th><th>Type</th><th>File key</th></tr>
+  <div class="table-wrap" tabindex="0"><table><tr><th>Record</th><th>Type</th><th>File key</th></tr>
   <% missing.forEach(m => { %><tr><td><%= m.ref %></td><td><%= m.kind %></td><td class="small"><%= m.key %></td></tr><% }) %></table></div><% } %>
 </div>
 <% } %>

@@ -2,7 +2,7 @@
 <div class="page-head"><h1>Price catalog</h1></div>
 <%- include('_nav') %>
 <p class="muted">The proposed fee schedule (docs/FEES.md). Changing a price keeps history: the old price ends and the new one starts today; existing invoices never change. Inactive products are for later phases and cannot be invoiced yet. Per-certificate prices are graduated bands (the "from" column is the first certificate beyond the allowance in the plan year).</p>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Product</th><th>Plan</th><th>From #</th><th>Price (USD)</th><th></th></tr>
   <% products.forEach(p => { const ps = prices.filter(x => x.product_id === p.id); %>
     <tr style="background:var(--bg-soft,#f6f8fb)"><td colspan="4"><strong><%= p.name %></strong> <span class="muted small">(<%= p.code %> · <%= p.unit.replace('_', ' ') %><%= p.phase !== 'now' ? ' · ' + p.phase : '' %>)</span><% if (p.description) { %><div class="small muted"><%= p.description %></div><% } %></td>

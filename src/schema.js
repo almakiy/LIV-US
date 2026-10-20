@@ -1020,6 +1020,89 @@ DROP TRIGGER IF EXISTS partner_title_revisions_lock ON partner_title_revisions;
 CREATE TRIGGER partner_title_revisions_lock BEFORE UPDATE OR DELETE ON partner_title_revisions FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 DROP TRIGGER IF EXISTS partner_title_events_lock ON partner_title_events;
 CREATE TRIGGER partner_title_events_lock BEFORE UPDATE OR DELETE ON partner_title_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Batch H (docs/DECISIONS.md §7). Monitoring, renewals, material-change notices, sanctions screening and records retention.
+-- An upload that is refused (no valid rows, or issuance refused) is recorded; these rows feed the monitoring indicators.
+CREATE TABLE IF NOT EXISTS issuance_refusals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  source VARCHAR(10) NOT NULL CHECK (source IN ('csv','api')),
+  file_name VARCHAR(255),
+  reason TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS issuance_refusals_platform_idx ON issuance_refusals (platform_id, created_at);
+-- Monitoring cases opened by an indicator. The system opens them; a person responds, then closes them. A case never
+-- revokes a credential or changes an authorization. Response and escalation deadlines are 5 and 10 working days.
+CREATE TABLE IF NOT EXISTS partner_audit_cases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_no VARCHAR(20) NOT NULL UNIQUE,
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  trigger_code VARCHAR(30) NOT NULL CHECK (trigger_code IN ('volume_spike','half_allowance','refused_batches','complaints')),
+  source_ref VARCHAR(120) NOT NULL,
+  detail JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status VARCHAR(12) NOT NULL DEFAULT 'open' CHECK (status IN ('open','responded','escalated','closed')),
+  opened_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  response_due DATE NOT NULL,
+  escalate_due DATE NOT NULL,
+  response TEXT NOT NULL DEFAULT '',
+  responded_at TIMESTAMPTZ,
+  outcome VARCHAR(20) CHECK (outcome IN ('no_action','corrective_action','referred_to_review')),
+  closing_note TEXT NOT NULL DEFAULT '',
+  closed_at TIMESTAMPTZ,
+  closed_by_label VARCHAR(200),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (platform_id, trigger_code, source_ref)
+);
+CREATE TABLE IF NOT EXISTS partner_audit_events (
+  id BIGSERIAL PRIMARY KEY,
+  case_id UUID NOT NULL REFERENCES partner_audit_cases(id) ON DELETE CASCADE,
+  at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+  actor_label VARCHAR(200) NOT NULL DEFAULT 'system',
+  event VARCHAR(30) NOT NULL,
+  note TEXT NOT NULL DEFAULT ''
+);
+DROP TRIGGER IF EXISTS partner_audit_events_lock ON partner_audit_events;
+CREATE TRIGGER partner_audit_events_lock BEFORE UPDATE OR DELETE ON partner_audit_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Renewals: the due date is set by staff; the renewal period is pending decision P-11, so none is calculated.
+CREATE TABLE IF NOT EXISTS partner_renewals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  due_on DATE NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled','renewed','lapsed')),
+  note TEXT NOT NULL DEFAULT '',
+  set_by_label VARCHAR(200) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  decided_at TIMESTAMPTZ,
+  decided_by_label VARCHAR(200)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS partner_renewals_one_open ON partner_renewals (platform_id) WHERE status = 'scheduled';
+-- Material-change notices from a provider. The categories and what counts as material are pending decision P-12.
+CREATE TABLE IF NOT EXISTS partner_material_changes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  change_kind VARCHAR(30) NOT NULL CHECK (change_kind IN ('legal_entity','ownership_or_control','contact_or_address','trainers','courses_or_scope','delivery_method','other')),
+  description TEXT NOT NULL,
+  effective_on DATE,
+  status VARCHAR(16) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','acknowledged','review_opened')),
+  submitted_by UUID REFERENCES users(id),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  handled_by_label VARCHAR(200) NOT NULL DEFAULT '',
+  handled_at TIMESTAMPTZ,
+  handling_note TEXT NOT NULL DEFAULT ''
+);
+-- Sanctions screening record: append-only (a later check is recorded as a new row).
+CREATE TABLE IF NOT EXISTS partner_sanctions_checks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  list_name VARCHAR(200) NOT NULL,
+  checked_on DATE NOT NULL,
+  result VARCHAR(16) NOT NULL CHECK (result IN ('no_match','possible_match','match')),
+  checked_by_label VARCHAR(200) NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+DROP TRIGGER IF EXISTS partner_sanctions_lock ON partner_sanctions_checks;
+CREATE TRIGGER partner_sanctions_lock BEFORE UPDATE OR DELETE ON partner_sanctions_checks FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},

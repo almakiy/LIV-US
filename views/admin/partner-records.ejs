@@ -1,0 +1,34 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Partner records</h1></div>
+<p class="small muted">Renewals, material-change notices and sanctions screening. Each action is recorded under the staff position that makes it. The renewal period (P-11) and the categories of a material change (P-12) are pending decisions: dates are set by hand.</p>
+
+<h2>Renewals</h2>
+<% if (can.assess) { %><form class="card" method="post" action="/admin/partner-records/renewals"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Schedule a renewal</h3>
+  <div class="row"><div class="field"><label for="rp">Provider</label><select id="rp" name="platform_id" required><option value="">Choose</option><% d.platforms.forEach(p => { %><option value="<%= p.id %>"><%= p.company_name %></option><% }) %></select></div>
+  <div class="field"><label for="rd">Due date *</label><input id="rd" name="due_on" type="date" required></div></div>
+  <div class="field"><label for="rn">Note</label><input id="rn" name="note" maxlength="2000"></div><button class="btn">Schedule</button></form><% } %>
+<% if (d.renewals.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Provider</th><th>Due</th><th>Status</th><th>Note</th><th>Decision</th></tr>
+<% d.renewals.forEach(r => { %><tr><td><%= r.company_name %></td><td class="small"><%= usDate(r.due_on) %></td><td class="small"><%= r.status %></td><td class="small"><%= r.note %></td><td class="small">
+  <% if (r.status === 'scheduled' && can.decide) { %><form method="post" action="/admin/partner-records/renewals/<%= r.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="outcome" aria-label="Outcome"><option value="renewed">Renewed</option><option value="lapsed">Lapsed</option></select> <input name="note" aria-label="Reason" placeholder="Reason *" required maxlength="2000"> <button class="btn sm">Record</button></form>
+  <% } else if (r.status !== 'scheduled') { %><%= r.decided_by_label %>, <%= usDate(r.decided_at) %><% } else { %>Needs the Authorization Decision-Maker<% } %></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No renewals scheduled.</p><% } %>
+
+<h2 class="mt">Material-change notices</h2>
+<% if (d.changes.length) { %><div class="table-wrap" tabindex="0"><table><tr><th>Provider</th><th>Kind</th><th>Description</th><th>Effective</th><th>Status</th><th>Handling</th></tr>
+<% d.changes.forEach(c => { %><tr><td><%= c.company_name %></td><td class="small"><%= CHANGE_KINDS[c.change_kind] %></td><td class="small"><%= c.description %></td><td class="small"><%= c.effective_on ? usDate(c.effective_on) : '' %></td><td class="small"><%= CHANGE_STATUS[c.status] %></td><td class="small">
+  <% if (c.status === 'submitted' && can.assess) { %><form method="post" action="/admin/partner-records/changes/<%= c.id %>/handle"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="outcome" aria-label="Outcome"><option value="acknowledged">Acknowledge</option><option value="review_opened">Open a review</option></select> <input name="note" aria-label="Note" placeholder="Note *" required maxlength="2000"> <button class="btn sm">Save</button></form>
+  <% } else if (c.status !== 'submitted') { %><%= c.handling_note %><% } %></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No notices.</p><% } %>
+
+<h2 class="mt">Sanctions screening</h2>
+<% if (can.assess) { %><form class="card" method="post" action="/admin/partner-records/sanctions"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Record a screening</h3>
+  <p class="small muted">Record the check against the list you used. Screening is a record only: a possible match is worked on by the assessor, and a later check with no match closes it.</p>
+  <div class="row"><div class="field"><label for="sp">Provider</label><select id="sp" name="platform_id" required><option value="">Choose</option><% d.platforms.forEach(p => { %><option value="<%= p.id %>"><%= p.company_name %></option><% }) %></select></div>
+  <div class="field"><label for="sl">List checked *</label><input id="sl" name="list_name" maxlength="200" required></div>
+  <div class="field"><label for="sc">Date checked</label><input id="sc" name="checked_on" type="date"></div>
+  <div class="field"><label for="sr">Result *</label><select id="sr" name="result" required><% Object.keys(SANCTION_RESULTS).forEach(k => { %><option value="<%= k %>"><%= SANCTION_RESULTS[k] %></option><% }) %></select></div></div>
+  <div class="field"><label for="sx">Note</label><textarea id="sx" name="note" rows="2" maxlength="2000"></textarea></div><button class="btn">Record</button></form><% } %>
+<% if (d.sanctions.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Provider</th><th>List</th><th>Checked</th><th>Result</th><th>Recorded by</th><th>Note</th></tr>
+<% d.sanctions.forEach(s => { %><tr><td><%= s.company_name %></td><td class="small"><%= s.list_name %></td><td class="small"><%= usDate(s.checked_on) %></td><td class="small"><%= SANCTION_RESULTS[s.result] %></td><td class="small"><%= s.checked_by_label %></td><td class="small"><%= s.note %></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No screenings recorded.</p><% } %>
+<%- include('../partials/app-end') %>

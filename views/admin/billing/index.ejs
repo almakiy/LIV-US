@@ -8,11 +8,11 @@
   <div class="card"><div class="small muted">Collected this year</div><h2><%= money(t.collected_year) %></h2><div class="small"><%= t.drafts %> draft(s) waiting</div></div>
 </div>
 <h3 class="mt">Overdue invoices</h3>
-<div class="table-wrap"><table><tr><th>Invoice</th><th>Partner</th><th>Due</th><th>Balance</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Invoice</th><th>Partner</th><th>Due</th><th>Balance</th></tr>
 <% if (!late.length) { %><tr><td colspan="4" class="muted center">None.</td></tr><% } %>
 <% late.forEach(i => { %><tr><td><a href="/admin/billing/invoices/<%= i.id %>"><%= i.number %></a></td><td><%= i.company_name %></td><td><%= usDate(i.due_date) %></td><td><%= money(i.balance) %></td></tr><% }) %></table></div>
 <h3 class="mt">Payments received by month</h3>
-<div class="table-wrap"><table><tr><th>Month</th><th>Received</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Month</th><th>Received</th></tr>
 <% if (!months.length) { %><tr><td colspan="2" class="muted center">No payments yet.</td></tr><% } %>
 <% months.forEach(m => { %><tr><td><%= m.month %></td><td><%= money(m.cents) %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

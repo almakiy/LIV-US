@@ -13,7 +13,7 @@
   <div class="field"><label>Decisions, findings and actions *</label><textarea name="decisions" rows="3"><%= f.decisions || '' %></textarea></div>
   <button class="btn">Save record</button>
 </form>
-<div class="table-wrap mt"><table><tr><th>Date</th><th>Kind</th><th>Participants</th><th>Decisions</th><th>Next due</th></tr>
+<div class="table-wrap mt" tabindex="0"><table><tr><th>Date</th><th>Kind</th><th>Participants</th><th>Decisions</th><th>Next due</th></tr>
 <% if (!rows.length) { %><tr><td colspan="5" class="muted center">Nothing recorded.</td></tr><% } %>
 <% rows.forEach(m => { %><tr><td><%= usDate(m.held_on) %></td><td><%= KINDS[m.kind] %></td><td class="small"><%= m.participants %></td><td class="small"><%= m.decisions %></td><td><%= m.next_due ? usDate(m.next_due) : '—' %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

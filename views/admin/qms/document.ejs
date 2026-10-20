@@ -25,6 +25,6 @@
 </div>
 <% } %>
 <h3 class="mt">Version history</h3>
-<div class="table-wrap"><table><tr><th>Version</th><th>Status</th><th>Change</th><th>Author</th><th>Approved by</th><th>Effective</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Version</th><th>Status</th><th>Change</th><th>Author</th><th>Approved by</th><th>Effective</th></tr>
 <% versions.forEach(v => { %><tr><td><%= v.version %></td><td><%= v.status %></td><td><%= v.change_summary %></td><td><%= v.author_name %></td><td><%= v.approver_name || '—' %><%= v.self_approved ? ' (self-approved)' : '' %></td><td><%= v.effective_date ? usDate(v.effective_date) : '—' %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

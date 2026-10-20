@@ -15,5 +15,5 @@
 <% } else { %><p class="small muted mt">Only the main account approves an exception. This one is waiting for it.</p><% } %><% } %>
 <% if (['approved','used','expired'].includes(e.status)) { %><form class="card mt" method="post" action="/admin/exceptions/<%= e.id %>/close"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Close</h3>
   <div class="field"><label for="n">How it was closed *</label><input id="n" name="note" maxlength="2000" required></div><button class="btn secondary">Close</button></form><% } %>
-<h2 class="mt">History</h2><div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% e.events.slice().reverse().forEach(h => { %><tr><td class="small"><%= usDateTime(h.created_at) %></td><td class="small"><%= h.to_status %></td><td class="small"><%= h.actor_label %></td><td class="small"><%= h.note %></td></tr><% }) %></table></div>
+<h2 class="mt">History</h2><div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% e.events.slice().reverse().forEach(h => { %><tr><td class="small"><%= usDateTime(h.created_at) %></td><td class="small"><%= h.to_status %></td><td class="small"><%= h.actor_label %></td><td class="small"><%= h.note %></td></tr><% }) %></table></div>
 <%- include('../partials/app-end') %>

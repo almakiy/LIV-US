@@ -1,0 +1,7 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Monitoring</h1><form method="post" action="/admin/monitoring/check"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Run the indicator check now</button></form></div>
+<p class="small muted">Four indicators open a case for a provider: <%= Object.values(TRIGGERS).join('; ') %>. A batch is also checked against the monthly average and the included allowance. The provider is asked to respond within 5 working days; with no response by 10 working days the case goes to the Authorization Decision-Maker. A case never revokes a credential or changes an authorization.</p>
+<% if (rows.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Case</th><th>Provider</th><th>Indicator</th><th>Status</th><th>Respond by</th><th>Escalate after</th><th>Opened</th><th></th></tr>
+<% rows.forEach(k => { %><tr><td class="small"><%= k.case_no %></td><td><%= k.company_name %></td><td class="small"><%= TRIGGERS[k.trigger_code] %></td><td class="small"><%= k.status %></td><td class="small"><%= k.status === 'open' ? usDate(k.response_due) : '' %></td><td class="small"><%= usDate(k.escalate_due) %></td><td class="small"><%= usDate(k.opened_at) %></td><td><a class="btn sm secondary" href="/admin/monitoring/<%= k.id %>">Open</a></td></tr><% }) %></table></div>
+<% } else { %><p class="muted mt">No monitoring cases. Indicators are checked after every upload and once an hour.</p><% } %>
+<%- include('../partials/app-end') %>

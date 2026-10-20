@@ -29,7 +29,7 @@ p{margin:0 0 1em}
 .brand img{display:block;flex:none}
 .wm{font-family:"Libre Baskerville",Georgia,serif;font-weight:700;font-size:1.65rem;letter-spacing:2px;line-height:1;color:#fff}
 .wm small{display:block;font-family:Inter,sans-serif;font-size:.6rem;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold-2);margin-top:6px}
-.brand-dark .wm{color:var(--navy)}.brand-dark .wm small{color:var(--gold)}
+.brand-dark .wm{color:var(--navy)}.brand-dark .wm small{color:#7A5F26;opacity:1}
 .brand{gap:12px}
 .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:1.1rem;letter-spacing:.2px}
 .brand:hover{text-decoration:none}.brand svg{flex:none}
@@ -45,7 +45,7 @@ p{margin:0 0 1em}
 .btn:hover{filter:brightness(.95);text-decoration:none}
 .btn.secondary{background:#fff;color:var(--ink);border-color:var(--line)}
 .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
-.btn.gold{background:var(--gold);color:#fff}
+.btn.gold{background:#8A6A2E;color:#fff}
 .btn.danger{background:var(--red)}.btn.success{background:var(--green)}
 .btn.sm{padding:6px 10px;font-size:.85rem}.btn.lg{padding:14px 22px;font-size:1rem}
 .btn:disabled{opacity:.5;cursor:not-allowed}
@@ -61,7 +61,7 @@ p{margin:0 0 1em}
 .grid{display:grid;gap:20px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
 .card h3{margin-top:0}
-.step-n{width:32px;height:32px;border-radius:50%;background:var(--gold);color:#fff;display:inline-grid;place-items:center;font-weight:700;margin-bottom:10px}
+.step-n{width:32px;height:32px;border-radius:50%;background:#8A6A2E;color:#fff;display:inline-grid;place-items:center;font-weight:700;margin-bottom:10px}
 .trust{display:flex;gap:10px 22px;flex-wrap:wrap;color:#C9D6E6;font-size:.9rem;margin-top:28px}
 .trust span::before{content:"★ ";color:var(--gold-2)}
 /* forms */
@@ -178,3 +178,5 @@ pre{background:#0F1B2D;color:#DDE7F3;padding:16px;border-radius:8px;overflow:aut
 .lvl-silver{background:#e8ecf0;color:#44505c;border-color:#b9c2cb}
 .lvl-gold{background:#fbf0c9;color:#7a5a00;border-color:#e3c765}
 @media (prefers-color-scheme: dark){.lvl-bronze{background:#3a2a1c;color:#e6bf98;border-color:#6b4a2a}.lvl-silver{background:#2b3138;color:#cfd6dd;border-color:#566370}.lvl-gold{background:#3b3216;color:#f0d77b;border-color:#7a6420}}
+/* Links inside running text are underlined, so colour is not the only cue (WCAG 1.4.1). */
+p a:not(.btn),li a:not(.btn),.small a:not(.btn),.muted a:not(.btn){text-decoration:underline;text-underline-offset:3px}

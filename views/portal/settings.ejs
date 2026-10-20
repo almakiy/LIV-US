@@ -4,18 +4,18 @@
   <form class="card" method="post" action="/portal/settings/profile">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Company profile</h3>
-    <div class="field"><label>Company name</label><input type="text" name="company_name" value="<%= platform.company_name %>" required></div>
-    <div class="row"><div class="field"><label>Website</label><input type="url" name="website" value="<%= platform.website || '' %>"></div>
-    <div class="field"><label>Country</label><input type="text" name="country" value="<%= platform.country || '' %>"></div></div>
-    <div class="row"><div class="field"><label>Contact email</label><input type="email" name="contact_email" value="<%= platform.contact_email || '' %>"></div>
-    <div class="field" style="flex:0"><label>Brand color</label><input type="color" name="primary_color" value="<%= platform.primary_color || '#0B2545' %>"></div></div>
+    <div class="field"><label for="f-company_name">Company name</label><input id="f-company_name" type="text" name="company_name" value="<%= platform.company_name %>" required></div>
+    <div class="row"><div class="field"><label for="f-website">Website</label><input id="f-website" type="url" name="website" value="<%= platform.website || '' %>"></div>
+    <div class="field"><label for="f-country">Country</label><input id="f-country" type="text" name="country" value="<%= platform.country || '' %>"></div></div>
+    <div class="row"><div class="field"><label for="f-contact_email">Contact email</label><input id="f-contact_email" type="email" name="contact_email" value="<%= platform.contact_email || '' %>"></div>
+    <div class="field" style="flex:0"><label for="f-primary_color">Brand color</label><input id="f-primary_color" type="color" name="primary_color" value="<%= platform.primary_color || '#0B2545' %>"></div></div>
     <button class="btn">Save profile</button>
   </form>
   <form class="card" method="post" action="/portal/settings/logo" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Logo</h3><p class="small muted">Shown on your verification records. It is not printed on LIV credentials: the credential face carries LIV's identity only.</p>
     <% if (platform.logo_path) { %><p><img src="/logo/<%= platform.id %>" alt="Logo" style="max-height:64px;max-width:240px"></p><% } else { %><p class="muted">No logo uploaded.</p><% } %>
-    <div class="field"><input type="file" name="logo" accept="image/png,image/jpeg" required><div class="hint">PNG or JPEG, max 1 MB. A transparent PNG at least 600 px wide works best.</div></div>
+    <div class="field"><label for="f-logo">Logo</label><input id="f-logo" type="file" name="logo" accept="image/png,image/jpeg" required><div class="hint">PNG or JPEG, max 1 MB. A transparent PNG at least 600 px wide works best.</div></div>
     <button class="btn">Upload logo</button>
   </form>
 </div>
@@ -24,17 +24,17 @@
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <h3>Billing details</h3>
   <p class="small muted">Used for invoices and receipts. Fees are described in your partner agreement.</p>
-  <div class="row"><div class="field"><label>Billing name</label><input type="text" name="billing_name" value="<%= platform.billing_name || '' %>"></div>
-    <div class="field"><label>Billing email</label><input type="email" name="billing_email" value="<%= platform.billing_email || '' %>"></div></div>
-  <div class="field"><label>Billing address</label><textarea name="billing_address" rows="3"><%= platform.billing_address || '' %></textarea></div>
-  <div class="field"><label>Tax / VAT number (if any)</label><input type="text" name="tax_id" value="<%= platform.tax_id || '' %>"></div>
+  <div class="row"><div class="field"><label for="f-billing_name">Billing name</label><input id="f-billing_name" type="text" name="billing_name" value="<%= platform.billing_name || '' %>"></div>
+    <div class="field"><label for="f-billing_email">Billing email</label><input id="f-billing_email" type="email" name="billing_email" value="<%= platform.billing_email || '' %>"></div></div>
+  <div class="field"><label for="f-billing_address">Billing address</label><textarea id="f-billing_address" name="billing_address" rows="3"><%= platform.billing_address || '' %></textarea></div>
+  <div class="field"><label for="f-tax_id">Tax / VAT number (if any)</label><input id="f-tax_id" type="text" name="tax_id" value="<%= platform.tax_id || '' %>"></div>
   <button class="btn">Save billing details</button>
 </form>
 
 <h2 class="mt" id="api">API keys</h2>
 <% if (newKey) { %><div class="alert success"><strong>Copy your new API key now. It won't be shown again.</strong><div class="keybox mt"><%= newKey %></div><button class="btn sm secondary mt" data-copy="<%= newKey %>">Copy key</button></div><% } %>
 <div class="grid g2">
-  <div class="table-wrap"><table>
+  <div class="table-wrap" tabindex="0"><table>
     <tr><th>Label</th><th>Prefix</th><th>Created</th><th>Last used</th><th></th></tr>
     <% if (!keys.length) { %><tr><td colspan="5" class="muted center">No API keys yet.</td></tr><% } %>
     <% keys.forEach(k => { %><tr><td><%= k.label %></td><td class="mono"><%= k.prefix %>…</td><td><%= usDate(k.created_at) %></td>
@@ -45,7 +45,7 @@
   <form class="card" method="post" action="/portal/settings/keys">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Generate API key</h3>
-    <div class="field"><label>Label</label><input name="label" placeholder="e.g. LMS production"></div>
+    <div class="field"><label for="f-label">Label</label><input id="f-label" name="label" placeholder="e.g. LMS production"></div>
     <button class="btn">Generate key</button>
     <p class="small muted mt">Keys are stored only as a one-way hash. See the <a href="/portal/api-docs">API docs</a>.</p>
   </form>
@@ -53,7 +53,7 @@
 
 <h2 class="mt">Users</h2>
 <div class="grid g2">
-  <div class="table-wrap"><table>
+  <div class="table-wrap" tabindex="0"><table>
     <tr><th>Name</th><th>Email</th><th>Role</th><th>Last login</th><th></th></tr>
     <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td>
       <% if (u.id === user.id) { %><%= ROLES[u.partner_role] %> (you)<% } else { %>
@@ -65,10 +65,10 @@
   <form class="card" method="post" action="/portal/settings/users">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Add user</h3>
-    <div class="field"><label>Full name</label><input name="full_name" required></div>
-    <div class="field"><label>Email</label><input type="email" name="email" required></div>
-    <div class="field"><label>Role</label><select name="partner_role"><% Object.keys(ROLES).forEach(k => { %><option value="<%= k %>"><%= ROLES[k] %></option><% }) %></select></div>
-    <div class="field"><label>Temporary password</label><input type="password" name="password" minlength="10" required></div>
+    <div class="field"><label for="f-full_name">Full name</label><input id="f-full_name" name="full_name" required></div>
+    <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" name="email" required></div>
+    <div class="field"><label for="f-partner_role">Role</label><select id="f-partner_role" name="partner_role"><% Object.keys(ROLES).forEach(k => { %><option value="<%= k %>"><%= ROLES[k] %></option><% }) %></select></div>
+    <div class="field"><label for="f-password">Temporary password</label><input id="f-password" type="password" name="password" minlength="10" required></div>
     <button class="btn">Add user</button>
   </form>
 </div>

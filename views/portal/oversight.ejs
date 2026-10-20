@@ -1,0 +1,25 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Notices and changes</h1></div>
+<p class="small muted">Monitoring notices come from LIV when a check needs your response. Tell LIV about a material change to your organization, trainers or courses as it happens. Write in English (Latin letters).</p>
+
+<h2>Monitoring notices</h2>
+<% if (cases.length) { %>
+  <% cases.forEach(k => { %><div class="card mt"><p><strong><%= k.case_no %></strong> · <%= k.text %> · <span class="badge b-pending"><%= k.status %></span></p>
+    <p class="small muted">Opened <%= usDate(k.opened_at) %>. Respond by <%= usDate(k.response_due) %> (5 working days).<% if (k.status === 'escalated') { %> The case has been referred to LIV's Authorization Decision-Maker.<% } %></p>
+    <% if (k.status === 'open' || k.status === 'escalated') { %><form method="post" action="/portal/oversight/cases/<%= k.id %>/respond"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label for="r<%= k.id %>">Your response *</label><textarea id="r<%= k.id %>" name="response" rows="4" maxlength="4000" required></textarea></div><button class="btn">Send the response</button></form>
+    <% } else if (k.response) { %><p class="small"><strong>Your response:</strong> <%= k.response %></p><% } %>
+    <% if (k.status === 'closed') { %><p><strong>Outcome: <%= OUTCOMES[k.outcome] %></strong></p><p class="small"><%= k.closing_note %></p><% } %></div><% }) %>
+<% } else { %><p class="muted">No monitoring notices.</p><% } %>
+
+<h2 class="mt">Tell LIV about a material change</h2>
+<form class="card" method="post" action="/portal/oversight/changes"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="row"><div class="field"><label for="ck">Kind of change *</label><select id="ck" name="change_kind" required><option value="">Choose</option><% Object.keys(CHANGE_KINDS).forEach(k => { %><option value="<%= k %>"><%= CHANGE_KINDS[k] %></option><% }) %></select></div>
+  <div class="field"><label for="ef">Effective on</label><input id="ef" name="effective_on" type="date"></div></div>
+  <div class="field"><label for="cd">Description *</label><textarea id="cd" name="description" rows="3" maxlength="4000" required></textarea></div>
+  <button class="btn">Send the notice</button></form>
+
+<h2 class="mt">Your notices</h2>
+<% if (changes.length) { %><div class="table-wrap" tabindex="0"><table><tr><th>Sent</th><th>Kind</th><th>Description</th><th>Status</th><th>LIV's note</th></tr>
+<% changes.forEach(c => { %><tr><td class="small"><%= usDate(c.submitted_at) %></td><td class="small"><%= CHANGE_KINDS[c.change_kind] %></td><td class="small"><%= c.description %></td><td class="small"><%= CHANGE_STATUS[c.status] %></td><td class="small"><%= c.handling_note %></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No notices sent.</p><% } %>
+<%- include('../partials/app-end') %>

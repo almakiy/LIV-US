@@ -4,7 +4,7 @@
 <form class="card" method="post" action="/admin/levels/open"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Open a review</h3>
   <div class="field"><label for="p1">Provider</label><select id="p1" name="platform_id" required><option value="">Choose</option><% platforms.forEach(p => { %><option value="<%= p.id %>"><%= p.company_name %> (<%= LABEL[p.level] || '—' %>)</option><% }) %></select></div>
   <button class="btn">Review for the next level</button> <button class="btn secondary" formaction="/admin/levels/open-lower">Review for the lower level</button></form>
-<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Provider</th><th>From</th><th>To</th><th>Opened by</th><th>Status</th><th>Outcome</th><th>Updated</th><th></th></tr>
+<% if (rows.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Provider</th><th>From</th><th>To</th><th>Opened by</th><th>Status</th><th>Outcome</th><th>Updated</th><th></th></tr>
 <% rows.forEach(r => { %><tr><td><%= r.company_name %></td><td><%= LABEL[r.from_level] %></td><td><%= LABEL[r.to_level] %></td><td class="small"><%= r.requested_by === 'provider' ? 'Provider' : 'LIV' %></td><td class="small"><%= r.status.replace('_', ' ') %></td><td class="small"><%= r.outcome ? r.outcome.replace('_', ' ') : '' %></td><td class="small"><%= usDate(r.updated_at) %></td><td><a class="btn sm secondary" href="/admin/levels/<%= r.id %>">Open</a></td></tr><% }) %></table></div>
 <% } else { %><p class="muted mt">No reviews yet.</p><% } %>
 <%- include('../partials/app-end') %>

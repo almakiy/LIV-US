@@ -6,14 +6,14 @@
   <form class="card" method="post" action="/apply">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Organization</h3>
-    <div class="field"><label>Organization name *</label><input name="company_name" value="<%= form.company_name || '' %>" required></div>
-    <div class="row"><div class="field"><label>Website</label><input type="url" name="website" value="<%= form.website || '' %>" placeholder="https://"></div>
-    <div class="field"><label>Country</label><input name="country" value="<%= form.country || '' %>"></div></div>
+    <div class="field"><label for="f-company_name">Organization name *</label><input id="f-company_name" name="company_name" value="<%= form.company_name || '' %>" required></div>
+    <div class="row"><div class="field"><label for="f-website">Website</label><input id="f-website" type="url" name="website" value="<%= form.website || '' %>" placeholder="https://"></div>
+    <div class="field"><label for="f-country">Country</label><input id="f-country" name="country" value="<%= form.country || '' %>"></div></div>
     <h3 class="mt">Administrator account</h3>
-    <div class="field"><label>Full name *</label><input name="full_name" value="<%= form.full_name || '' %>" required></div>
-    <div class="row"><div class="field"><label>Work email *</label><input type="email" name="email" value="<%= form.email || '' %>" required></div>
-    <div class="field"><label>Phone *</label><input type="tel" name="phone" value="<%= form.phone || '' %>" required placeholder="+962 7 0000 0000"></div></div>
-    <div class="field"><label>Password *</label><input type="password" name="password" minlength="10" required><div class="hint">At least 10 characters.</div></div>
+    <div class="field"><label for="f-full_name">Full name *</label><input id="f-full_name" name="full_name" value="<%= form.full_name || '' %>" required></div>
+    <div class="row"><div class="field"><label for="f-email">Work email *</label><input id="f-email" type="email" name="email" value="<%= form.email || '' %>" required></div>
+    <div class="field"><label for="f-phone">Phone *</label><input id="f-phone" type="tel" name="phone" value="<%= form.phone || '' %>" required placeholder="+962 7 0000 0000"></div></div>
+    <div class="field"><label for="f-password">Password *</label><input id="f-password" type="password" name="password" minlength="10" required><div class="hint">At least 10 characters.</div></div>
     <label class="check"><input type="checkbox" name="agree" value="1" required> I confirm the information is accurate and agree to the Authorized Training Provider Program terms.</label>
     <button class="btn lg mt">Create my account</button>
   </form>

@@ -4,6 +4,7 @@ const { q } = require('../db');
 const { sha256, qrToken } = require('../lib/crypto');
 const { audit } = require('../lib/audit');
 const { validateRows, issue } = require('../lib/issuance');
+const { recordRefusal, checkBatch } = require('../lib/indicators');
 const { verifyCertificate, publicView } = require('../lib/verify');
 const { limiter, wrap } = require('../lib/guards');
 
@@ -63,13 +64,17 @@ r.post('/certificates', wrap(async (req, res) => {
   if (!tpl) return res.status(400).json({ error: 'Unknown template_id (or no template configured).' });
   const results = await validateRows(list.map((x) => (x && typeof x === 'object' ? x : {})), p.id);
   const bad = results.filter((x) => x.errors.length);
-  if (bad.length) return res.status(422).json({ error: 'Validation failed; nothing was issued.', rows: bad.map((x) => ({ index: x.index, errors: x.errors })) });
+  if (bad.length) {
+    await recordRefusal(p.id, { source: 'api', reason: 'Validation failed' }).catch(() => {});
+    return res.status(422).json({ error: 'Validation failed; nothing was issued.', rows: bad.map((x) => ({ index: x.index, errors: x.errors })) });
+  }
   try {
     const out = await issue({ rows: results, platform: p, template: tpl, source: 'api', idempotencyKey: idem, actorLabel: `api:${req.apiKey.prefix}` });
+    await checkBatch(p.id, out.batch.id).catch(() => {});
     const { rows } = await q('SELECT * FROM certificates WHERE batch_id = $1 ORDER BY created_at', [out.batch.id]);
     res.status(201).json({ batch_id: out.batch.id, certificates: rows.map(certJson) });
   } catch (e) {
-    if (e.status === 409 || e.status === 422) return res.status(e.status).json({ error: e.message });
+    if (e.status === 409 || e.status === 422) { await recordRefusal(p.id, { source: 'api', reason: e.message }).catch(() => {}); return res.status(e.status).json({ error: e.message }); }
     if (e.code === '23505' && idem) return res.status(409).json({ error: 'A request with this Idempotency-Key is already being processed.' });
     throw e;
   }

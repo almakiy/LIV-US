@@ -1,7 +1,7 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1>Partner applications</h1></div>
 <p class="small muted">Applications from training providers seeking LIV authorization. Opening one shows the submitted form, the evidence, the assessment, the recommendation and the decision. Acceptance never activates a provider; activation is a separate step.</p>
-<% if (rows.length) { %><div class="table-wrap"><table><tr><th>Provider</th><th>Country</th><th>Status</th><th>Version</th><th>Criteria</th><th>Updated</th><th></th></tr>
+<% if (rows.length) { %><div class="table-wrap" tabindex="0"><table><tr><th>Provider</th><th>Country</th><th>Status</th><th>Version</th><th>Criteria</th><th>Updated</th><th></th></tr>
 <% rows.forEach(a => { %><tr><td><strong><%= a.company_name %></strong></td><td class="small"><%= a.country || '—' %></td><td><span class="badge b-pending"><%= a.state.replace(/_/g, ' ') %></span></td><td><%= a.current_version || 'Draft' %></td><td class="small"><%= a.criteria_version %></td><td class="small"><%= usDateTime(a.updated_at) %></td><td><a class="btn sm secondary" href="/admin/applications/<%= a.id %>">Open</a></td></tr><% }) %></table></div>
 <% } else { %><p class="muted">No applications yet.</p><% } %>
 <%- include('../partials/app-end') %>

@@ -17,7 +17,7 @@
 </dl></div><% } else { %><p class="muted">Nothing has been submitted yet.</p><% } %>
 
 <h2 class="mt">Evidence</h2>
-<% if (evidence.length) { %><div class="table-wrap"><table><tr><th>Criterion</th><th>File</th><th>Version</th><th>Size</th><th>SHA-256</th><th></th></tr>
+<% if (evidence.length) { %><div class="table-wrap" tabindex="0"><table><tr><th>Criterion</th><th>File</th><th>Version</th><th>Size</th><th>SHA-256</th><th></th></tr>
 <% evidence.forEach(e => { %><tr><td><strong><%= e.criterion %></strong><div class="small muted"><%= titleOf(e.criterion) %></div></td><td><%= e.filename %></td><td><%= e.version || 'draft' %></td><td class="small"><%= Math.ceil(e.bytes / 1024) %> KB</td><td class="small"><code><%= e.sha256.slice(0, 12) %>…</code></td><td><a class="btn sm secondary" href="/admin/applications/evidence/<%= e.id %>">Download</a></td></tr><% }) %></table></div>
 <p class="small muted">Each download is logged.</p>
 <% } else { %><p class="muted">No evidence uploaded.</p><% } %>
@@ -34,7 +34,7 @@
 <% assessments.slice().reverse().forEach((a, idx) => { const fs = findingsOf(a.id); const recs = recommendations.filter((r) => r.assessment_id === a.id).slice().reverse(); %>
 <div class="card mt"><h3>Assessment of version <%= a.version %> <span class="small muted">by <%= a.assessor_label %> · <%= usDateTime(a.created_at) %><%= idx === 0 ? ' · latest' : '' %></span></h3>
   <% if (a.summary) { %><p><%= a.summary %></p><% } %>
-  <div class="table-wrap"><table><tr><th>Criterion</th><th>Result</th><th>Reason</th><th>Evidence</th></tr>
+  <div class="table-wrap" tabindex="0"><table><tr><th>Criterion</th><th>Result</th><th>Reason</th><th>Evidence</th></tr>
   <% CRITERIA.forEach(c => { const f = fs[c]; if (!f) return; %><tr><td><strong><%= c %></strong><div class="small muted"><%= titleOf(c) %></div></td><td><span class="badge b-<%= f.result === 'met' ? 'active' : 'suspended' %>"><%= label(f.result) %></span></td><td class="small"><%= f.reason %></td><td class="small"><%= f.evidence_id ? evName(f.evidence_id) : '—' %></td></tr><% }) %></table></div>
   <p class="small"><strong>Recommendations</strong> (newest first):
   <% recs.forEach((r, i) => { %><br><%= usDateTime(r.created_at) %> · <strong><%= label(r.outcome) %></strong><%= i === 0 && idx === 0 ? (last && last.current ? ' (matches the current application)' : ' (out of date: recalculate or reassess)') : '' %><% }) %></p>
@@ -73,11 +73,11 @@
 
 <h2 class="mt" id="activation">Activation</h2>
 <p class="small muted">Acceptance does not turn the provider on. Activation is a separate step by the Activation Officer, and only when every item below is complete. Payment never activates. Trainer thresholds are not yet defined (P-5): a trainer record is an evidence document plus the assessor's finding.</p>
-<div class="table-wrap"><table><tr><th></th><th>Item</th><th>Status</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th></th><th>Item</th><th>Status</th></tr>
 <% act.items.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div>
 <% if (act.activation) { %><div class="alert success mt">Activated by <%= act.activation.activated_by_label %> on <%= usDateTime(act.activation.created_at) %>.</div><% } %>
 
-<% if (act.trainers.length) { %><h3 class="mt">Trainer records</h3><div class="table-wrap"><table><tr><th>Scope</th><th>Trainer</th><th>Evidence</th><th>Finding</th><th>By</th></tr>
+<% if (act.trainers.length) { %><h3 class="mt">Trainer records</h3><div class="table-wrap" tabindex="0"><table><tr><th>Scope</th><th>Trainer</th><th>Evidence</th><th>Finding</th><th>By</th></tr>
 <% act.trainers.forEach(t => { %><tr><td class="small"><%= t.scope_title %></td><td><%= t.trainer_name %></td><td class="small"><%= evName(t.evidence_id) %></td><td class="small"><%= t.finding %></td><td class="small"><%= t.recorded_by_label %></td></tr><% }) %></table></div><% } %>
 <% if (can.assess && !['activated','declined','withdrawn','closed'].includes(app.state)) { %>
 <form class="card mt" method="post" action="/admin/applications/<%= app.id %>/trainer"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Add a trainer record (C3)</h3>
@@ -89,7 +89,7 @@
   <button class="btn">Add trainer record</button></form>
 <% } %>
 
-<% const closedIds = new Set(act.closures.map(c => c.condition_id)); if (conditions.length) { %><h3 class="mt">Conditions</h3><div class="table-wrap"><table><tr><th>Condition</th><th>Type</th><th>Due</th><th>Status</th></tr>
+<% const closedIds = new Set(act.closures.map(c => c.condition_id)); if (conditions.length) { %><h3 class="mt">Conditions</h3><div class="table-wrap" tabindex="0"><table><tr><th>Condition</th><th>Type</th><th>Due</th><th>Status</th></tr>
 <% conditions.forEach(k => { %><tr><td><%= k.text %></td><td class="small"><%= k.blocking ? 'Blocking' : 'Non-blocking' %></td><td class="small"><%= k.due_date ? usDate(k.due_date) : '—' %></td>
 <td class="small"><% if (closedIds.has(k.id)) { %>Closed: <%= (act.closures.find(c => c.condition_id === k.id) || {}).note %><% } else if (can.assess && !act.activation) { %>
 <form method="post" action="/admin/applications/<%= app.id %>/conditions/<%= k.id %>/close" class="row" style="gap:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><input name="note" placeholder="How it was verified" maxlength="2000" required aria-label="How the condition was verified"><button class="btn sm secondary">Close</button></form><% } else { %>Open<% } %></td></tr><% }) %></table></div><% } %>
@@ -105,6 +105,6 @@
 <% } %>
 
 <h2 class="mt">History</h2>
-<div class="table-wrap"><table><tr><th>When</th><th>From</th><th>To</th><th>By</th><th>Reason</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>From</th><th>To</th><th>By</th><th>Reason</th></tr>
 <% events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= e.from_state ? label(e.from_state) : '—' %></td><td class="small"><%= label(e.to_state) %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.reason %></td></tr><% }) %></table></div>
 <%- include('../partials/app-end') %>

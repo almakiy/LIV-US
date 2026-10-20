@@ -11,5 +11,5 @@
   <div class="field"><label for="tf">CV or certificates (PDF, PNG or JPEG, up to 10 MB) *</label><input id="tf" type="file" name="file" accept="application/pdf,image/png,image/jpeg" required></div>
   <button class="btn">Submit the trainer</button></form>
 <% } %>
-<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Trainer</th><th>Status</th><th>Updated</th><th></th></tr><% rows.forEach(t => { %><tr><td><strong><%= t.trainer_name %></strong></td><td><span class="badge b-pending"><%= LABEL[t.status] %></span></td><td class="small"><%= usDateTime(t.updated_at) %></td><td><a class="btn sm secondary" href="/portal/trainers/<%= t.id %>">Open</a></td></tr><% }) %></table></div><% } %>
+<% if (rows.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Trainer</th><th>Status</th><th>Updated</th><th></th></tr><% rows.forEach(t => { %><tr><td><strong><%= t.trainer_name %></strong></td><td><span class="badge b-pending"><%= LABEL[t.status] %></span></td><td class="small"><%= usDateTime(t.updated_at) %></td><td><a class="btn sm secondary" href="/portal/trainers/<%= t.id %>">Open</a></td></tr><% }) %></table></div><% } %>
 <%- include('../partials/app-end') %>

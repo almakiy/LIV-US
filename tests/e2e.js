@@ -1469,6 +1469,126 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     for (const x of [lead, rec, fin]) await x.c.close(); await c3.close();
   }
 
+  console.log('Monitoring, renewals, change notices, sanctions, standards and reminders (Batch H)');
+  {
+    const I = require('../src/lib/indicators');
+    const PR = require('../src/lib/partner-records');
+    const S = require('../src/lib/standards');
+    const RM = require('../src/lib/reminders');
+    const mkStaff = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Batch H ${n}', 'bh${n}.${stamp}@example.com', 'x', ${position ? `'${position}'` : 'NULL'}) RETURNING id`).split('\n')[0], email: `bh${n}.${stamp}@example.com`, role: 'super_admin' });
+    const assessor = mkStaff(1, 'application_assessor'); const decider = mkStaff(2, 'authorization_decision_maker'); const owner = mkStaff(3, null);
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const partnerPlatform = psql(`SELECT platform_id FROM users WHERE email = 'demo@trainingco.example'`).split('\n')[0];
+    const mp = psql(`INSERT INTO platforms (company_name, contact_email) VALUES ('Monitor Test ${stamp}', 'mon.${stamp}@example.com') RETURNING id`).split('\n')[0];
+    psql(`INSERT INTO users (platform_id, role, full_name, email, password_hash) VALUES ('${mp}', 'platform_admin', 'Monitor Admin', 'monadm.${stamp}@example.com', 'x')`);
+
+    console.log(' indicators and audit cases');
+    for (let i = 0; i < 3; i++) await I.recordRefusal(mp, { source: 'csv', fileName: `bad${i}.csv`, reason: 'No valid rows' });
+    ok(psql(`SELECT count(*) FROM partner_audit_cases WHERE platform_id = '${mp}' AND trigger_code = 'refused_batches'`) === '1', 'three refused uploads open one refused-batches case');
+    await I.checkPlatform(mp);
+    ok(psql(`SELECT count(*) FROM partner_audit_cases WHERE platform_id = '${mp}' AND trigger_code = 'refused_batches'`) === '1', 'the same indicator does not open a second case within 90 days');
+    for (let i = 0; i < 3; i++) psql(`INSERT INTO qms_cases (case_no, kind, complainant_name, subject_type, platform_id, summary, ack_due, decision_due) VALUES ('CMP-${stamp}-${i}', 'complaint', 'Learner', 'partner', '${mp}', 'Complaint ${i}', CURRENT_DATE + 5, CURRENT_DATE + 30)`);
+    await I.checkPlatform(mp);
+    ok(psql(`SELECT count(*) FROM partner_audit_cases WHERE platform_id = '${mp}' AND trigger_code = 'complaints'`) === '1', 'three complaints about a provider open a complaints case');
+    const caseId = psql(`SELECT id FROM partner_audit_cases WHERE platform_id = '${mp}' AND trigger_code = 'complaints'`).split('\n')[0];
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE dedupe_key = 'audit-open:${caseId}:monadm.${stamp}@example.com'`) === '1', 'the provider is told by email that a case was opened');
+    ok(psql(`SELECT response_due > CURRENT_DATE AND escalate_due > response_due FROM partner_audit_cases WHERE id = '${caseId}'`) === 't', 'the response date falls before the escalation date (5, then 10 working days)');
+    ok((await I.openForQueue()).some((r) => r.id === caseId && r.owner === 'partner_relations'), 'an open case waits for partner relations');
+    psql(`UPDATE partner_audit_cases SET escalate_due = CURRENT_DATE - 1 WHERE id = '${caseId}'`);
+    await I.sweep();
+    ok(psql(`SELECT status FROM partner_audit_cases WHERE id = '${caseId}'`) === 'escalated', 'a case with no response after 10 working days is escalated');
+    ok((await I.openForQueue()).some((r) => r.id === caseId && r.owner === 'authorization_decision_maker'), 'an escalated case waits for the decision-maker');
+    await I.respond(caseId, mp, { email: 'monadm@example.com', id: null }, 'We corrected the course names and reissued the affected records.');
+    ok(psql(`SELECT status FROM partner_audit_cases WHERE id = '${caseId}'`) === 'responded', 'the provider response moves the case to review');
+    ok(await fails(I.respond(caseId, mp, { email: 'x' }, 'Another reply'), 409), 'a second response to the same case is refused');
+    ok(await fails(I.respond(caseId, mp, { email: 'x' }, 'ردّ'), 422), 'a response in another script is refused');
+    ok(await fails(I.close(caseId, owner, { outcome: 'no_action', note: 'x' }), 403), 'the owner administrator (no position) cannot close a case');
+    ok(await fails(I.close(caseId, decider, { outcome: 'no_action', note: 'x' }), 403), 'the decision-maker does not close a responded case: the assessor does');
+    await I.close(caseId, assessor, { outcome: 'corrective_action', note: 'Course names corrected; checked on the next batch.' });
+    ok(psql(`SELECT status || ':' || outcome FROM partner_audit_cases WHERE id = '${caseId}'`) === 'closed:corrective_action', 'the assessor closes the case with an outcome and a reason');
+    ok(psql(`SELECT count(*) FROM partner_audit_events WHERE case_id = '${caseId}'`) === '4' && psqlRefused(`UPDATE partner_audit_events SET note = 'changed' WHERE case_id = '${caseId}'`), 'the case history (opened, escalated, responded, closed) is complete and cannot be edited');
+
+    console.log(' renewals and change notices');
+    ok(await fails(PR.scheduleRenewal(mp, owner, { due_on: '2020-01-01' }), 403), 'the owner administrator cannot schedule a renewal');
+    await PR.scheduleRenewal(mp, assessor, { due_on: '2020-01-01', note: 'Test renewal' });
+    ok(await fails(PR.scheduleRenewal(mp, assessor, { due_on: '2021-01-01' }), 409), 'a second open renewal for the same provider is refused');
+    const rn = psql(`SELECT id FROM partner_renewals WHERE platform_id = '${mp}' AND status = 'scheduled'`);
+    ok((await PR.openForQueue()).some((i) => i.kind === 'Renewal' && i.who === `Monitor Test ${stamp}`), 'an overdue renewal waits for the decision-maker');
+    ok(await fails(PR.decideRenewal(rn, assessor, { outcome: 'renewed', note: 'x' }), 403), 'the assessor cannot record a renewal outcome');
+    const providerStatus = psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`);
+    await PR.decideRenewal(rn, decider, { outcome: 'lapsed', note: 'Not renewed in time' });
+    ok(psql(`SELECT status FROM partner_renewals WHERE id = '${rn}'`) === 'lapsed' && psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`) === providerStatus, 'a lapsed renewal is recorded and the provider status is unchanged');
+    await page.goto(BASE + '/portal/oversight');
+    await page.selectOption('select[name=change_kind]', 'contact_or_address');
+    await page.fill('textarea[name=description]', 'The training office moved to a new address.');
+    await page.click('form[action="/portal/oversight/changes"] button:has-text("Send the notice")');
+    ok(await see(page, 'text=Notice sent'), 'the provider sends a material-change notice');
+    await page.goto(BASE + '/portal/oversight');
+    await page.selectOption('select[name=change_kind]', 'other');
+    await page.fill('textarea[name=description]', 'تغيير في العنوان');
+    await page.click('form[action="/portal/oversight/changes"] button:has-text("Send the notice")');
+    ok(await see(page, 'text=Write the description in English'), 'a notice written in another script is refused');
+    const chg = psql(`SELECT id FROM partner_material_changes WHERE platform_id = '${partnerPlatform}' AND status = 'submitted' ORDER BY submitted_at DESC LIMIT 1`);
+    ok(await fails(PR.handleChange(chg, owner, { outcome: 'acknowledged', note: 'x' }), 403), 'the owner administrator cannot handle a notice');
+    await PR.handleChange(chg, assessor, { outcome: 'acknowledged', note: 'Address recorded on the provider file.' });
+    ok(psql(`SELECT status FROM partner_material_changes WHERE id = '${chg}'`) === 'acknowledged', 'the assessor acknowledges a notice and the note is kept');
+    await page.goto(BASE + '/portal/oversight');
+    ok(await see(page, 'td:has-text("Address recorded on the provider file.")'), 'the provider sees LIV\'s note on the notice');
+
+    console.log(' sanctions screening');
+    await PR.recordSanctions(mp, assessor, { list_name: 'Test Screening List', checked_on: '2026-10-01', result: 'possible_match', note: 'Name similarity to be checked' });
+    ok((await PR.openForQueue()).some((i) => i.kind === 'Sanctions check' && i.who === `Monitor Test ${stamp}`), 'a possible match waits for the assessor');
+    await PR.recordSanctions(mp, assessor, { list_name: 'Test Screening List', checked_on: '2026-10-02', result: 'no_match', note: 'Checked against the registered identifiers' });
+    ok(!(await PR.openForQueue()).some((i) => i.kind === 'Sanctions check' && i.who === `Monitor Test ${stamp}`), 'a later check with no match clears the waiting item');
+    ok(await fails(PR.recordSanctions(mp, owner, { list_name: 'Test Screening List', result: 'no_match' }), 403), 'the owner administrator cannot record a screening');
+    ok(psql(`SELECT count(*) FROM partner_sanctions_checks WHERE platform_id = '${mp}'`) === '2' && psqlRefused(`UPDATE partner_sanctions_checks SET note = 'x' WHERE platform_id = '${mp}'`), 'screenings are kept as written and cannot be edited');
+
+    console.log(' standards versions and retention');
+    const criteria = (tag) => JSON.stringify(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9'].map((code) => ({ code, title: `${tag} ${code} title`, if_not_met: 'major' })));
+    ok(await fails(S.publish(assessor, { version: 'v8.1', criteria: criteria('Test') }), 403), 'the assessor cannot publish a standard: the decision-maker does');
+    ok(await fails(S.publish(decider, { version: 'v8.2', criteria: '[{"code":"C2"}]' }), 422), 'a criteria list that breaks the C1 to C9 order is refused');
+    await S.publish(decider, { version: 'v8.1', criteria: criteria('Test') });
+    ok(psql(`SELECT count(*) FROM partner_criteria_sets WHERE status = 'in_force'`) === '1' && psql(`SELECT status FROM partner_criteria_sets WHERE version = 'v8.1'`) === 'in_force', 'the published version is the one in force');
+    ok(await fails(S.publish(decider, { version: 'v8.1', criteria: criteria('Again') }), 409), 'a version number cannot be reused');
+    ok(psql(`SELECT count(*) FROM partner_applications WHERE criteria_version = 'v0.1'`) !== '0', 'applications opened before the new version keep their version');
+    await adm.goto(`${BASE}/admin/standards`);
+    ok(await see(adm, 'h2:has-text("Records retention schedule")') && await see(adm, 'td:has-text("Pending P-14")'), 'the retention schedule shows where each record is kept, with the periods left for counsel');
+
+    console.log(' draft reminders');
+    const draftApp = psql(`INSERT INTO partner_applications (platform_id, state, criteria_version, updated_at) VALUES ('${mp}', 'draft', 'v8.1', now() - interval '45 days') RETURNING id`).split('\n')[0];
+    await RM.remindStaleDrafts();
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE dedupe_key = 'draft-30:app:${draftApp}:monadm.${stamp}@example.com'`) === '1', 'a draft idle for 30 days gets one reminder');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE dedupe_key LIKE 'draft-90:app:${draftApp}%'`) === '0', 'the 90-day reminder is not sent at 30 days');
+    await RM.remindStaleDrafts();
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE dedupe_key = 'draft-30:app:${draftApp}:monadm.${stamp}@example.com'`) === '1', 'running the reminders again does not send a second copy');
+    psql(`UPDATE partner_applications SET updated_at = now() - interval '100 days' WHERE id = '${draftApp}'`);
+    await RM.remindStaleDrafts();
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE dedupe_key = 'draft-90:app:${draftApp}:monadm.${stamp}@example.com'`) === '1', 'a draft idle for 90 days gets the 90-day reminder');
+
+    console.log(' screens');
+    await adm.goto(`${BASE}/admin/monitoring`);
+    ok(await see(adm, 'th:has-text("Respond by")') && await see(adm, `td:has-text("Monitor Test ${stamp}")`), 'the monitoring page lists the cases with their deadlines');
+    await adm.goto(`${BASE}/admin/monitoring/${caseId}`);
+    ok(await see(adm, 'text=Closed:') && await see(adm, 'td:has-text("Provider response received")') , 'a case page shows its history and outcome');
+    await adm.goto(`${BASE}/admin/partner-records`);
+    ok(await see(adm, 'h2:has-text("Sanctions screening")') && await see(adm, 'td:has-text("Test Screening List")') && await see(adm, 'td:has-text("Not renewed in time")'), 'partner records show renewals, notices and screenings');
+    ok(await see(page, 'h2:has-text("Monitoring notices")') && await see(page, 'td:has-text("Contact or address")'), 'the provider sees its notices and changes');
+    const anonPages = ['/admin/monitoring', '/admin/partner-records', '/admin/standards', '/portal/oversight'];
+    ok((await Promise.all(anonPages.map((p) => anon.request.get(BASE + p, { maxRedirects: 0 })))).every((r) => r.status() !== 200), 'the new pages are closed to visitors');
+
+    console.log(' accessibility (automated WCAG 2.2 AA check, axe-core)');
+    const axeSource = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    const axeCheck = async (p, path) => {
+      await p.goto(BASE + path);
+      await p.evaluate(axeSource);
+      const v = await p.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      ok(v.length === 0, `${path} has no automated WCAG 2.2 AA violations${v.length ? ': ' + v.join(', ') : ''}`);
+    };
+    for (const path of ['/admin/monitoring', `/admin/monitoring/${caseId}`, '/admin/partner-records', '/admin/standards', '/admin/work', '/admin/report']) await axeCheck(adm, path);
+    for (const path of ['/portal/oversight', '/portal/level', '/portal/settings', '/portal/templates', '/portal/issue', '/account/security']) await axeCheck(page, path);
+    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/credentials', '/verify']) await axeCheck(anon, path);
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

@@ -7,7 +7,7 @@
   <div class="stat"><div class="n" style="color:var(--red)"><%= invalid %></div><div class="l">Rows with errors</div></div>
 </div>
 <% if (invalid) { %><div class="alert warn">Fix the highlighted rows in your file and re-upload, or skip them and issue the valid rows now.</div><% } %>
-<div class="table-wrap mt"><table>
+<div class="table-wrap mt" tabindex="0"><table>
   <tr><th>#</th><th>Ref</th><th>Name</th><th>ID</th><th>Email</th><th>Course</th><th>Completed</th><th>Status</th></tr>
   <% results.slice(0, 500).forEach(r => { %><tr class="<%= r.errors.length ? 'err' : '' %>">
     <td><%= r.index + 2 %></td><td><%= r.data.serial_no %></td><td><%= r.data.full_name %></td><td class="mono"><%= r.data.national_id ? maskId(r.data.national_id.slice(-4)) : '' %></td><td><%= r.data.email %></td><td><%= r.data.course_name %></td>

@@ -2,7 +2,7 @@
 <div class="page-head"><h1>Exceptions</h1><a class="btn" href="/admin/exceptions/new">Prepare an exception</a></div>
 <p class="small muted">An exception lets one case depart from one rule, for a bounded time or number of uses. Any staff account prepares it; only the main account approves. Normal procedures and published alternatives are not exceptions and do not come here.</p>
 <% if (recurring.length) { %><div class="card"><h3>Repeated categories</h3><p class="small muted">The same rule keeps needing exceptions: review whether the rule, the guidance or a published alternative should change.</p><ul><% recurring.forEach(c => { %><li><%= CASE_TYPES[c.case_type] || c.case_type %> · <%= c.rule_ref %> · <strong><%= c.n %></strong></li><% }) %></ul></div><% } %>
-<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Created</th><th>Type</th><th>Rule</th><th>Case</th><th>Provider</th><th>Status</th><th>Uses</th><th></th></tr>
+<% if (rows.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Created</th><th>Type</th><th>Rule</th><th>Case</th><th>Provider</th><th>Status</th><th>Uses</th><th></th></tr>
 <% rows.forEach(e => { %><tr><td class="small"><%= usDate(e.created_at) %></td><td class="small"><%= e.case_type.replace(/_/g, ' ') %></td><td class="small"><%= e.rule_ref %></td><td class="small"><%= e.subject_ref %></td><td class="small"><%= e.company_name || '—' %></td><td><span class="badge b-pending"><%= e.status %></span></td><td><%= e.uses %>/<%= e.max_uses %></td><td><a class="btn sm secondary" href="/admin/exceptions/<%= e.id %>">Open</a></td></tr><% }) %></table></div>
 <% } else { %><p class="muted mt">No exceptions.</p><% } %>
 <%- include('../partials/app-end') %>

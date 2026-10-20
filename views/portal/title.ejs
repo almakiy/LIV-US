@@ -18,6 +18,6 @@
   <% if (editable) { %><div class="row" style="gap:10px"><button class="btn secondary">Save draft</button><button class="btn" formaction="/portal/titles/<%= t.id %>/submit" formnovalidate>Submit<%= t.revision ? ' revision ' + (t.revision + 1) : '' %></button></div><% } %>
 </form>
 <h2 class="mt">History</h2>
-<div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= LABEL[e.to_status] || e.to_status %></td><td class="small"><%= ['needs_changes','needs_wider_review','needs_scope_expansion','refused','authorized'].includes(e.to_status) ? e.note : '' %></td></tr><% }) %></table></div>
+<div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>Status</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= LABEL[e.to_status] || e.to_status %></td><td class="small"><%= ['needs_changes','needs_wider_review','needs_scope_expansion','refused','authorized'].includes(e.to_status) ? e.note : '' %></td></tr><% }) %></table></div>
 <% if (!['authorized','refused','withdrawn'].includes(t.status)) { %><form class="mt" method="post" action="/portal/titles/<%= t.id %>/withdraw" data-confirm="Withdraw this request?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Withdraw</button></form><% } %>
 <%- include('../partials/app-end') %>

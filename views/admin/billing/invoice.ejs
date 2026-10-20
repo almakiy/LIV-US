@@ -3,7 +3,7 @@
   <span class="badge <%= inv.status === 'paid' ? 'b-active' : inv.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= inv.status %></span><% if (isOverdue(inv)) { %> <span class="badge b-suspended">overdue</span><% } %></div>
 <%- include('_nav') %>
 <p class="small"><a href="/admin/billing/partners/<%= inv.platform_id %>">Partner billing</a> · <a href="/admin/billing/invoices/<%= inv.id %>/pdf" target="_blank">Open PDF</a></p>
-<div class="table-wrap"><table><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th><th>Discount</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Amount</th><th>Discount</th></tr>
 <% lines.forEach(l => { %><tr><td class="small"><%= l.description %></td><td><%= l.quantity %></td><td><%= money(l.unit_amount_cents) %></td><td><%= money(l.amount_cents) %></td><td><%= Number(l.discount_cents) ? '-' + money(l.discount_cents) : '' %></td></tr><% }) %></table></div>
 <div class="card mt details"><dl>
   <dt>Subtotal</dt><dd><%= money(inv.subtotal_cents) %></dd>
@@ -28,7 +28,7 @@
 <% if (!payments.length) { %><form method="post" action="/admin/billing/invoices/<%= inv.id %>/void" class="mt" data-confirm="Void this invoice? Its number stays on record."><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Void invoice</button></form><% } %>
 <% } %>
 <h3 class="mt">Payments</h3>
-<div class="table-wrap"><table><tr><th>Received</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Received</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
 <% if (!payments.length) { %><tr><td colspan="4" class="muted center">No payments recorded.</td></tr><% } %>
 <% payments.forEach(p => { %><tr><td><%= usDate(p.received_on) %></td><td><%= money(p.amount_cents) %></td><td><%= p.method.replace('_', ' ') %><%= p.provider === 'stripe' ? ' (Stripe)' : '' %></td><td class="small"><%= p.reference %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

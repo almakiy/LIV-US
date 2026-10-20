@@ -1,0 +1,16 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Standards and retention</h1></div>
+<h2>Authorization criteria versions</h2>
+<p class="small muted">A published version applies to applications created after publication. Applications already open keep the version they started on (transition rule P-9 is pending). The criteria codes C1 to C9 must stay the same and in order, because each assessment records one finding per code.</p>
+<% if (can.decide) { %><form class="card" method="post" action="/admin/standards/publish"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Publish a version</h3>
+  <div class="field"><label for="sv">Version *</label><input id="sv" name="version" pattern="v[0-9]{1,3}\.[0-9]{1,3}" placeholder="v0.2" required></div>
+  <div class="field"><label for="sj">Criteria (JSON, English only) *</label><textarea id="sj" name="criteria" rows="10" required spellcheck="false">[{"code":"C1","title":"Legal entity and accountability","if_not_met":"major"}, ...nine items C1 to C9...]</textarea></div>
+  <button class="btn">Publish and put in force</button></form><% } else { %><p class="card small muted">Publishing a version needs the Authorization Decision-Maker.</p><% } %>
+<div class="table-wrap mt" tabindex="0"><table><tr><th>Version</th><th>Status</th><th>Created</th><th>Criteria</th></tr>
+<% versions.forEach(v => { %><tr><td><%= v.version %></td><td class="small"><%= v.status.replace('_', ' ') %></td><td class="small"><%= usDate(v.created_at) %></td><td class="small"><%= v.criteria.map(c => c.code + ' ' + c.title).join('; ') %></td></tr><% }) %></table></div>
+
+<h2 class="mt">Records retention schedule</h2>
+<p class="small muted">Where each record is kept and who owns it. Retention periods are pending decision P-14 (counsel), so none is set here. Nothing is deleted automatically; any deletion needs an approval.</p>
+<div class="table-wrap" tabindex="0"><table><tr><th>Record</th><th>Owner</th><th>Rows now</th><th>Retention</th></tr>
+<% retention.forEach(r => { %><tr><td class="small"><%= r.label %></td><td class="small"><%= r.owner %></td><td class="small"><%= r.n %></td><td class="small">Pending P-14</td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

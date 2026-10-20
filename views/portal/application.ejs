@@ -23,7 +23,7 @@
   <% conditions.forEach(k => { %><li><%= k.blocking ? 'Must be met before activation' : 'Non-blocking' %>: <%= k.text %><%= k.due_date ? ' (due ' + usDate(k.due_date) + ')' : '' %> <strong><%= k.closed ? '— closed' : '— open' %></strong></li><% }) %></ul></div><% } %>
 
 <% if (checklist.length) { %><div class="card mt"><h3>Activation</h3><p class="small muted">LIV activates your organization when every item is complete. Payment alone never activates.</p>
-  <div class="table-wrap"><table><tr><th></th><th>Item</th><th>Status</th></tr><% checklist.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div></div><% } %>
+  <div class="table-wrap" tabindex="0"><table><tr><th></th><th>Item</th><th>Status</th></tr><% checklist.forEach(i => { %><tr><td><span class="badge <%= i.ok ? 'b-active' : 'b-pending' %>"><%= i.ok ? 'done' : 'open' %></span></td><td><%= i.label %></td><td class="small"><%= i.detail %></td></tr><% }) %></table></div></div><% } %>
 
 <nav aria-label="Application stages" class="mt"><ol style="list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0">
   <% STAGES.forEach((s, i) => { %><li><a class="btn sm <%= s.key === step ? '' : 'secondary' %>" href="/portal/application/<%= app.id %>?step=<%= s.key %>" <%= s.key === step ? 'aria-current=step' : '' %>><%= i + 1 %>. <%= s.title %><%= done[s.key] ? ' ✓' : '' %></a></li><% }) %></ol>
@@ -71,7 +71,7 @@
 <% } %>
 
 <h2 class="mt">Progress</h2>
-<div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>When</th><th>Status</th><th>By</th></tr>
 <% app.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= (STATE_TEXT[e.to_state] || [e.to_state])[0] %></td><td class="small"><%= e.actor_label === 'system' ? 'System' : (e.actor_label || '').includes('@') ? 'LIV or you' : e.actor_label %></td></tr><% }) %></table></div>
 
 <% if (!['activated','declined','withdrawn','closed'].includes(app.state)) { %>

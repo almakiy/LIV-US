@@ -21,6 +21,12 @@ start().finally(() => {
   // Approved exceptions past their end date expire; they are never renewed.
   const expire = () => require('./lib/exceptions').expire().catch(() => {});
   setTimeout(expire, 45 * 1000).unref(); setInterval(expire, 24 * 3600 * 1000).unref();
+  // Monitoring indicators (Batch H): count indicators per provider and escalation of cases past 10 working days, hourly.
+  const indicators = () => require('./lib/indicators').sweep().then((n) => n && console.log(`[indicators] ${n} case(s) escalated`)).catch((e) => console.warn(`[indicators] ${e.message}`));
+  setTimeout(indicators, 60 * 1000).unref(); setInterval(indicators, 3600 * 1000).unref();
+  // Reminders for drafts idle for 30 and 90 days (once per draft and step).
+  const reminders = () => require('./lib/reminders').remindStaleDrafts().catch((e) => console.warn(`[reminders] ${e.message}`));
+  setTimeout(reminders, 90 * 1000).unref(); setInterval(reminders, 24 * 3600 * 1000).unref();
   // Email worker: sends queued messages every 20 seconds (at most 10 per run), with retries. EMAIL_DRIVER=off keeps them queued.
   const mail = () => require('./lib/email').processQueue().catch((e) => console.warn(`[email] ${e.message}`));
   setTimeout(mail, 10 * 1000).unref(); setInterval(mail, 20 * 1000).unref();

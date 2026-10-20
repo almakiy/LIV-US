@@ -5,7 +5,7 @@
   <% const groups = [['accreditation', 'Training provider application, review and authorization'], ['certificate', 'Certificates'], ['verification', 'Verification'], ['candidate', 'Candidates and examinations'], ['course', 'Courses and curricula'], ['resource', 'Resources']]; %>
   <% groups.forEach(([cat, label]) => { const list = products.filter(p => p.category === cat); if (!list.length) return; %>
     <h2 class="mt"><%= label %></h2>
-    <div class="table-wrap"><table><tr><th>Service</th><th>Fee</th></tr>
+    <div class="table-wrap" tabindex="0"><table><tr><th>Service</th><th>Fee</th></tr>
     <% list.forEach(p => { const ps = prices.filter(x => x.code === p.code); const plans = ps.filter(x => x.plan); %>
       <tr><td><strong><%= p.name %></strong><% if (p.description) { %><div class="small muted"><%= p.description %></div><% } %></td>
       <td class="small"><% if (plans.length) { %><% ['starter', 'professional', 'enterprise'].forEach(k => { const row = plans.find(x => x.plan === k); if (row) { %><%= PLANS[k] %>: <%= money(row.unit_amount_cents) %><br><% } }) %>
@@ -14,7 +14,7 @@
     <% }) %></table></div>
   <% }) %>
   <h2 class="mt">Plans</h2>
-  <div class="table-wrap"><table><tr><th>Plan</th><th>Certificates included each plan year</th></tr><% Object.entries(PLANS).forEach(([k, l]) => { %><tr><td><%= l %></td><td><%= PLAN_DEFAULTS[k].included %></td></tr><% }) %></table></div>
+  <div class="table-wrap" tabindex="0"><table><tr><th>Plan</th><th>Certificates included each plan year</th></tr><% Object.entries(PLANS).forEach(([k, l]) => { %><tr><td><%= l %></td><td><%= PLAN_DEFAULTS[k].included %></td></tr><% }) %></table></div>
   <p class="small muted mt"><%= brand %> is a private professional credentialing and verification organization based in the United States and is not a government agency. Fees do not depend on any authorization or credential decision.</p>
 </div>
 <%- include('../partials/foot') %>

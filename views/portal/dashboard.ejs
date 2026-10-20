@@ -10,7 +10,7 @@
   <div class="stat"><div class="n"><%= lookups %></div><div class="l">Verification checks (last 30 days)</div></div>
 </div>
 <h2 class="mt">Recent issuance batches</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Date</th><th>Source</th><th>File</th><th>Issued</th><th>Skipped</th><th>By</th><th></th></tr>
   <% if (!batches.length) { %><tr><td colspan="7" class="muted center">No batches yet.</td></tr><% } %>
   <% batches.forEach(b => { %><tr>

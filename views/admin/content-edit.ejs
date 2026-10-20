@@ -52,7 +52,7 @@
   <p class="small"><a class="btn secondary sm" href="/admin/content/<%= a.id %>/review-pack.xlsx">Download expert review pack (Excel)</a> <span class="muted">Every statement with its cited source, the sources list, a quality checklist and the reviewer's declaration, in English and Arabic, to send to the subject-matter reviewer.</span></p>
   <% if (a.status === 'draft') { %><form method="post" action="/admin/content/<%= a.id %>/request-review" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm"><%= a.review_requested_at ? 'Review requested (waiting for the engine)' : 'Request automated review' %></button></form><% } %>
 </div><% } %>
-<% if (versions && versions.length) { %><h3 class="mt">Version history</h3><div class="table-wrap"><table><tr><th>Version</th><th>By</th><th>Note</th><th>Date</th></tr>
+<% if (versions && versions.length) { %><h3 class="mt">Version history</h3><div class="table-wrap" tabindex="0"><table><tr><th>Version</th><th>By</th><th>Note</th><th>Date</th></tr>
   <% versions.forEach(v => { %><tr><td><%= v.version %></td><td><%= v.changed_by %></td><td><%= v.change_note %></td><td><%= usDate(v.created_at) %></td></tr><% }) %></table></div><% } %>
 <% if (a.id) { %><form method="post" action="/admin/content/<%= a.id %>/delete" data-confirm="Delete this article permanently?" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Delete article</button></form><% } %>
 <%- include('../partials/app-end') %>

@@ -15,7 +15,7 @@
   <button class="btn">Save review</button>
 </form>
 <h3 class="mt">History</h3>
-<div class="table-wrap"><table><tr><th>Date</th><th>Type</th><th>Reviewer</th><th>Outcome</th><th>Findings</th><th>Next due</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Date</th><th>Type</th><th>Reviewer</th><th>Outcome</th><th>Findings</th><th>Next due</th></tr>
 <% if (!reviews.length) { %><tr><td colspan="6" class="muted center">No reviews recorded.</td></tr><% } %>
 <% reviews.forEach(v => { %><tr><td><%= usDate(v.reviewed_on) %></td><td><%= TYPES[v.review_type] %></td><td><%= v.reviewer_name %></td><td><%= OUTCOMES[v.outcome] %></td><td class="small"><%= v.findings %></td><td><%= usDate(v.next_review_due) %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

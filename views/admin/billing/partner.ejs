@@ -35,7 +35,7 @@
 </form>
 
 <h3 class="mt">Discounts and credits</h3>
-<div class="table-wrap"><table><tr><th>Category</th><th>Applies to</th><th>Value</th><th>Reason</th><th>Until</th><th>Status</th><th></th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>Category</th><th>Applies to</th><th>Value</th><th>Reason</th><th>Until</th><th>Status</th><th></th></tr>
 <% if (!discounts.length) { %><tr><td colspan="7" class="muted center">None.</td></tr><% } %>
 <% discounts.forEach(d => { %><tr><td><%= DISCOUNT_CATEGORIES[d.category] %></td><td><%= d.product_code || 'All products' %></td><td><%= d.percent_bps != null ? (d.percent_bps / 100) + '%' : money(d.amount_cents) + ' credit' %></td><td class="small"><%= d.note %></td><td><%= d.valid_until ? usDate(d.valid_until) : '—' %></td><td><%= d.used_invoice_id ? 'used' : 'available' %></td>
   <td class="right"><% if (!d.used_invoice_id) { %><form method="post" action="/admin/billing/discounts/<%= d.id %>/delete" style="display:inline" data-confirm="Remove this discount?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn danger sm">Remove</button></form><% } %></td></tr><% }) %></table></div>
@@ -51,7 +51,7 @@
 </form>
 
 <h3 class="mt">Invoices</h3>
-<div class="table-wrap"><table><tr><th>No.</th><th>Status</th><th>Issued</th><th>Due</th><th>Total</th><th>Paid</th></tr>
+<div class="table-wrap" tabindex="0"><table><tr><th>No.</th><th>Status</th><th>Issued</th><th>Due</th><th>Total</th><th>Paid</th></tr>
 <% if (!invoices.length) { %><tr><td colspan="6" class="muted center">No invoices yet.</td></tr><% } %>
 <% invoices.forEach(i => { %><tr><td><a href="/admin/billing/invoices/<%= i.id %>"><%= i.number || 'Draft' %></a></td><td><span class="badge <%= i.status === 'paid' ? 'b-active' : i.status === 'void' ? 'b-suspended' : 'b-pending' %>"><%= i.status %></span></td><td><%= i.issue_date ? usDate(i.issue_date) : '—' %></td><td><%= i.due_date ? usDate(i.due_date) : '—' %></td><td><%= money(i.total_cents) %></td><td><%= money(i.amount_paid_cents) %></td></tr><% }) %></table></div>
 <%- include('../../partials/app-end') %>

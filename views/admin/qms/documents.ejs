@@ -3,7 +3,7 @@
   <form method="post" action="/admin/qms/documents/starter" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary">Create starter set (11 outlines)</button></form>
   <a class="btn" href="/admin/qms/documents/new">+ New document</a></div></div>
 <%- include('_nav') %>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>No.</th><th>Title</th><th>Type</th><th>Status</th><th>Version</th><th>Next review</th></tr>
   <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No documents yet. Create the starter set of policy and procedure outlines.</td></tr><% } %>
   <% rows.forEach(d => { %><tr><td><%= d.doc_no %></td><td><a href="/admin/qms/documents/<%= d.id %>"><%= d.title %></a></td><td><%= DOC_TYPES[d.doc_type] %></td>

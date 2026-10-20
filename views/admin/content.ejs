@@ -8,7 +8,7 @@
   <p class="small"><a href="/admin/content/library/review-packs.zip">Download expert review packs for all library items (ZIP of Excel files)</a></p>
   <% if (lib.errors.length) { %><div class="alert error"><strong>Library files with errors (not loaded):</strong><ul><% lib.errors.forEach(e => { %><li class="small"><%= e %></li><% }) %></ul></div><% } %>
 </div><% } %>
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Title</th><th>Topic</th><th>Type</th><th>Status</th><th>Review</th><th>Updated</th><th></th></tr>
   <% if (!rows.length) { %><tr><td colspan="7" class="muted center">Nothing here yet. Write the first article.</td></tr><% } %>
   <% rows.forEach(a => { %><tr><td><a href="/admin/content/<%= a.id %>"><%= a.title %></a><div class="small muted">/knowledge/<%= a.slug %></div></td>

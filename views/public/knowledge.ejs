@@ -7,8 +7,8 @@
 <section class="section"><div class="container">
   <form method="get" class="filters">
     <input type="search" name="q" value="<%= search %>" placeholder="Search articles">
-    <select name="category" data-autosubmit><option value="">All topics</option><% Object.entries(CATEGORIES).forEach(([k, l]) => { %><option value="<%= k %>" <%= category === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
-    <select name="kind" data-autosubmit><option value="">All types</option><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+    <select name="category" aria-label="Category" data-autosubmit><option value="">All topics</option><% Object.entries(CATEGORIES).forEach(([k, l]) => { %><option value="<%= k %>" <%= category === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+    <select name="kind" aria-label="Type" data-autosubmit><option value="">All types</option><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= kind === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
     <button class="btn">Search</button>
   </form>
   <% if (!rows.length) { %><div class="card center muted">No articles found. <a href="/knowledge">Clear filters</a></div><% } %>

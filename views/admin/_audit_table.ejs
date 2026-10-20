@@ -1,4 +1,4 @@
-<div class="table-wrap"><table>
+<div class="table-wrap" tabindex="0"><table>
   <tr><th>Time (ET)</th><th>Actor</th><th>Platform</th><th>Action</th><th>Target</th><th>Details</th></tr>
   <% if (!rows.length) { %><tr><td colspan="6" class="muted center">No activity.</td></tr><% } %>
   <% rows.forEach(a => { %><tr><td style="white-space:nowrap"><%= usDateTime(a.created_at) %></td>
