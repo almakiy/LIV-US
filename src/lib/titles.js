@@ -4,7 +4,9 @@
 const { q, tx } = require('../db');
 const { audit } = require('./audit');
 const pos = require('./positions');
-const F = require('./title-form');
+const TF = require('./title-form');
+const EF = require('./expansion-form');
+const formFor = (kind) => (kind === 'expansion' ? EF : TF);
 const { ApplicationError } = require('./applications');
 
 const EDITABLE = ['draft', 'needs_changes', 'needs_wider_review'];
@@ -33,15 +35,15 @@ async function lockAny(c, id) {
   return t;
 }
 
-async function create(platformId, user, title) {
+async function create(platformId, user, title, kind = 'title') {
   if (!(await eligible(platformId))) throw new ApplicationError('Title requests open once your application is accepted.', 409);
   const t = String(title || '').trim().slice(0, 200);
   if (!t) throw new ApplicationError('Enter the title.');
-  const errs = F.validate({ title: t });
+  const errs = formFor(kind).validate({ title: t });
   if (errs.length) throw new ApplicationError(errs[0].message);
   try {
     return await tx(async (c) => {
-      const { rows: [r] } = await c.query(`INSERT INTO partner_title_requests (platform_id, title, form, created_by) VALUES ($1,$2,$3,$4) RETURNING *`, [platformId, t, JSON.stringify({ title: t }), user?.id || null]);
+      const { rows: [r] } = await c.query(`INSERT INTO partner_title_requests (platform_id, title, kind, form, created_by) VALUES ($1,$2,$3,$4,$5) RETURNING *`, [platformId, t, kind, JSON.stringify({ title: t }), user?.id || null]);
       await event(c, r.id, 'draft', user, 'Started');
       await audit({ user, platformId, action: 'title.create', target: r.id, metadata: { title: t } }, c);
       return r;
@@ -63,7 +65,7 @@ async function submit(id, platformId, user) {
   return tx(async (c) => {
     const t = await lockOwn(c, id, platformId);
     if (!EDITABLE.includes(t.status)) throw new ApplicationError(`The request cannot be submitted while it is ${t.status.replace(/_/g, ' ')}.`, 409);
-    const errs = F.validate(F.clean(t.form), { submit: true });
+    const errs = formFor(t.kind).validate(formFor(t.kind).clean(t.form), { submit: true });
     if (errs.length) throw new ApplicationError(errs[0].message);
     const revision = t.revision + 1;
     await c.query('INSERT INTO partner_title_revisions (request_id, revision, form, submitted_by) VALUES ($1,$2,$3,$4)', [id, revision, JSON.stringify(t.form), user?.id || null]);
@@ -93,6 +95,7 @@ async function review(id, user, { recommendation, note }) {
   return tx(async (c) => {
     const t = await lockAny(c, id);
     if (t.status !== 'submitted') throw new ApplicationError(`The request is ${t.status.replace(/_/g, ' ')}, not waiting for review.`, 409);
+    if (t.kind === 'expansion' && recommendation === 'scope_expansion') throw new ApplicationError('A scope expansion request cannot be sent back for a scope expansion.');
     if (RETURNS[recommendation]) {
       await c.query('UPDATE partner_title_requests SET reviewer_id = $2, reviewer_label = $3, recommendation = $4, review_note = $5 WHERE id = $1', [id, user.id, user.email, recommendation, why]);
       await event(c, id, RETURNS[recommendation], user, why);
@@ -117,7 +120,9 @@ async function decide(id, user, { outcome, reason }) {
     if (t.reviewer_id === user.id) throw new ApplicationError('You reviewed this request, so another decision-maker must decide it.', 403);
     if (outcome === 'authorized' && t.recommendation !== 'authorize') throw new ApplicationError(`The reviewer recommended "${t.recommendation}", so the title cannot be authorized. Refuse it, or ask the reviewer to look again.`, 409);
     let scopeId = null;
-    if (outcome === 'authorized') {
+    if (outcome === 'authorized' && t.kind === 'expansion') {
+      await c.query(`INSERT INTO partner_capabilities (platform_id, kind, description, request_id) VALUES ($1,$2,$3,$4)`, [t.platform_id, t.form.expansion_type || 'subfield', t.title, t.id]);
+    } else if (outcome === 'authorized') {
       const { rows: [sc] } = await c.query(`INSERT INTO partner_scopes (platform_id, title, decision_note, created_by) VALUES ($1,$2,$3,$4) RETURNING id`,
         [t.platform_id, t.title, `Title request ${t.id} authorized`, user.id]);
       scopeId = sc.id;
@@ -125,7 +130,7 @@ async function decide(id, user, { outcome, reason }) {
     await c.query('UPDATE partner_title_requests SET decided_by = $2, decided_by_label = $3, decision_reason = $4, decided_at = now(), scope_id = $5 WHERE id = $1', [id, user.id, user.email, why, scopeId]);
     await event(c, id, outcome, user, why);
     await audit({ user, platformId: t.platform_id, action: `title.${outcome}`, target: id, metadata: { scope: scopeId } }, c);
-    return { id, status: outcome, platformId: t.platform_id, title: t.title, note: why, scopeId };
+    return { id, status: outcome, platformId: t.platform_id, title: t.title, note: why, scopeId, kind: t.kind };
   }).then(async (r) => { await notify(r.platformId, r.title, r.status, r.note, id); return r; });
 }
 
@@ -134,7 +139,7 @@ async function notify(platformId, title, status, note, id) {
 }
 
 async function listOwn(platformId) {
-  return (await q('SELECT id, title, status, revision, updated_at FROM partner_title_requests WHERE platform_id = $1 ORDER BY updated_at DESC', [platformId])).rows;
+  return (await q('SELECT id, title, kind, status, revision, updated_at FROM partner_title_requests WHERE platform_id = $1 ORDER BY updated_at DESC', [platformId])).rows;
 }
 /** Provider view: the request, and the history without the reviewer's internal notes. */
 async function getOwn(id, platformId) {
@@ -145,7 +150,7 @@ async function getOwn(id, platformId) {
   return { ...t, events, trainers };
 }
 async function listAll() {
-  return (await q(`SELECT t.id, t.title, t.status, t.revision, t.updated_at, p.company_name FROM partner_title_requests t JOIN platforms p ON p.id = t.platform_id
+  return (await q(`SELECT t.id, t.title, t.kind, t.status, t.revision, t.updated_at, p.company_name FROM partner_title_requests t JOIN platforms p ON p.id = t.platform_id
     WHERE t.status <> 'draft' ORDER BY (t.status IN ('submitted','awaiting_decision')) DESC, t.updated_at DESC`)).rows;
 }
 async function getForStaff(id) {
@@ -157,4 +162,4 @@ async function getForStaff(id) {
   return { ...t, events, revisions, trainers };
 }
 
-module.exports = { EDITABLE, eligible, create, saveDraft, submit, withdraw, review, decide, listOwn, getOwn, listAll, getForStaff };
+module.exports = { formFor, EDITABLE, eligible, create, saveDraft, submit, withdraw, review, decide, listOwn, getOwn, listAll, getForStaff };

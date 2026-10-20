@@ -19,16 +19,32 @@ r.get('/about', (req, res) => res.render('public/about', { title: 'About Us' }))
 
 // Authorized Training Provider Program and public register of Authorized Training Providers. /accreditation is the legacy URL.
 r.get('/accreditation', (req, res) => res.redirect(301, '/partners'));
+const likeEscape = (v) => String(v).replace(/[\\%_]/g, (c) => `\\${c}`);
 r.get('/partners', wrap(async (req, res) => {
-  const { rows: partners } = await q(`SELECT company_name, country, public_slug AS slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL ORDER BY company_name`);
-  res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners });
+  const term = String(req.query.q || '').trim().slice(0, 80), country = String(req.query.country || '').trim().slice(0, 80);
+  const { rows: partners } = await q(`SELECT p.company_name, p.country, p.public_slug AS slug, p.level, p.public_number,
+      (SELECT array_agg(title ORDER BY title) FROM (SELECT title FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' ORDER BY title LIMIT 3) t) AS titles
+    FROM platforms p WHERE p.accreditation_status = 'active' AND p.public_slug IS NOT NULL
+      AND ($1 = '' OR p.company_name ILIKE '%' || $2 || '%' OR EXISTS (SELECT 1 FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' AND s.title ILIKE '%' || $2 || '%'))
+      AND ($3 = '' OR lower(p.country) = lower($3))
+    ORDER BY p.company_name LIMIT 200`, [term, likeEscape(term), country]);
+  const { rows: countries } = await q(`SELECT DISTINCT country FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND country IS NOT NULL AND country <> '' ORDER BY country`);
+  res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners, countries: countries.map((c) => c.country), term, country });
 }));
+r.get('/partners/guide', (req, res) => {
+  const F = require('../lib/application-form'); const T = require('../lib/title-form');
+  res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
+});
 r.get('/partners/:slug', wrap(async (req, res, next) => {
-  const { rows: [p] } = await q(`SELECT id, company_name, country, website FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
   const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
   const scopes = await schemeStore.scopesFor(p.id, { activeOnly: true });
-  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, scopes });
+  const { rows: [app] } = await q(`SELECT v.form FROM partner_application_versions v JOIN partner_applications a ON a.id = v.application_id WHERE a.platform_id = $1 AND a.state = 'activated' ORDER BY v.version DESC LIMIT 1`, [p.id]);
+  const MODES = require('../lib/application-form').MODES;
+  const modes = ((app && app.form && app.form.delivery_modes) || []).map((m) => MODES[m]).filter(Boolean);
+  const { rows: capabilities } = await q(`SELECT description, kind, granted_on FROM partner_capabilities WHERE platform_id = $1 AND status = 'active' ORDER BY granted_on`, [p.id]);
+  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, scopes, modes, capabilities });
 }));
 
 // Credential types and credential families.

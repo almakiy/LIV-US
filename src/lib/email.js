@@ -39,6 +39,8 @@ const TEMPLATES = {
     `LIV reviewed the title "${clip(d.title, 200)}". Outcome: ${clip(d.outcome, 60)}.`, clip(d.reason, 1500),
     d.outcome === 'authorized' ? 'The title is now part of your authorized scope.' : 'Open the request to see what happens next.'],
   { label: 'Open your title requests', url: `${cfg.baseUrl}/portal/titles` }) }),
+  status_update: (d) => ({ subject: clip(d.title, 120), ...layout(clip(d.title, 120), [clip(d.message, 1500)].concat(d.reason ? [clip(d.reason, 1500)] : []),
+  d.url ? { label: clip(d.label || 'Open', 40), url: `${cfg.baseUrl}${d.url}` } : null) }),
   application_fee_received: (d) => ({ subject: 'Application fee received', ...layout('Thank you, the fee is received', [
     `LIV received the application fee for ${clip(d.company, 200)}. The completeness check is done within 5 working days.`, 'The fee pays for the review work. It does not affect the decision.'],
   { label: 'View your application', url: `${cfg.baseUrl}/portal/application` }) }),

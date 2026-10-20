@@ -1,0 +1,10 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= t.trainer_name %></h1><span class="badge b-pending"><%= t.status.replace('_', ' ') %></span></div>
+<p class="small muted"><a href="/admin/trainers">All submissions</a> · <%= t.company_name %> · <a href="/admin/trainers/<%= t.id %>/document">Download the document</a> (logged)</p>
+<div class="card details"><dl><dt>Qualifications</dt><dd><%= t.qualifications %></dd><dt>Experience</dt><dd><%= t.experience %></dd><dt>Delivery competence</dt><dd><%= t.delivery_competence %></dd><dt>Scopes</dt><dd><%= t.scopes.map(s => s.title).join(', ') %></dd></dl></div>
+<% if (t.status === 'submitted' && can.assess) { %><form class="card mt" method="post" action="/admin/trainers/<%= t.id %>/review"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Review</h3>
+  <p class="small muted">Accepting records this trainer against each chosen scope. The finding is shown to the provider.</p>
+  <div class="field"><label for="o">Outcome</label><select id="o" name="outcome" required><option value="">Choose</option><option value="accepted">Accept</option><option value="needs_more">Needs more information</option><option value="refused">Refuse</option></select></div>
+  <div class="field"><label for="f">Finding *</label><textarea id="f" name="finding" rows="3" maxlength="4000" required></textarea></div><button class="btn">Record</button></form><% } %>
+<h2 class="mt">History</h2><div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% t.events.slice().reverse().forEach(e => { %><tr><td class="small"><%= usDateTime(e.created_at) %></td><td class="small"><%= e.to_status.replace('_', ' ') %></td><td class="small"><%= e.actor_label %></td><td class="small"><%= e.note %></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

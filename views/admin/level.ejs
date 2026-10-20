@@ -1,0 +1,23 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= rv.company_name %>: <%= LABEL[rv.from_level] %> to <%= LABEL[rv.to_level] %></h1><span class="badge b-pending"><%= rv.status.replace('_', ' ') %></span></div>
+<p class="small muted"><a href="/admin/levels">All reviews</a> · opened by <%= rv.requested_by === 'provider' ? 'the provider' : 'LIV' %> · criteria <%= VERSION %> · plan of the new level: <%= PLAN[rv.to_level] %></p>
+<% if (rv.status === 'open' && !can.assess && Object.keys(rv.auto).length) { %><div class="card mt"><h3>What the system can establish</h3><ul class="small"><% rv.criteriaDef.filter(c => rv.auto[c.key]).forEach(c => { const a = rv.auto[c.key]; %><li><strong><%= c.label %></strong><br>System: <%= a.met ? 'met' : 'not met' %>. <%= a.note %></li><% }) %></ul><p class="small muted">The assessor confirms these and records a finding for every criterion.</p></div><% } %>
+<% if (rv.status === 'open' && can.assess) { %>
+<form class="card mt" method="post" action="/admin/levels/<%= rv.id %>/assess"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (rv.down) { %><h3>Assessment for a lower level</h3><p class="small muted">Recommend a lower level only on recorded reasons, for example two failed surveillance reviews or a commitment not renewed after the 90-day correction period.</p>
+    <div class="field"><label for="dm">Recommend the lower level?</label><select id="dm" name="demote"><option value="no">No, keep the level</option><option value="yes">Yes, recommend the lower level</option></select></div>
+  <% } else { %><h3>Assessment</h3><p class="small muted">One finding per criterion. The system's own readings are shown; the assessor confirms them.</p>
+    <% rv.criteriaDef.forEach(c => { const a = rv.auto[c.key]; %><fieldset class="mt"><legend><strong><%= c.label %></strong></legend>
+      <% if (a) { %><p class="small muted">System: <%= a.met ? 'met' : 'not met' %>. <%= a.note %></p><% } %>
+      <div class="row"><div class="field"><label for="m_<%= c.key %>">Met?</label><select id="m_<%= c.key %>" name="met_<%= c.key %>"><option value="yes" <%= a && a.met ? 'selected' : '' %>>Yes</option><option value="no" <%= a && !a.met ? 'selected' : '' %>>No</option></select></div>
+      <div class="field"><label for="n_<%= c.key %>">Finding *</label><input id="n_<%= c.key %>" name="note_<%= c.key %>" maxlength="1000" required value="<%= a ? a.note : '' %>"></div></div></fieldset><% }) %><% } %>
+  <div class="field mt"><label for="sn">Note <%= rv.down ? '*' : '' %></label><textarea id="sn" name="note" rows="2" maxlength="4000" <%= rv.down ? 'required' : '' %>></textarea></div><button class="btn">Record the assessment</button></form>
+<% } else if (rv.criteria) { %><div class="table-wrap mt"><table><tr><th>Criterion</th><th>Met</th><th>Finding</th></tr><% rv.criteriaDef.forEach(c => { const a = rv.criteria[c.key] || {}; %><tr><td class="small"><%= c.label %></td><td><span class="badge <%= a.met ? 'b-active' : 'b-pending' %>"><%= a.met ? 'yes' : 'no' %></span></td><td class="small"><%= a.note %></td></tr><% }) %></table></div><% } %>
+<% if (rv.recommendation) { %><div class="card mt"><strong>Recommendation: <%= rv.recommendation.replace('_', ' ') %></strong> by <%= rv.reviewer_label %><% if (rv.review_note) { %><p><%= rv.review_note %></p><% } %></div><% } %>
+<% if (rv.status === 'awaiting_decision' && can.decide) { %>
+<form class="card mt" method="post" action="/admin/levels/<%= rv.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Decision</h3>
+  <p class="small muted">The server refuses a decision by the assessor. A promotion needs a recommendation to promote; a lower level needs a recommendation to demote. The level changes only here.</p>
+  <div class="field"><label for="do">Decision</label><select id="do" name="outcome" required><option value="">Choose</option><% if (!rv.down) { %><option value="promoted">Promote to <%= LABEL[rv.to_level] %></option><% } else { %><option value="demoted">Move to <%= LABEL[rv.to_level] %></option><% } %><option value="not_yet">Not yet, keep the level</option></select></div>
+  <div class="field"><label for="dr">Reasons *</label><textarea id="dr" name="reason" rows="2" maxlength="4000" required></textarea></div><button class="btn">Record the decision</button></form><% } %>
+<% if (rv.status === 'decided') { %><div class="card mt"><strong>Decision: <%= rv.outcome.replace('_', ' ') %></strong> by <%= rv.decided_by_label %><p><%= rv.decision_reason %></p></div><% } %>
+<%- include('../partials/app-end') %>

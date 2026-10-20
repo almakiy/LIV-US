@@ -1,18 +1,18 @@
 <%- include('../partials/app-start') %>
 <% const label = (s) => String(s).replace(/_/g, ' '); const last = t.revisions.length ? t.revisions[t.revisions.length - 1].form : t.form; %>
 <div class="page-head"><h1><%= t.title %></h1><span class="badge b-pending"><%= label(t.status) %></span></div>
-<p class="small muted"><a href="/admin/titles">All title requests</a> · <%= t.company_name %> · revision <%= t.revision %></p>
+<p class="small muted"><a href="/admin/titles">All title requests</a> · <%= t.kind === 'expansion' ? 'Scope expansion' : 'Title' %> · <%= t.company_name %> · revision <%= t.revision %></p>
 <div class="card details"><dl><% FIELDS.forEach(f => { const v = last[f.key]; %><dt><%= f.label %></dt><dd><% if (f.key === 'objectives') { %><ol><% lines(v).forEach(l => { %><li><%= l %></li><% }) %></ol><% } else if (Array.isArray(v)) { %><%= v.map(label).join(', ') %><% } else { %><%= v || '—' %><% } %></dd><% }) %></dl></div>
 <% if (t.trainers.length) { %><p class="small muted">Trainer records of this provider: <%= t.trainers.join(', ') %></p><% } %>
 <% if (t.status === 'submitted' && can.assess) { %>
 <form class="card mt" method="post" action="/admin/titles/<%= t.id %>/review"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Review</h3>
   <p class="small muted">Is the title suitable inside the provider's authorized field and capability, with trainers and delivery that fit it? Returning outcomes go back to the provider with your note. Authorize or refuse goes to the decision-maker.</p>
-  <div class="field"><label for="rc">Outcome</label><select id="rc" name="recommendation" required><option value="">Choose</option><option value="authorize">Recommend to authorize</option><option value="changes">Needs changes</option><option value="wider_review">Needs a wider review</option><option value="scope_expansion">Needs a scope expansion</option><option value="refuse">Recommend to refuse</option></select></div>
+  <div class="field"><label for="rc">Outcome</label><select id="rc" name="recommendation" required><option value="">Choose</option><option value="authorize">Recommend to authorize</option><option value="changes">Needs changes</option><option value="wider_review">Needs a wider review</option><% if (t.kind !== 'expansion') { %><option value="scope_expansion">Needs a scope expansion</option><% } %><option value="refuse">Recommend to refuse</option></select></div>
   <div class="field"><label for="rn">Finding *</label><textarea id="rn" name="note" rows="3" maxlength="4000" required></textarea></div><button class="btn">Record</button></form>
 <% } %>
 <% if (t.status === 'awaiting_decision') { %><div class="card mt"><h3>Reviewer's recommendation</h3><p><strong><%= label(t.recommendation) %></strong> by <%= t.reviewer_label %></p><p><%= t.review_note %></p></div>
 <% if (can.decide) { %><form class="card mt" method="post" action="/admin/titles/<%= t.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Decision</h3>
-  <p class="small muted">The server refuses a decision by the reviewer. Authorizing creates an authorized scope for this title.</p>
+  <p class="small muted">The server refuses a decision by the reviewer. Authorizing creates an authorized scope for a title, or a recorded capability for a scope expansion.</p>
   <div class="field"><label for="do">Decision</label><select id="do" name="outcome" required><option value="">Choose</option><option value="authorized">Authorize</option><option value="refused">Refuse</option></select></div>
   <div class="field"><label for="dr">Reasons *</label><textarea id="dr" name="reason" rows="3" maxlength="4000" required></textarea></div><button class="btn">Record decision</button></form><% } %><% } %>
 <h2 class="mt">History</h2>

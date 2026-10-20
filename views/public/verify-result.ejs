@@ -41,7 +41,7 @@ const provLabel = (st) => st === 'active' ? 'LIV Authorized Training Provider' :
     <hr>
     <h3 class="vsec">3. Training provider</h3>
     <dl>
-      <dt>Training provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span></div></dd>
+      <dt>Training provider</dt><dd><div class="issuer"><% if (c.logo_path) { %><img src="/logo/<%= c.platform_id %>" alt=""><% } %><span><%= c.company_name %></span><% if (c.provider_level && c.accreditation_status === 'active') { %> <span class="lvl lvl-<%= c.provider_level %>" title="Partnership level today"><%= c.provider_level.charAt(0).toUpperCase() + c.provider_level.slice(1) %> partner</span><% } %></div></dd>
       <dt>Status when issued</dt><dd><% if (c.issued_partner_status) { %><%= provLabel(c.issued_partner_status) %><% } else { %><span class="muted">Not recorded</span><% } %></dd>
       <dt>Status today</dt><dd><% if (c.accreditation_status !== 'active') { %><span class="badge b-<%= c.accreditation_status %>">Partner <%= c.accreditation_status %></span><% } else { %><span class="badge b-active">LIV Authorized Training Provider</span><% } %></dd>
       <% if (c.scope_title) { %><dt>Authorized scope</dt><dd><%= c.scope_title %><% if (c.scheme_name) { %> <span class="muted small">(<%= c.scheme_name %> family)</span><% } %>

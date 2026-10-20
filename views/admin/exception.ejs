@@ -1,0 +1,19 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Exception</h1><span class="badge b-pending"><%= e.status %></span></div>
+<p class="small muted"><a href="/admin/exceptions">All exceptions</a> · <%= CASE_TYPES[e.case_type] || e.case_type %><%= e.company_name ? ' · ' + e.company_name : '' %></p>
+<div class="card details"><dl>
+  <dt>Rule</dt><dd><%= e.rule_ref %></dd><dt>Case</dt><dd><%= e.subject_ref %></dd><dt>Why the rule cannot be followed</dt><dd><%= e.reason %></dd>
+  <dt>Why not a normal procedure</dt><dd><%= e.why_not_standard %></dd><dt>Evidence</dt><dd><%= e.evidence %></dd><dt>Effect</dt><dd><%= e.impact %></dd><dt>What it allows</dt><dd><%= e.limits %></dd>
+  <dt>Carried out by</dt><dd><%= e.executor %></dd><dt>Valid</dt><dd><%= usDate(e.valid_from) %> to <%= usDate(e.valid_until) %>, <%= e.uses %> of <%= e.max_uses %> use(s)</dd><dt>Closes when</dt><dd><%= e.closing_conditions %></dd>
+  <% if (e.specialist_opinion) { %><dt>Specialist opinion</dt><dd><%= e.specialist_opinion %></dd><% } %><% if (e.decision_reason) { %><dt>Decision</dt><dd><%= e.decision_reason %></dd><% } %>
+</dl></div>
+<% if (e.status === 'prepared') { %><% if (main) { %>
+<form class="card mt" method="post" action="/admin/exceptions/<%= e.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Decision</h3>
+  <p class="small muted">An approval covers this rule, this case and these dates and uses only. It does not prove a criterion that was not met, and it does not change real dates, evidence or the original score.</p>
+  <div class="field"><label for="o">Decision</label><select id="o" name="outcome" required><option value="">Choose</option><option value="approved">Approve</option><option value="refused">Refuse</option></select></div>
+  <div class="field"><label for="r">Reasons *</label><textarea id="r" name="reason" rows="2" maxlength="4000" required></textarea></div><button class="btn">Record</button></form>
+<% } else { %><p class="small muted mt">Only the main account approves an exception. This one is waiting for it.</p><% } %><% } %>
+<% if (['approved','used','expired'].includes(e.status)) { %><form class="card mt" method="post" action="/admin/exceptions/<%= e.id %>/close"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Close</h3>
+  <div class="field"><label for="n">How it was closed *</label><input id="n" name="note" maxlength="2000" required></div><button class="btn secondary">Close</button></form><% } %>
+<h2 class="mt">History</h2><div class="table-wrap"><table><tr><th>When</th><th>Status</th><th>By</th><th>Note</th></tr><% e.events.slice().reverse().forEach(h => { %><tr><td class="small"><%= usDateTime(h.created_at) %></td><td class="small"><%= h.to_status %></td><td class="small"><%= h.actor_label %></td><td class="small"><%= h.note %></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

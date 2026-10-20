@@ -1,0 +1,13 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Management report</h1><a class="btn secondary sm" href="/admin/work">Work</a></div>
+<p class="small muted">A short view from existing records. Speed of acceptance and the number of certificates are not targets: either can reward leniency. Look at the quality of decisions and the reasons for changes.</p>
+<div class="grid g2">
+  <div class="card"><h3>Work waiting</h3><p><strong><%= d.queue.total %></strong> items; <%= d.queue.over5 %> older than 5 days, <%= d.queue.over10 %> older than 10, <%= d.queue.over30 %> older than 30.</p><% if (d.queue.vacant.length) { %><p class="small" style="color:#a02020">No one holds: <%= d.queue.vacant.join(', ') %></p><% } %></div>
+  <div class="card"><h3>Applications</h3><p class="small"><%= d.sub.submitted %> submitted; <%= d.sub.returned %> returned to the applicant for information or corrections.</p><ul class="small mb0"><% d.apps.forEach(a => { %><li><%= a.state.replace(/_/g, ' ') %>: <%= a.n %></li><% }) %></ul></div>
+  <div class="card"><h3>Titles and expansions</h3><p class="small"><%= d.titles.total %> submitted: <%= d.titles.authorized %> authorized, <%= d.titles.returned %> returned, <%= d.titles.refused %> refused.</p></div>
+  <div class="card"><h3>Exceptions</h3><% if (d.exc.length) { %><ul class="small mb0"><% d.exc.forEach(e => { %><li><%= e.case_type.replace(/_/g, ' ') %>: <%= e.n %></li><% }) %></ul><% } else { %><p class="small muted">None.</p><% } %></div>
+  <div class="card"><h3>Providers by level</h3><% if (d.levels.length) { %><ul class="small mb0"><% d.levels.forEach(l => { %><li><%= l.level %>: <%= l.n %></li><% }) %></ul><% } else { %><p class="small muted">No active provider yet.</p><% } %></div>
+  <div class="card"><h3>Income concentration (12 months)</h3><% if (d.revenue.total) { %><p class="small">Total invoiced and paid <%= money(d.revenue.total) %> across <%= d.revenue.providers %> provider(s). The largest provider is <strong><%= d.revenue.top1 %>%</strong>, the two largest <strong><%= d.revenue.top2 %>%</strong>. Watch this: income that depends on few providers can pressure quality decisions about them.</p><% } else { %><p class="small muted">No invoices yet.</p><% } %></div>
+  <div class="card"><h3>Email</h3><% if (d.emails.length) { %><ul class="small mb0"><% d.emails.forEach(e => { %><li><%= e.status %>: <%= e.n %></li><% }) %></ul><% } else { %><p class="small muted">No messages.</p><% } %></div>
+</div>
+<%- include('../partials/app-end') %>

@@ -1,0 +1,18 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Prepare an exception</h1></div>
+<div class="card"><p class="small">Outside the authority of any exception: <%= Object.values(FORBIDDEN).map(v => v.charAt(0).toLowerCase() + v.slice(1)).join('; ') %>.</p></div>
+<form class="card mt" method="post" action="/admin/exceptions"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label for="ct">What it is about *</label><select id="ct" name="case_type" required><option value="">Choose</option><% Object.entries(CASE_TYPES).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+  <div class="field"><label for="pl">Provider (if any)</label><select id="pl" name="platform_id"><option value="">None</option><% platforms.forEach(p => { %><option value="<%= p.id %>"><%= p.company_name %></option><% }) %></select></div>
+  <div class="row"><div class="field"><label for="rr">The rule and its version *</label><input id="rr" name="rule_ref" maxlength="200" required></div><div class="field"><label for="sr">The case it applies to *</label><input id="sr" name="subject_ref" maxlength="200" required></div></div>
+  <div class="field"><label for="re">Why the rule cannot be followed here *</label><textarea id="re" name="reason" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="ws">Why a normal procedure or published alternative is not enough *</label><textarea id="ws" name="why_not_standard" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="ev">Evidence *</label><textarea id="ev" name="evidence" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="im">Effect on the learner, on integrity and on resources *</label><textarea id="im" name="impact" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="li">Exactly what it allows *</label><textarea id="li" name="limits" rows="2" maxlength="1500" required></textarea></div>
+  <div class="row"><div class="field"><label for="ex">Who carries it out *</label><input id="ex" name="executor" maxlength="200" required></div><div class="field"><label for="mu">Number of uses</label><input id="mu" type="number" name="max_uses" min="1" max="20" value="1"></div></div>
+  <div class="row"><div class="field"><label for="vf">Valid from *</label><input id="vf" type="date" name="valid_from" required></div><div class="field"><label for="vu">Valid until *</label><input id="vu" type="date" name="valid_until" required></div></div>
+  <div class="field"><label for="cc">What closes it *</label><input id="cc" name="closing_conditions" maxlength="1000" required></div>
+  <div class="field"><label for="so">Specialist opinion (if one was taken)</label><textarea id="so" name="specialist_opinion" rows="2" maxlength="2000"></textarea></div>
+  <button class="btn">Prepare for the main account</button></form>
+<%- include('../partials/app-end') %>

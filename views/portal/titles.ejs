@@ -1,12 +1,14 @@
 <%- include('../partials/app-start') %>
 <div class="page-head"><h1>Titles</h1></div>
-<p class="small muted">A title is a course you ask to deliver for LIV credentials. LIV reviews each title before it is used. A different title is a different request.</p>
+<p class="small muted">A title is a course you ask to deliver for LIV credentials. LIV reviews each title before it is used. A different title is a different request. If a title needs something your authorization does not cover yet (a new subfield, delivery mode, platform or site), ask for a scope expansion first.</p>
 <% if (!eligible) { %><div class="card"><p>Title requests open once your authorization application is accepted.</p></div>
 <% } else { %>
 <form class="card" method="post" action="/portal/titles/new"><input type="hidden" name="_csrf" value="<%= csrf %>">
   <div class="field"><label for="nt">New title (in English)</label><input id="nt" name="title" maxlength="200" required></div><button class="btn">Start a request</button></form>
-<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Title</th><th>Status</th><th>Revision</th><th>Updated</th><th></th></tr>
-<% rows.forEach(t => { %><tr><td><strong><%= t.title %></strong></td><td><span class="badge b-pending"><%= LABEL[t.status] %></span></td><td><%= t.revision || '—' %></td><td class="small"><%= usDateTime(t.updated_at) %></td><td><a class="btn sm secondary" href="/portal/titles/<%= t.id %>">Open</a></td></tr><% }) %></table></div>
+<form class="card mt" method="post" action="/portal/titles/new"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="kind" value="expansion">
+  <div class="field"><label for="ne">New scope expansion (name it in English)</label><input id="ne" name="title" maxlength="200" required></div><button class="btn secondary">Start an expansion request</button></form>
+<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Request</th><th>Type</th><th>Status</th><th>Revision</th><th>Updated</th><th></th></tr>
+<% rows.forEach(t => { %><tr><td><strong><%= t.title %></strong></td><td class="small"><%= t.kind === 'expansion' ? 'Scope expansion' : 'Title' %></td><td><span class="badge b-pending"><%= LABEL[t.status] %></span></td><td><%= t.revision || '—' %></td><td class="small"><%= usDateTime(t.updated_at) %></td><td><a class="btn sm secondary" href="/portal/titles/<%= t.id %>">Open</a></td></tr><% }) %></table></div>
 <% } else { %><p class="muted mt">No requests yet.</p><% } %>
 <% } %>
 <%- include('../partials/app-end') %>

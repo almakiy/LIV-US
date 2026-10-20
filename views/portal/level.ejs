@@ -1,0 +1,14 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Partnership level</h1></div>
+<% if (!d.level) { %><div class="card"><p>Your level is set when your organization becomes an active provider.</p></div><% } else { %>
+<div class="card"><p>Your level: <span class="lvl lvl-<%= d.level %>"><%= LABEL[d.level] %> partner</span> <span class="small muted">since <%= d.level_since ? usDate(d.level_since) : '' %> · provider number <%= d.public_number %> · plan <%= PLAN[d.level] %></span></p>
+  <p class="small muted">The level shows beside your name in the public register and on credential verification pages. It describes the size of your commitment and your record with LIV. It does not change what a credential says, and every provider meets the same authorization criteria.</p></div>
+<% const next = ORDER[ORDER.indexOf(d.level) + 1]; const openReview = d.reviews.find(r => ['open','awaiting_decision'].includes(r.status)); %>
+<% if (next) { %><div class="card mt"><h3>Moving to <%= LABEL[next] %></h3>
+  <p class="small muted">A review is decided against these criteria. Time, record and commitment count; paying more or issuing more does not shorten a minimum period.</p>
+  <ul class="small"><% CRITERIA[next].forEach(c => { %><li><%= c.label %></li><% }) %></ul>
+  <% if (openReview) { %><p><strong>A review is open</strong> (<%= openReview.status.replace('_', ' ') %>).</p><form method="post" action="/portal/level/<%= openReview.id %>/withdraw"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Withdraw the request</button></form>
+  <% } else { %><form method="post" action="/portal/level/request"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Request a review for <%= LABEL[next] %></button></form><% } %></div><% } %>
+<% if (d.reviews.length) { %><h2 class="mt">Reviews</h2><div class="table-wrap"><table><tr><th>When</th><th>From</th><th>To</th><th>Status</th><th>Outcome</th><th>Reasons</th></tr><% d.reviews.forEach(r => { %><tr><td class="small"><%= usDate(r.updated_at) %></td><td><%= LABEL[r.from_level] %></td><td><%= LABEL[r.to_level] %></td><td class="small"><%= r.status.replace('_', ' ') %></td><td class="small"><%= r.outcome ? r.outcome.replace('_', ' ') : '' %></td><td class="small"><%= r.decision_reason || '' %></td></tr><% }) %></table></div><% } %>
+<% } %>
+<%- include('../partials/app-end') %>

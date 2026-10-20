@@ -1,0 +1,15 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Trainers</h1></div>
+<p class="small muted">Add a trainer who will teach one of your authorized scopes. LIV reviews the trainer's documents. Accepted trainers are recorded against the scopes you choose.</p>
+<% if (!scopes.length) { %><div class="card"><p>You have no active authorized scope yet. Trainers are added once a scope exists.</p></div><% } else { %>
+<form class="card" method="post" action="/portal/trainers/new" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label for="tn">Trainer name *</label><input id="tn" name="trainer_name" maxlength="200" required></div>
+  <div class="field"><label for="tq">Qualifications *</label><textarea id="tq" name="qualifications" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="te">Subject experience *</label><textarea id="te" name="experience" rows="2" maxlength="2000" required></textarea></div>
+  <div class="field"><label for="tc">Training-delivery competence *</label><textarea id="tc" name="delivery_competence" rows="2" maxlength="2000" required></textarea></div>
+  <fieldset class="field"><legend>Scopes this trainer will teach *</legend><% scopes.forEach(s => { %><label style="display:block"><input type="checkbox" name="scope_ids" value="<%= s.id %>"> <%= s.title %></label><% }) %></fieldset>
+  <div class="field"><label for="tf">CV or certificates (PDF, PNG or JPEG, up to 10 MB) *</label><input id="tf" type="file" name="file" accept="application/pdf,image/png,image/jpeg" required></div>
+  <button class="btn">Submit the trainer</button></form>
+<% } %>
+<% if (rows.length) { %><div class="table-wrap mt"><table><tr><th>Trainer</th><th>Status</th><th>Updated</th><th></th></tr><% rows.forEach(t => { %><tr><td><strong><%= t.trainer_name %></strong></td><td><span class="badge b-pending"><%= LABEL[t.status] %></span></td><td class="small"><%= usDateTime(t.updated_at) %></td><td><a class="btn sm secondary" href="/portal/trainers/<%= t.id %>">Open</a></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

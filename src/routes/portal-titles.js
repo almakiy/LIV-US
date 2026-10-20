@@ -3,7 +3,6 @@ const express = require('express');
 const { requirePlatformAdmin, wrap, flash } = require('../lib/guards');
 const A = require('../lib/applications');
 const T = require('../lib/titles');
-const F = require('../lib/title-form');
 
 const r = express.Router();
 r.use(requirePlatformAdmin);
@@ -23,6 +22,7 @@ async function load(req, res, next) {
   try { return await T.getOwn(req.params.id, pid(req)); } catch (e) { if (e instanceof A.ApplicationError) return next(); throw e; }
 }
 async function render(req, res, t, { errors = [], form = null, status = 200 } = {}) {
+  const F = T.formFor(t.kind);
   res.status(status).render('portal/title', { title: t.title, t, form: form || t.form || {}, errors, FIELDS: F.FIELDS, editable: T.EDITABLE.includes(t.status), LABEL, NEXT });
 }
 
@@ -30,12 +30,13 @@ r.get('/', wrap(async (req, res) => {
   res.render('portal/titles', { title: 'Titles', rows: await T.listOwn(pid(req)), eligible: await T.eligible(pid(req)), LABEL });
 }));
 r.post('/new', wrap(async (req, res) => {
-  try { const t = await T.create(pid(req), req.user, req.body.title); return res.redirect(`/portal/titles/${t.id}`); }
+  try { const t = await T.create(pid(req), req.user, req.body.title, req.body.kind === 'expansion' ? 'expansion' : 'title'); return res.redirect(`/portal/titles/${t.id}`); }
   catch (e) { if (!(e instanceof A.ApplicationError)) throw e; flash(req, 'error', e.message); return res.redirect('/portal/titles'); }
 }));
 r.get('/:id', wrap(async (req, res, next) => { const t = await load(req, res, next); if (t) await render(req, res, t); }));
 r.post('/:id/save', wrap(async (req, res, next) => {
   const t = await load(req, res, next); if (!t) return;
+  const F = T.formFor(t.kind);
   const form = { ...F.clean(req.body), title: t.title };
   const errors = F.validate(form);
   if (errors.length) return render(req, res, t, { errors, form: { ...t.form, ...form }, status: 422 });
@@ -44,6 +45,7 @@ r.post('/:id/save', wrap(async (req, res, next) => {
 }));
 r.post('/:id/submit', wrap(async (req, res, next) => {
   const t = await load(req, res, next); if (!t) return;
+  const F = T.formFor(t.kind);
   const form = { ...F.clean(req.body), title: t.title };
   const errors = F.validate(form, { submit: true });
   if (errors.length) return render(req, res, t, { errors, form: { ...t.form, ...form }, status: 422 });

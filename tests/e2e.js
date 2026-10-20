@@ -48,7 +48,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
@@ -57,7 +57,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(hse.includes('From HSE operations to HSE governance.') && hse.includes('IN DEVELOPMENT') && !/passing score of|questions in/i.test(hse), 'HSE Governance page is marked as in development');
   for (const sec of ['/research', '/guides', '/standards']) ok((await pr.get(BASE + sec)).status() === 200, `${sec} section renders`);
   const sm = await (await pr.get(BASE + '/sitemap.xml')).text();
-  ok(sm.includes('/credentials/hse-governance') && sm.includes(`/partners/${pSlug}`) && !sm.includes('/accreditation<'), 'sitemap lists the new public URLs');
+  ok(sm.includes('/credentials/hse-governance') && sm.includes('/partners/guide') && sm.includes(`/partners/${pSlug}`) && !sm.includes('/accreditation<'), 'sitemap lists the new public URLs');
   await repo.close();
   }
 
@@ -1155,6 +1155,213 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(`${BASE}/admin/titles/${id}`);
     ok(await see(adm, `h1:has-text("${title}")`) && await see(adm, 'text=authorized'), 'the admin screen shows the request, its revisions and the decision');
     ok(!(await see(adm, 'button:has-text("Record decision")')), 'the owner administrator sees no review or decision forms');
+  }
+
+  console.log('Scope expansion and trainer additions (F2)');
+  {
+    const T = require('../src/lib/titles');
+    const TR = require('../src/lib/trainer-additions');
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const mk = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Exp Staff ${n}', 'ex${n}.${stamp}@example.com', 'x', '${position}') RETURNING id`).split('\n')[0], email: `ex${n}.${stamp}@example.com`, role: 'super_admin' });
+    const reviewer = mk(1, 'application_assessor'); const decider = mk(2, 'authorization_decision_maker');
+    const platformId = psql(`SELECT platform_id FROM partner_title_requests WHERE title LIKE 'Workplace Safety Awareness%' LIMIT 1`);
+    const ownUser = { id: psql(`SELECT id FROM users WHERE platform_id = '${platformId}' LIMIT 1`), email: 'owner' };
+    const exp = { expansion_type: 'delivery_mode', description: 'Hands-on rescue practice at a training yard', reason: 'Clients ask for practical rescue courses', equipment_or_platform: 'Training yard with rescue equipment',
+      trainers: 'Two rescue instructors with 10 years each', safeguards: 'Ratio of 1 instructor to 6 learners; equipment inspected before each session' };
+    const e1 = await T.create(platformId, ownUser, `Hands-on Rescue Delivery ${stamp}`, 'expansion');
+    ok(e1.kind === 'expansion' && await fails(T.create(platformId, ownUser, 'Accredited Rescue Capability', 'expansion'), 422), 'a scope expansion is its own request type, and a name implying an approval is refused');
+    await T.saveDraft(e1.id, platformId, ownUser, exp);
+    ok(await fails(T.submit(e1.id, platformId, ownUser).then(() => T.submit(e1.id, platformId, ownUser)), 409), 'an expansion request submits once');
+    ok(await fails(T.review(e1.id, reviewer, { recommendation: 'scope_expansion', note: 'x' }), 422), 'an expansion cannot be sent back for another expansion');
+    await T.review(e1.id, reviewer, { recommendation: 'authorize', note: 'The yard and the instructors meet what the capability needs.' });
+    const d = await T.decide(e1.id, decider, { outcome: 'authorized', reason: 'Capability confirmed.' });
+    ok(d.scopeId === null && psql(`SELECT count(*) FROM partner_capabilities WHERE request_id = '${e1.id}' AND kind = 'delivery_mode' AND status = 'active'`) === '1' && psql(`SELECT count(*) FROM partner_scopes WHERE title = 'Hands-on Rescue Delivery ${stamp}'`) === '0', 'an authorized expansion records a capability and does not create a title scope');
+    await page.goto(`${BASE}/portal/titles`);
+    ok(await see(page, 'button:has-text("Start an expansion request")') && await see(page, 'td:has-text("Scope expansion")'), 'the portal offers expansion requests and lists them by type');
+
+    // Trainer additions
+    const scopeId = psql(`SELECT id FROM partner_scopes WHERE platform_id = '${platformId}' AND status = 'active' LIMIT 1`);
+    await page.goto(`${BASE}/portal/trainers`);
+    const csrf = await page.inputValue('input[name=_csrf]');
+    const send = (extra = {}, buffer = Buffer.from('%PDF-1.4\n% cv\n')) => page.request.post(`${BASE}/portal/trainers/new`, { multipart: { _csrf: csrf, trainer_name: 'Nora Salem', qualifications: 'Diploma in rescue instruction', experience: '9 years of rescue instruction', delivery_competence: 'Delivered 40 courses', scope_ids: scopeId, file: { name: 'cv.pdf', mimeType: 'application/pdf', buffer }, ...extra }, maxRedirects: 0 });
+    await send({}, Buffer.from('not a pdf'));
+    ok(psql(`SELECT count(*) FROM partner_trainer_additions WHERE platform_id = '${platformId}'`) === '0', 'a trainer document is checked by content');
+    await send({ trainer_name: 'نورة سالم' });
+    ok(psql(`SELECT count(*) FROM partner_trainer_additions WHERE platform_id = '${platformId}'`) === '0', 'Arabic text is refused');
+    await send({ scope_ids: '11111111-1111-1111-1111-111111111111' });
+    ok(psql(`SELECT count(*) FROM partner_trainer_additions WHERE platform_id = '${platformId}'`) === '0', 'a scope that is not the provider\'s own is refused');
+    await send();
+    const tid = psql(`SELECT id FROM partner_trainer_additions WHERE platform_id = '${platformId}'`);
+    ok(!!tid && psql(`SELECT status FROM partner_trainer_additions WHERE id = '${tid}'`) === 'submitted', 'a trainer is submitted with a document and the scopes to teach');
+    ok(await fails(TR.review(tid, decider, { outcome: 'accepted', finding: 'x' }), 403) && await fails(TR.review(tid, reviewer, { outcome: 'accepted', finding: ' ' }), 422), 'only the reviewer position reviews, with a finding');
+    await TR.review(tid, reviewer, { outcome: 'needs_more', finding: 'Please add the instructor certificate.' });
+    await page.goto(`${BASE}/portal/trainers/${tid}`);
+    ok(await see(page, 'text=Please add the instructor certificate') && await see(page, 'button:has-text("Submit again")'), 'a returned submission shows LIV\'s message and opens for correction');
+    const re = await page.request.post(`${BASE}/portal/trainers/${tid}/resubmit`, { multipart: { _csrf: csrf, trainer_name: 'Nora Salem', qualifications: 'Diploma in rescue instruction; instructor certificate', experience: '9 years of rescue instruction', delivery_competence: 'Delivered 40 courses', scope_ids: scopeId, file: { name: 'cv2.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n% cv2\n') } }, maxRedirects: 0 });
+    ok(psql(`SELECT status || ':' || filename FROM partner_trainer_additions WHERE id = '${tid}'`) === 'submitted:cv2.pdf', 'the corrected trainer is submitted again with the new document');
+    const before = psql(`SELECT count(*) FROM partner_scope_trainers WHERE scope_id = '${scopeId}'`);
+    const acc = await TR.review(tid, reviewer, { outcome: 'accepted', finding: 'Qualifications and instructor certificate verified.' });
+    ok(acc.scopes === 1 && Number(psql(`SELECT count(*) FROM partner_scope_trainers WHERE scope_id = '${scopeId}' AND addition_id = '${tid}'`)) === 1 && Number(psql(`SELECT count(*) FROM partner_scope_trainers WHERE scope_id = '${scopeId}'`)) === Number(before) + 1, 'accepting records a trainer record against each chosen scope');
+    ok(psqlRefused(`UPDATE partner_scope_trainers SET trainer_name = 'X' WHERE addition_id = '${tid}'`), 'the trainer record is locked');
+    ok(await fails(TR.review(tid, reviewer, { outcome: 'refused', finding: 'Again' }), 409), 'a reviewed submission cannot be reviewed again');
+    ok((await page.request.get(`${BASE}/portal/trainers/${tid}/document`)).status() === 200 && psql(`SELECT count(*) FROM audit_logs WHERE action = 'trainer.document.download' AND target = '${tid}'`) >= '1', 'the provider downloads its own document and the download is logged');
+    const [oPid, oUid] = psql(`WITH p AS (INSERT INTO platforms (company_name, contact_email, accreditation_status) VALUES ('Other Trainers ${stamp}', 'otr.${stamp}@example.com', 'active') RETURNING id)
+      INSERT INTO users (platform_id, role, full_name, email, password_hash) SELECT id, 'platform_admin', 'Other', 'otr.${stamp}@example.com', 'x' FROM p RETURNING platform_id || '|' || id`).split('\n')[0].split('|');
+    const oScope = psql(`INSERT INTO partner_scopes (platform_id, title, decision_note) VALUES ('${oPid}', 'Other Course', 'test') RETURNING id`).split('\n')[0];
+    const foreign = await TR.submit(oPid, { id: oUid }, { trainer_name: 'Other Trainer', qualifications: 'q', experience: 'e', delivery_competence: 'd', scope_ids: [oScope] }, { name: 'o.pdf', buffer: Buffer.from('%PDF-1.4\n% o\n') });
+    const st = async (m, u, o) => (await page.request[m](u, { maxRedirects: 0, ...o })).status();
+    ok(await st('get', `${BASE}/portal/trainers/${foreign.id}`) === 404 && await st('get', `${BASE}/portal/trainers/${foreign.id}/document`) === 404 && await st('post', `${BASE}/portal/trainers/${foreign.id}/withdraw`, { form: { _csrf: csrf } }) === 404, 'one provider cannot open, download or withdraw another provider\'s trainer submission');
+    ok((await anon.request.get(`${BASE}/portal/trainers/${tid}`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/trainers/${tid}`, { maxRedirects: 0 })).status() !== 200, 'trainer pages are closed to visitors');
+    await adm.goto(`${BASE}/admin/trainers/${tid}`);
+    ok(await see(adm, 'h1:has-text("Nora Salem")') && await see(adm, 'text=accepted'), 'the admin screen shows the submission and its history');
+  }
+
+  console.log('Policy exceptions');
+  {
+    const X = require('../src/lib/exceptions');
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const mk = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Exc Staff ${n}', 'xc${n}.${stamp}@example.com', 'x', ${position ? `'${position}'` : 'NULL'}) RETURNING id`).split('\n')[0], email: `xc${n}.${stamp}@example.com`, role: 'super_admin' });
+    const relations = mk(1, 'partner_relations'); const assessor = mk(2, 'application_assessor'); const decider = mk(3, 'authorization_decision_maker'); const main = mk(4, null);
+    const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+    const body = (over = {}) => ({ case_type: 'late_administrative_submission', rule_ref: 'Trainer record rule v1', subject_ref: `case-${stamp}`, reason: 'The partner\'s portal was down on the deadline day', why_not_standard: 'No published alternative covers an outage',
+      evidence: 'Provider status page entry and email', impact: 'No learner is affected; no integrity risk', limits: 'Accept the submission 3 days late, once', executor: 'Partner relations', closing_conditions: 'Submission received', valid_from: day(-1), valid_until: day(10), max_uses: 1, ...over });
+    ok(await fails(X.prepare(relations, body({ case_type: 'fabricated_completion' })), 422) && await fails(X.prepare(relations, body({ case_type: 'false_payment_status' })), 422) && await fails(X.prepare(relations, body({ case_type: 'made_up' })), 422), 'an exception cannot be about inventing a completion, a false payment status or an unknown matter');
+    ok(await fails(X.prepare(relations, body({ evidence: ' ' })), 422) && await fails(X.prepare(relations, body({ valid_until: day(-5) })), 422), 'every field is required and the dates must make sense');
+    ok(await fails(X.prepare({ id: '00000000-0000-0000-0000-000000000000' }, body()), 403), 'only staff prepare an exception');
+    const e = await X.prepare(relations, body());
+    ok(e.status === 'prepared' && psqlRefused(`UPDATE policy_exception_events SET note = 'x' WHERE exception_id = '${e.id}'`), 'a staff member prepares an exception and its history is locked');
+    ok(await fails(X.decide(e.id, assessor, { outcome: 'approved', reason: 'ok' }), 403) && await fails(X.decide(e.id, decider, { outcome: 'approved', reason: 'ok' }), 403) && await fails(X.decide(e.id, relations, { outcome: 'approved', reason: 'ok' }), 403), 'no position holder can approve, not even the decision-maker or the person who prepared it');
+    ok(await fails(X.decide(e.id, main, { outcome: 'approved', reason: ' ' }), 422), 'the main account must give reasons');
+    ok(await fails(X.consume(e.id, { ruleRef: 'Trainer record rule v1', subjectRef: `case-${stamp}` }, main), 409), 'an exception that is not approved cannot be used');
+    await X.decide(e.id, main, { outcome: 'approved', reason: 'Documented outage' });
+    ok(await fails(X.decide(e.id, main, { outcome: 'refused', reason: 'again' }), 409), 'an approved exception cannot be decided again');
+    ok(await fails(X.consume(e.id, { ruleRef: 'Another rule', subjectRef: `case-${stamp}` }, relations), 409) && await fails(X.consume(e.id, { ruleRef: 'Trainer record rule v1', subjectRef: 'other-case' }, relations), 409), 'it applies to its own rule and its own case only');
+    await X.consume(e.id, { ruleRef: 'Trainer record rule v1', subjectRef: `case-${stamp}` }, relations);
+    ok(psql(`SELECT status || ':' || uses FROM policy_exceptions WHERE id = '${e.id}'`) === 'used:1' && await fails(X.consume(e.id, { ruleRef: 'Trainer record rule v1', subjectRef: `case-${stamp}` }, relations), 409), 'a single-use exception is used once and then spent');
+    ok(await fails(X.close(e.id, relations, ' '), 422));
+    await X.close(e.id, relations, 'Submission received and filed');
+    ok(psql(`SELECT status FROM policy_exceptions WHERE id = '${e.id}'`) === 'closed', 'a used exception is closed with a note');
+    const later = await X.prepare(relations, body({ subject_ref: `later-${stamp}`, valid_from: day(5), valid_until: day(9) }));
+    await X.decide(later.id, main, { outcome: 'approved', reason: 'Planned' });
+    ok(await fails(X.consume(later.id, { ruleRef: 'Trainer record rule v1', subjectRef: `later-${stamp}` }, relations), 409), 'an approved exception cannot be used before its dates');
+    const past = await X.prepare(relations, body({ subject_ref: `past-${stamp}`, valid_from: day(-6), valid_until: day(-3) }));
+    await X.decide(past.id, main, { outcome: 'approved', reason: 'Was needed' });
+    ok(await fails(X.consume(past.id, { ruleRef: 'Trainer record rule v1', subjectRef: `past-${stamp}` }, relations), 409) && await X.expire() >= 1 && psql(`SELECT status FROM policy_exceptions WHERE id = '${past.id}'`) === 'expired', 'an exception past its end date cannot be used and expires; it is never renewed');
+    const refused = await X.prepare(relations, body({ subject_ref: `no-${stamp}` }));
+    await X.decide(refused.id, main, { outcome: 'refused', reason: 'A published alternative applies' });
+    ok(psql(`SELECT status FROM policy_exceptions WHERE id = '${refused.id}'`) === 'refused', 'the main account can refuse');
+    ok((await X.recurrence()).some((r) => r.rule_ref === 'Trainer record rule v1' && r.n >= 2), 'the same rule needing exceptions repeatedly is flagged for review');
+    const open = await X.prepare(relations, body({ subject_ref: `open-${stamp}` }));
+    await adm.goto(`${BASE}/admin/exceptions/${open.id}`);
+    ok(await see(adm, 'button:has-text("Record")') && await see(adm, 'text=Rule'), 'the main account sees the decision form on a prepared exception');
+    await adm.goto(`${BASE}/admin/exceptions`);
+    ok(await see(adm, 'text=Repeated categories') && await see(adm, 'a:has-text("Prepare an exception")'), 'the exceptions page lists them and the repeated categories');
+    ok((await anon.request.get(`${BASE}/admin/exceptions`, { maxRedirects: 0 })).status() !== 200, 'the exceptions pages are closed to visitors');
+  }
+
+  console.log('Partnership levels and the public register');
+  {
+    const L = require('../src/lib/levels');
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const mk = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Lvl Staff ${n}', 'lv${n}.${stamp}@example.com', 'x', '${position}') RETURNING id`).split('\n')[0], email: `lv${n}.${stamp}@example.com`, role: 'super_admin' });
+    const assessor = mk(1, 'application_assessor'); const decider = mk(2, 'authorization_decision_maker'); const decider2 = mk(3, 'authorization_decision_maker');
+    const platformId = psql(`SELECT platform_id FROM partner_title_requests WHERE title LIKE 'Workplace Safety Awareness%' LIMIT 1`);
+    ok(psql(`SELECT level FROM platforms WHERE id = '${platformId}'`) === 'bronze' && /^ATP-\d{4}$/.test(psql(`SELECT public_number FROM platforms WHERE id = '${platformId}'`)), 'an active provider has Bronze and a public number');
+    const [np, nn] = psql(`INSERT INTO platforms (company_name, contact_email, accreditation_status) VALUES ('Fresh Active ${stamp}', 'fa.${stamp}@example.com', 'active') RETURNING level || '|' || public_number`).split('\n')[0].split('|');
+    ok(np === 'bronze' && /^ATP-\d{4}$/.test(nn) && nn !== psql(`SELECT public_number FROM platforms WHERE id = '${platformId}'`), 'a provider that becomes active gets Bronze and its own number');
+    ok(psql(`INSERT INTO platforms (company_name, contact_email) VALUES ('Still Pending ${stamp}', 'sp.${stamp}@example.com') RETURNING coalesce(level, 'none') || coalesce(public_number, 'none')`).split('\n')[0] === 'nonenone', 'a pending provider has neither');
+    ok(await fails(L.openDemotion(platformId, assessor), 409), 'a Bronze provider has no lower level to review');
+
+    await page.goto(`${BASE}/portal/level`);
+    ok(await see(page, 'text=Bronze partner') && await see(page, 'button:has-text("Request a review for Silver")'), 'the provider sees its level and can request a review');
+    await page.click('button:has-text("Request a review for Silver")');
+    ok(await see(page, 'text=A review is open') && psql(`SELECT count(*) FROM partner_level_reviews WHERE platform_id = '${platformId}' AND status = 'open' AND requested_by = 'provider'`) === '1', 'the request opens one review');
+    ok(await fails(L.open(platformId, assessor, 'liv'), 409), 'only one review is open at a time');
+    await page.click('button:has-text("Withdraw the request")');
+    ok(psql(`SELECT count(*) FROM partner_level_reviews WHERE platform_id = '${platformId}' AND status = 'withdrawn'`) === '1', 'the provider can withdraw its request');
+
+    const review = await L.open(platformId, assessor, 'liv');
+    const answers = Object.fromEntries(L.CRITERIA.silver.map((c) => [c.key, { met: true, note: `${c.key} confirmed` }]));
+    ok(await fails(L.assess(review.id, decider, { answers }), 403) && await fails(L.assess(review.id, assessor, { answers: { ...answers, samples: { met: true, note: ' ' } } }), 422), 'only the assessor position assesses, with a finding per criterion');
+    await adm.goto(`${BASE}/admin/levels/${review.id}`);
+    ok(await see(adm, 'text=System:') && await see(adm, 'text=month(s) at Bronze'), 'the review shows what the system can establish by itself');
+    const a1 = await L.assess(review.id, assessor, { answers });
+    ok(a1.recommendation === 'promote', 'every criterion met recommends the promotion');
+    ok(await fails(L.decide(review.id, assessor, { outcome: 'promoted', reason: 'Mine' }), 403), 'the assessor cannot decide');
+    psql(`UPDATE users SET staff_position = 'authorization_decision_maker' WHERE id = '${assessor.id}'`);
+    ok(await fails(L.decide(review.id, assessor, { outcome: 'promoted', reason: 'Mine' }), 403) && psql(`SELECT level FROM platforms WHERE id = '${platformId}'`) === 'bronze', 'even holding the decision position, the assessor cannot decide, and the level is unchanged');
+    psql(`UPDATE users SET staff_position = 'application_assessor' WHERE id = '${assessor.id}'`);
+    ok(await fails(L.decide(review.id, decider, { outcome: 'demoted', reason: 'x' }), 409), 'a promotion review cannot end in a lower level');
+    const d1 = await L.decide(review.id, decider, { outcome: 'promoted', reason: 'All criteria met on the record.' });
+    ok(d1.to === 'silver' && psql(`SELECT level FROM platforms WHERE id = '${platformId}'`) === 'silver' && psql(`SELECT level_since FROM platforms WHERE id = '${platformId}'`) !== '', 'the level changes only at the decision');
+    ok(await fails(L.decide(review.id, decider2, { outcome: 'not_yet', reason: 'again' }), 409), 'a decided review cannot be decided again');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE template = 'status_update' AND text_body LIKE '%Your partnership level is now Silver%'`) >= '1', 'the provider is emailed the new level');
+
+    const gold = await L.open(platformId, assessor, 'liv');
+    ok(gold.to_level === 'gold', 'the next review is toward Gold');
+    const g = Object.fromEntries(L.CRITERIA.gold.map((c) => [c.key, { met: c.key !== 'quality_officer', note: 'recorded' }]));
+    const ga = await L.assess(gold.id, assessor, { answers: g });
+    ok(ga.recommendation === 'not_yet' && await fails(L.decide(gold.id, decider, { outcome: 'promoted', reason: 'Override' }), 409), 'one criterion not met recommends not yet, and the decision-maker cannot promote against it');
+    await L.decide(gold.id, decider, { outcome: 'not_yet', reason: 'A quality officer is not named yet.' });
+    ok(psql(`SELECT level FROM platforms WHERE id = '${platformId}'`) === 'silver', 'not yet keeps the level');
+    const down = await L.openDemotion(platformId, assessor);
+    ok(down.to_level === 'bronze' && await fails(L.assess(down.id, assessor, { demote: true, note: ' ' }), 422), 'a lower-level review needs written reasons');
+    ok((await L.assess(down.id, assessor, { demote: false, note: 'The correction period closed with the commitment renewed.' })).recommendation === 'not_yet' && await fails(L.decide(down.id, decider, { outcome: 'demoted', reason: 'x' }), 409), 'a lower level needs an assessment that recommends it');
+    await L.decide(down.id, decider, { outcome: 'not_yet', reason: 'Kept.' });
+    const down2 = await L.openDemotion(platformId, assessor);
+    await L.assess(down2.id, assessor, { demote: true, note: 'Two consecutive surveillance reviews failed after the 90-day correction period.' });
+    await L.decide(down2.id, decider, { outcome: 'demoted', reason: 'As recommended.' });
+    ok(psql(`SELECT level FROM platforms WHERE id = '${platformId}'`) === 'bronze', 'a recorded, reasoned decision moves a provider to a lower level');
+    await adm.goto(`${BASE}/admin/levels`);
+    ok(await see(adm, 'h1:has-text("Partnership levels")') && await see(adm, 'text=Open a review'), 'the admin levels page lists reviews and opens new ones');
+
+    // public register and verification badge
+    const name = psql(`SELECT company_name FROM platforms WHERE id = '${platformId}'`); const slug = psql(`SELECT public_slug FROM platforms WHERE id = '${platformId}'`);
+    await anon.goto(`${BASE}/partners?q=${encodeURIComponent(name.slice(0, 6))}`);
+    ok(await see(anon, `a:has-text("${name}")`) && await see(anon, '.lvl-bronze'), 'the register finds a provider by name and shows its level beside it');
+    await anon.goto(`${BASE}/partners?q=zzzz-no-such-provider`);
+    ok(await see(anon, 'text=No provider matches that search'), 'a search with no match says so');
+    const country = psql(`SELECT country FROM platforms WHERE id = '${platformId}'`);
+    if (country) { await anon.goto(`${BASE}/partners?country=${encodeURIComponent(country)}`); ok(await see(anon, `a:has-text("${name}")`), 'the register filters by country'); }
+    await anon.goto(`${BASE}/partners/${slug}`);
+    ok(await see(anon, 'dt:has-text("Provider number")') && await see(anon, 'dt:has-text("Partnership level")') && await see(anon, 'text=Bronze'), 'the provider page shows its number, level and authorized scope');
+    await anon.goto(`${BASE}/partners/guide`);
+    ok(await see(anon, 'h1:has-text("Application guide")') && await see(anon, 'text=Legal name of the organization') && await see(anon, 'text=Learning objectives'), 'the application guide lists what is asked, stage by stage and for titles');
+    const cert = psql(`SELECT cert_number FROM certificates WHERE platform_id = '${platformId}' ORDER BY created_at LIMIT 1`);
+    if (cert) {
+      await anon.goto(`${BASE}/verify/${cert}`);
+      ok(await see(anon, '.issuer .lvl-bronze'), 'the verification page shows a small level badge beside the provider');
+      const api = await anon.request.get(`${BASE}/api/v1/verify/${cert}`);
+      ok(!(await api.text()).includes('provider_level') && !(await api.text()).includes('"level"'), 'the verification API carries no level');
+      psql(`UPDATE platforms SET accreditation_status = 'suspended' WHERE id = '${platformId}'`);
+      await anon.goto(`${BASE}/verify/${cert}`);
+      ok(!(await see(anon, '.issuer .lvl-bronze')), 'a suspended provider shows no level badge');
+      psql(`UPDATE platforms SET accreditation_status = 'active' WHERE id = '${platformId}'`);
+    }
+  }
+
+  console.log('Work queue and management report');
+  {
+    const O = require('../src/lib/oversight');
+    const exId = psql(`INSERT INTO policy_exceptions (case_type, rule_ref, subject_ref, reason, why_not_standard, evidence, impact, limits, executor, closing_conditions, valid_from, valid_until) VALUES ('other_procedural', 'Queue test rule', 'queue-${stamp}', 'r', 'w', 'e', 'i', 'l', 'x', 'c', CURRENT_DATE, CURRENT_DATE + 3) RETURNING id`).split('\n')[0];
+    psql(`UPDATE policy_exceptions SET updated_at = now() - interval '12 days' WHERE id = '${exId}'`);
+    const qp = psql(`INSERT INTO platforms (company_name, contact_email) VALUES ('Queue Test ${stamp}', 'qt.${stamp}@example.com') RETURNING id`).split('\n')[0];
+    const qa = psql(`INSERT INTO partner_applications (platform_id, state, criteria_version) VALUES ('${qp}', 'technical_review', 'v0.1') RETURNING id`).split('\n')[0];
+    psql(`UPDATE partner_applications SET updated_at = now() - interval '7 days' WHERE id = '${qa}'`);
+    const w = await O.workQueue();
+    ok(w.items.some((i) => i.url === `/admin/applications/${qa}` && i.owner === 'application_assessor' && i.age >= 7) && w.vacant.includes('Application Assessor'), 'an application in technical review waits for the assessor position, and a vacant position is reported');
+    const mine = w.items.find((i) => i.url === `/admin/exceptions/${exId}`);
+    ok(mine && mine.owner === 'main_account' && mine.age >= 12 && mine.ownerTitle === 'Main account', 'the queue shows an exception waiting for the main account, with its age');
+    ok(w.items.every((i, n) => n === 0 || w.items[n - 1].age >= i.age), 'the oldest work comes first');
+    ok(w.items.some((i) => i.owner === 'authorization_decision_maker') || w.items.some((i) => i.owner === 'application_assessor'), 'work for the review positions is listed');
+    const r = await O.report();
+    ok(r.queue.over10 >= 1 && Array.isArray(r.apps) && typeof r.revenue.top1 === 'number' && r.titles.total >= 1, 'the report summarizes the queue, applications, titles and income concentration');
+    await adm.goto(`${BASE}/admin/work`);
+    ok(await see(adm, 'th:has-text("Owner position")') && await see(adm, 'td:has-text("Main account")'), 'the work page lists each item with the position that owns it');
+    ok(await see(adm, 'text=No one holds'), 'a vacant position with waiting work is called out');
+    await adm.goto(`${BASE}/admin/report`);
+    ok(await see(adm, 'h3:has-text("Work waiting")') && await see(adm, 'h3:has-text("Income concentration")'), 'the management report page renders');
+    ok((await anon.request.get(`${BASE}/admin/work`, { maxRedirects: 0 })).status() !== 200 && (await anon.request.get(`${BASE}/admin/report`, { maxRedirects: 0 })).status() !== 200, 'both pages are closed to visitors');
   }
 
   console.log('Knowledge distribution');

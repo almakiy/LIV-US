@@ -1,0 +1,9 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Work</h1><a class="btn secondary sm" href="/admin/report">Management report</a></div>
+<p class="small muted">What waits for which position, and for how long. If a position is vacant its work has no owner: appoint someone in Staff positions.</p>
+<% if (w.vacant.length) { %><div class="alert error"><strong>No one holds:</strong> <%= w.vacant.join(', ') %>. Work for these positions is waiting.</div><% } %>
+<% if (w.items.length) { %><div class="table-wrap"><table><tr><th>Waiting</th><th>Type</th><th>What</th><th>Provider</th><th>Owner position</th><th></th></tr>
+<% w.items.forEach(i => { %><tr><td><strong><%= i.age %></strong> d</td><td class="small"><%= i.kind %></td><td class="small"><%= i.what %></td><td class="small"><%= i.who %></td><td class="small"><%= i.ownerTitle %><%= i.vacant ? ' (vacant)' : '' %></td><td><a class="btn sm secondary" href="<%= i.url %>">Open</a></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">Nothing is waiting for staff.</p><% } %>
+<% if (w.waitingApplicant.length) { %><h2 class="mt">Waiting for the applicant</h2><div class="table-wrap"><table><tr><th>Waiting</th><th>Provider</th><th>Status</th><th></th></tr><% w.waitingApplicant.forEach(i => { %><tr><td><%= i.age %> d</td><td class="small"><%= i.who %></td><td class="small"><%= i.what %></td><td><a class="btn sm secondary" href="<%= i.url %>">Open</a></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

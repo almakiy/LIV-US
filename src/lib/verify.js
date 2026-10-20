@@ -16,7 +16,7 @@ async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'we
     let row;
     try {
       ({ rows: [row] } = await q(
-      `SELECT c.*, p.company_name, p.logo_path, p.primary_color, p.accreditation_status, p.website,
+      `SELECT c.*, p.company_name, p.logo_path, p.primary_color, p.accreditation_status, p.website, p.level AS provider_level,
               ps.title AS scope_title, ps.status AS scope_status, cs.name AS scheme_name
          FROM certificates c JOIN platforms p ON p.id = c.platform_id
          LEFT JOIN partner_scopes ps ON ps.id = c.partner_scope_id LEFT JOIN credential_schemes cs ON cs.id = c.scheme_id

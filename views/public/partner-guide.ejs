@@ -1,0 +1,26 @@
+<%- include('../partials/head') %>
+<section class="section"><div class="container" style="max-width:820px">
+  <p class="small"><a href="/partners">Authorized Training Provider Program</a> · Application guide</p>
+  <h1>Application guide</h1>
+  <p>This guide shows what LIV asks of a training provider, so you can prepare before you apply. It is the same for everyone. It describes what is asked and how documents should look; LIV does not coach applicants on obtaining authorization.</p>
+  <ul>
+    <li>You create an account in about a minute, then complete the application in short stages. Each stage saves on its own, so you can stop and come back.</li>
+    <li>All text is written in English. Names keep their own spelling in Latin letters.</li>
+    <li>Documents are PDF, PNG or JPEG files, up to 10 MB each.</li>
+    <li>The application fee is paid at the end, when you submit. Paying it does not authorize you: authorization depends on the review and on a separate activation step.</li>
+  </ul>
+  <% STAGES.filter(s => s.fields.length).forEach((st, i) => { %>
+  <h2 class="mt"><%= i + 1 %>. <%= st.title %> <span class="small muted">(about <%= st.minutes %> minutes)</span></h2>
+  <p class="muted"><%= st.hint %></p>
+  <ul><% FIELDS.filter(f => st.fields.includes(f.key)).forEach(f => { %><li><%= f.label %><%= f.required ? ' (needed to submit)' : ' (optional)' %></li><% }) %></ul>
+  <% }) %>
+  <h2 class="mt">Documents</h2>
+  <p class="muted">Each document supports one criterion. <%= REQUIRED_EVIDENCE.join(' and ') %> are needed to submit; the others help the review.</p>
+  <ul><% Object.entries(CRITERIA_TITLES).forEach(([c, t]) => { %><li><strong><%= c %></strong> <%= t %><%= REQUIRED_EVIDENCE.includes(c) ? ' (needed)' : '' %></li><% }) %></ul>
+  <h2 class="mt">After authorization: asking for a course title</h2>
+  <p class="muted">Each course you want to deliver for LIV credentials is reviewed before it is used. The request asks for:</p>
+  <ul><% TITLE_FIELDS.forEach(f => { %><li><%= f.label %></li><% }) %></ul>
+  <p class="small muted">At least <%= MIN_OBJECTIVES %> learning objectives. A title must describe the training; it cannot imply an approval or a professional status the credential does not carry.</p>
+  <p class="mt"><a class="btn gold" href="/contact">Ask a question</a></p>
+</div></section>
+<%- include('../partials/foot') %>

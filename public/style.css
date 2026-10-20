@@ -171,3 +171,10 @@ pre{background:#0F1B2D;color:#DDE7F3;padding:16px;border-radius:8px;overflow:aut
 .prose code{background:#EEF1F6;padding:1px 5px;border-radius:4px;font-size:.9em}.prose pre{background:#0B1F3A;color:#E6ECF5;padding:14px;border-radius:8px;overflow-x:auto}
 .article-card:hover{border-color:var(--gold)}
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}.filters input[type=search]{flex:1;min-width:200px}.filters select{width:auto;min-width:150px}
+
+/* Partnership level badge (Bronze, Silver, Gold): a small label beside a provider's name. */
+.lvl{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.02em;padding:2px 8px;border-radius:999px;vertical-align:middle;border:1px solid transparent;margin-left:6px}
+.lvl-bronze{background:#f3e3d3;color:#7a4a1d;border-color:#d9b48f}
+.lvl-silver{background:#e8ecf0;color:#44505c;border-color:#b9c2cb}
+.lvl-gold{background:#fbf0c9;color:#7a5a00;border-color:#e3c765}
+@media (prefers-color-scheme: dark){.lvl-bronze{background:#3a2a1c;color:#e6bf98;border-color:#6b4a2a}.lvl-silver{background:#2b3138;color:#cfd6dd;border-color:#566370}.lvl-gold{background:#3b3216;color:#f0d77b;border-color:#7a6420}}

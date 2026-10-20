@@ -747,6 +747,114 @@ CREATE TABLE IF NOT EXISTS partner_title_events (
   note TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
+-- Scope expansion requests share the title request workflow (kind = 'expansion'); an authorized expansion records a capability.
+ALTER TABLE partner_title_requests ADD COLUMN IF NOT EXISTS kind VARCHAR(12) NOT NULL DEFAULT 'title' CHECK (kind IN ('title','expansion'));
+DROP INDEX IF EXISTS idx_partner_title_open;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_title_open ON partner_title_requests(platform_id, kind, lower(title)) WHERE status NOT IN ('refused','withdrawn');
+CREATE TABLE IF NOT EXISTS partner_capabilities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  kind VARCHAR(20) NOT NULL CHECK (kind IN ('subfield','delivery_mode','platform_or_site')),
+  description VARCHAR(200) NOT NULL,
+  request_id UUID REFERENCES partner_title_requests(id),
+  granted_on DATE NOT NULL DEFAULT CURRENT_DATE,
+  status VARCHAR(12) NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','withdrawn')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Trainers added after authorization: a provider submits a trainer with a document; the reviewer accepts (a trainer record per chosen scope) or returns it.
+CREATE TABLE IF NOT EXISTS partner_trainer_additions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  trainer_name VARCHAR(200) NOT NULL,
+  qualifications TEXT NOT NULL,
+  experience TEXT NOT NULL,
+  delivery_competence TEXT NOT NULL,
+  scope_ids UUID[] NOT NULL DEFAULT '{}',
+  file_key TEXT NOT NULL,
+  filename VARCHAR(200) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  bytes INT NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  status VARCHAR(12) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','accepted','refused','needs_more','withdrawn')),
+  reviewer_id UUID REFERENCES users(id),
+  reviewer_label VARCHAR(200),
+  finding TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS partner_trainer_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  addition_id UUID NOT NULL REFERENCES partner_trainer_additions(id) ON DELETE CASCADE,
+  to_status VARCHAR(12) NOT NULL,
+  actor_label VARCHAR(200),
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+DROP TRIGGER IF EXISTS partner_trainer_events_lock ON partner_trainer_events;
+CREATE TRIGGER partner_trainer_events_lock BEFORE UPDATE OR DELETE ON partner_trainer_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+
+-- Policy exceptions: prepared by staff, approved only by the main account (the super admin account without a staff position),
+-- for one rule, one case and a bounded time or number of uses. History is locked.
+CREATE TABLE IF NOT EXISTS policy_exceptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  case_type VARCHAR(40) NOT NULL,
+  platform_id UUID REFERENCES platforms(id) ON DELETE SET NULL,
+  rule_ref VARCHAR(200) NOT NULL,
+  subject_ref VARCHAR(200) NOT NULL,
+  reason TEXT NOT NULL, why_not_standard TEXT NOT NULL, evidence TEXT NOT NULL, impact TEXT NOT NULL, limits TEXT NOT NULL,
+  executor VARCHAR(200) NOT NULL, closing_conditions TEXT NOT NULL, specialist_opinion TEXT,
+  valid_from DATE NOT NULL, valid_until DATE NOT NULL, max_uses INT NOT NULL DEFAULT 1, uses INT NOT NULL DEFAULT 0,
+  status VARCHAR(12) NOT NULL DEFAULT 'prepared' CHECK (status IN ('prepared','approved','refused','used','closed','expired','withdrawn')),
+  prepared_by UUID REFERENCES users(id), decided_by UUID REFERENCES users(id), decided_at TIMESTAMPTZ, decision_reason TEXT, closed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (valid_until >= valid_from)
+);
+CREATE TABLE IF NOT EXISTS policy_exception_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exception_id UUID NOT NULL REFERENCES policy_exceptions(id) ON DELETE CASCADE,
+  to_status VARCHAR(12) NOT NULL,
+  actor_label VARCHAR(200),
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
+);
+DROP TRIGGER IF EXISTS policy_exception_events_lock ON policy_exception_events;
+CREATE TRIGGER policy_exception_events_lock BEFORE UPDATE OR DELETE ON policy_exception_events FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+
+-- Partnership levels (docs/PARTNER-LEVELS.md): Bronze, Silver, Gold. The level is stored on the provider and changes only by a recorded
+-- review decision. A public number is assigned when a provider first becomes active, together with the starting level (Bronze).
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS level VARCHAR(8) CHECK (level IN ('bronze','silver','gold'));
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS level_since DATE;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_number VARCHAR(12) UNIQUE;
+CREATE SEQUENCE IF NOT EXISTS partner_number_seq START 1;
+CREATE OR REPLACE FUNCTION platform_active_defaults() RETURNS trigger AS $f$
+BEGIN
+  IF NEW.accreditation_status = 'active' THEN
+    IF NEW.public_number IS NULL THEN NEW.public_number := 'ATP-' || lpad(nextval('partner_number_seq')::text, 4, '0'); END IF;
+    IF NEW.level IS NULL THEN NEW.level := 'bronze'; NEW.level_since := CURRENT_DATE; END IF;
+  END IF;
+  RETURN NEW;
+END $f$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS platforms_active_defaults ON platforms;
+CREATE TRIGGER platforms_active_defaults BEFORE INSERT OR UPDATE OF accreditation_status ON platforms FOR EACH ROW EXECUTE FUNCTION platform_active_defaults();
+UPDATE platforms SET accreditation_status = accreditation_status WHERE accreditation_status = 'active' AND (public_number IS NULL OR level IS NULL);
+CREATE TABLE IF NOT EXISTS partner_level_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  from_level VARCHAR(8) NOT NULL,
+  to_level VARCHAR(8) NOT NULL,
+  requested_by VARCHAR(10) NOT NULL CHECK (requested_by IN ('provider','liv')),
+  status VARCHAR(18) NOT NULL DEFAULT 'open' CHECK (status IN ('open','awaiting_decision','decided','withdrawn')),
+  criteria JSONB,
+  recommendation VARCHAR(10) CHECK (recommendation IN ('promote','not_yet','demote')),
+  reviewer_id UUID REFERENCES users(id), reviewer_label VARCHAR(200), review_note TEXT,
+  outcome VARCHAR(10) CHECK (outcome IN ('promoted','not_yet','demoted')),
+  decided_by UUID REFERENCES users(id), decided_by_label VARCHAR(200), decision_reason TEXT, decided_at TIMESTAMPTZ,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_level_review_open ON partner_level_reviews(platform_id) WHERE status IN ('open','awaiting_decision');
+
 -- Email foundation (task 2.1): every message is queued, sent by a worker with retries, and kept for audit. Messages to a
 -- suppressed address are recorded as suppressed and never sent. A dedupe key makes a retried event send only once.
 CREATE TABLE IF NOT EXISTS email_outbox (
@@ -871,6 +979,9 @@ CREATE TABLE IF NOT EXISTS partner_scope_trainers (
   recorded_by_label VARCHAR(200) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
+ALTER TABLE partner_scope_trainers ALTER COLUMN application_id DROP NOT NULL;
+ALTER TABLE partner_scope_trainers ALTER COLUMN evidence_id DROP NOT NULL;
+ALTER TABLE partner_scope_trainers ADD COLUMN IF NOT EXISTS addition_id UUID REFERENCES partner_trainer_additions(id);
 CREATE TABLE IF NOT EXISTS partner_condition_closures (
   condition_id UUID PRIMARY KEY REFERENCES partner_application_conditions(id) ON DELETE CASCADE,
   note TEXT NOT NULL CHECK (length(btrim(note)) > 0),

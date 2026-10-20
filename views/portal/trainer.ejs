@@ -1,0 +1,16 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1><%= t.trainer_name %></h1><span class="badge b-pending"><%= LABEL[t.status] %></span></div>
+<p class="small"><a href="/portal/trainers">All trainers</a> · <a href="/portal/trainers/<%= t.id %>/document">Download the document</a></p>
+<% const msg = t.events.filter(e => ['accepted','refused','needs_more'].includes(e.to_status) && e.note); if (msg.length) { const m = msg[msg.length - 1]; %><div class="card"><h3>Message from LIV</h3><p><%= m.note %></p></div><% } %>
+<% if (t.status === 'needs_more') { %>
+<form class="card mt" method="post" action="/portal/trainers/<%= t.id %>/resubmit" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label for="tn">Trainer name *</label><input id="tn" name="trainer_name" value="<%= t.trainer_name %>" maxlength="200" required></div>
+  <div class="field"><label for="tq">Qualifications *</label><textarea id="tq" name="qualifications" rows="2" maxlength="2000" required><%= t.qualifications %></textarea></div>
+  <div class="field"><label for="te">Subject experience *</label><textarea id="te" name="experience" rows="2" maxlength="2000" required><%= t.experience %></textarea></div>
+  <div class="field"><label for="tc">Training-delivery competence *</label><textarea id="tc" name="delivery_competence" rows="2" maxlength="2000" required><%= t.delivery_competence %></textarea></div>
+  <fieldset class="field"><legend>Scopes *</legend><% scopes.forEach(s => { %><label style="display:block"><input type="checkbox" name="scope_ids" value="<%= s.id %>" <%= t.scope_ids.includes(s.id) ? 'checked' : '' %>> <%= s.title %></label><% }) %></fieldset>
+  <div class="field"><label for="tf">Replace the document (optional)</label><input id="tf" type="file" name="file" accept="application/pdf,image/png,image/jpeg"></div>
+  <button class="btn">Submit again</button></form>
+<% } else { %><div class="card details"><dl><dt>Qualifications</dt><dd><%= t.qualifications %></dd><dt>Experience</dt><dd><%= t.experience %></dd><dt>Delivery competence</dt><dd><%= t.delivery_competence %></dd></dl></div><% } %>
+<% if (['submitted','needs_more'].includes(t.status)) { %><form class="mt" method="post" action="/portal/trainers/<%= t.id %>/withdraw"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn secondary sm">Withdraw</button></form><% } %>
+<%- include('../partials/app-end') %>

@@ -1,13 +1,17 @@
 <%- include('../partials/head') %>
 <section class="section"><div class="container" style="max-width:820px">
   <p class="small"><a href="/partners">Authorized Training Provider Program</a> · Register</p>
-  <div class="page-head"><h1><%= p.company_name %></h1><span class="badge b-active">Authorized Training Provider</span></div>
+  <div class="page-head"><h1><%= p.company_name %></h1><span><span class="badge b-active">Authorized Training Provider</span><% if (p.level) { %> <span class="lvl lvl-<%= p.level %>"><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %> partner</span><% } %></span></div>
   <div class="card details"><dl>
     <dt>Status</dt><dd>Authorized</dd>
+    <% if (p.public_number) { %><dt>Provider number</dt><dd><%= p.public_number %></dd><% } %>
+    <% if (p.level) { %><dt>Partnership level</dt><dd><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %><% if (p.level_since) { %> <span class="muted small">since <%= longDate(p.level_since) %></span><% } %></dd><% } %>
     <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
     <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a></dd><% } %>
+    <% if (modes.length) { %><dt>Delivery</dt><dd><%= modes.join(', ') %></dd><% } %>
+    <% if (capabilities.length) { %><dt>Added capabilities</dt><dd><ul class="mb0"><% capabilities.forEach(c => { %><li><%= c.description %> <span class="muted small">since <%= longDate(c.granted_on) %></span></li><% }) %></ul></dd><% } %>
     <dt>Authorized scope</dt><dd><% if (scopes.length) { %><ul class="mb0"><% scopes.forEach(s => { %><li><%= s.title %><% if (s.scheme_name) { %> <span class="muted small">(<%= s.scheme_name %> family)</span><% } %> <span class="muted small">since <%= longDate(s.granted_on) %><%= s.ends_on ? ', until ' + longDate(s.ends_on) : '' %></span></li><% }) %></ul><% } else { %><span class="muted">No scope is published yet. Contact <%= brand %> to confirm whether a specific course is within this partner's authorized scope.</span><% } %></dd>
   </dl></div>
-  <p class="small muted mt">Status reflects <%= brand %> records at the time of viewing. Authorization is a private, voluntary program of <%= legalEntity %> and is not a government approval.</p>
+  <p class="small muted mt">The partnership level describes the size of the commitment and the record with <%= brand %>. Status reflects <%= brand %> records at the time of viewing. Authorization is a private, voluntary program of <%= legalEntity %> and is not a government approval.</p>
 </div></section>
 <%- include('../partials/foot') %>
