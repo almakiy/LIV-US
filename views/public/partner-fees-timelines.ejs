@@ -1,0 +1,28 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow">LIV Authorized Training Provider (ATP)</span>
+  <h1>Fees and timelines</h1>
+  <p>What happens after you apply, and how long each step takes. Fees are shown here once LIV has approved them.</p>
+</div></section>
+<section class="section white"><div class="container" style="max-width:860px">
+  <h2 style="margin-top:0">Timelines we commit to</h2>
+  <ul>
+    <li>First contact from our partner relations team: within 2 working days.</li>
+    <li>Completeness check after the application fee is received: within 5 working days.</li>
+    <li>Decision on a complete file: within 30 days.</li>
+  </ul>
+  <p class="small muted">These are service targets for applicants. A file that is incomplete or needs more evidence starts the clock again once the missing information is received.</p>
+
+  <h2 class="mt">Fees</h2>
+  <div class="card">
+    <p>Fees for applications, authorization and scope additions are published on this page once LIV approves them. Until then, we do not show figures here.</p>
+    <p>Paying an application fee does not authorize you. Authorization depends on the review. Fees pay for the services described; they do not buy acceptance, a level or a score.</p>
+    <p><strong>To ask for a fee quote for your case,</strong> use the contact form and choose the training provider program topic.</p>
+  </div>
+  <div class="actions mt">
+    <a class="btn gold lg" href="/contact">Ask for a fee quote</a>
+    <a class="btn ghost lg" href="/partners/journey">How the process works</a>
+    <% if (publicFees) { %><a class="btn ghost lg" href="/fees">Published fee schedule</a><% } %>
+  </div>
+</div></section>
+<%- include('../partials/foot') %>

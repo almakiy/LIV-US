@@ -46,6 +46,7 @@ r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.render('public/partner-verify', { title: 'Verify a provider', description: 'Check an ATP number against the public register.', raw, number, result, searched: Boolean(raw) });
 }));
+r.get('/partners/fees-and-timelines', (req, res) => res.render('public/partner-fees-timelines', { title: 'Fees and timelines', description: 'Service timelines for applicants, and how fees are published.', publicFees: cfg.publicFees }));
 r.get('/partners/journey', (req, res) => res.render('public/partner-journey', { title: 'Your path to becoming a LIV Authorized Training Provider', description: 'How LIV reviews and authorizes a training provider, stage by stage.', publicApply: cfg.publicApply }));
 r.get('/partners/guide', (req, res) => {
   const F = require('../lib/application-form'); const T = require('../lib/title-form');

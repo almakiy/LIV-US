@@ -48,7 +48,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|fees-and-timelines")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
@@ -1619,7 +1619,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     };
     for (const path of ['/admin/monitoring', `/admin/monitoring/${caseId}`, '/admin/partner-records', '/admin/standards', '/admin/work', '/admin/report']) await axeCheck(adm, path);
     for (const path of ['/portal/oversight', '/portal/level', '/portal/settings', '/portal/templates', '/portal/issue', '/account/security']) await axeCheck(page, path);
-    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/verify', '/credentials', '/verify']) await axeCheck(anon, path);
+    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/verify', '/partners/fees-and-timelines', '/credentials', '/verify']) await axeCheck(anon, path);
   }
 
   console.log('Public directory: reviewed details, branches, scope details, documents and the process page');
@@ -1690,6 +1690,9 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
 
     console.log(' process page and screens');
     const journey = await (await anon.request.get(`${BASE}/partners/journey`)).text();
+    const feesPage = await (await anon.request.get(`${BASE}/partners/fees-and-timelines`)).text();
+    ok(feesPage.includes('Timelines we commit to') && feesPage.includes('within 30 days') && feesPage.includes('href="/contact"') && !/€|£|\$\s?\d/.test(feesPage), 'the fees and timelines page states the approved timelines and shows no fee figures');
+    ok(journey.includes('href="/partners/fees-and-timelines"'), 'the process page links to the fees and timelines page');
     ok(journey.includes('Your Path to Becoming a LIV Authorized Training Provider') && journey.includes('href="/contact"') && journey.includes('href="/apply"'), 'the process page is part of the site, with the contact link and the application link while applications are open');
     await adm.goto(`${BASE}/admin/directory`);
     ok(await see(adm, 'h2:has-text("Profile changes waiting")') && await see(adm, 'h2:has-text("Scope details")'), 'the review page lists profile changes, branches and scope details');
