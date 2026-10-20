@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partnership badges: review model</title>
+<style>
+  :root { --ink:#111827; --muted:#4B5563; --line:#D9DEE5; --bg:#F7F6F2; --card:#FFFFFF; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--bg); line-height:1.5; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.6rem; } p { color: var(--muted); }
+  .grid { display:grid; gap:14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .card { background: var(--card); border:1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .badge { display:inline-flex; align-items:center; gap:8px; padding: 6px 12px; border-radius: 999px; font-weight:700; font-size: 14px; border: 2px solid; }
+  .bronze { color:#5A3812; border-color:#A66B35; background:#F6EBDD; }
+  .silver { color:#2F3A46; border-color:#7B8794; background:#ECEFF2; }
+  .gold { color:#5C4413; border-color:#8A6A2E; background:#F7EDD2; }
+  .dot { width:10px; height:10px; border-radius:50%; background: currentColor; }
+  .note { font-size: 14px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Partnership badges: review model</h1>
+  <p>Review model only. The live site keeps the current text badge until the owner approves the official artwork. Each badge carries its name as text, so colour is not the only cue (WCAG 1.4.1). Each text colour is at least 4.5:1 on its background.</p>
+  <section class="grid" aria-label="Badge models">
+    <div class="card"><p class="badge bronze"><span class="dot" aria-hidden="true"></span>Bronze partner</p><p class="note">Entry partnership level.</p></div>
+    <div class="card"><p class="badge silver"><span class="dot" aria-hidden="true"></span>Silver partner</p><p class="note">Second partnership level.</p></div>
+    <div class="card"><p class="badge gold"><span class="dot" aria-hidden="true"></span>Gold partner</p><p class="note">Highest partnership level.</p></div>
+  </section>
+  <p class="note">Display rules: the badge shows on the provider page, the directory card and the verification page. It never appears on a learner's certificate. The levels and their criteria are the existing ones; this model changes only how they look.</p>
+</main>
+</body>
+</html>

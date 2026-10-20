@@ -119,6 +119,7 @@ app.use('/portal/titles', require('./routes/portal-titles'));
 app.use('/portal/trainers', require('./routes/portal-trainers'));
 app.use('/portal/level', require('./routes/portal-level'));
 app.use('/portal/oversight', require('./routes/portal-oversight'));
+app.use('/portal/directory', require('./routes/portal-directory'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));
@@ -132,6 +133,7 @@ app.use('/admin', require('./routes/admin-oversight'));
 app.use('/admin', require('./routes/admin-monitoring'));
 app.use('/admin', require('./routes/admin-partner-records'));
 app.use('/admin', require('./routes/admin-standards'));
+app.use('/admin', require('./routes/admin-directory'));
 app.use('/admin', require('./routes/admin-schemes')); // after admin: it ends 'act as partner' mode before the super-admin check
 app.use('/admin', require('./routes/admin-system'));
 app.use('/api/v1/content', require('./routes/content-api'));

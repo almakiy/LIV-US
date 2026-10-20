@@ -419,11 +419,8 @@ r.post('/settings/profile', wrap(async (req, res) => {
   const color = /^#[0-9a-f]{6}$/i.test(req.body.primary_color || '') ? req.body.primary_color : '#0B2545';
   const name = String(req.body.company_name || '').trim().slice(0, 255);
   if (!name) { flash(req, 'error', 'Company name is required.'); return res.redirect('/portal/settings'); }
-  const details = require('../lib/provider-public').readFields(req.body);
-  if (details.errors.length) { flash(req, 'error', details.errors.join(' ')); return res.redirect('/portal/settings'); }
-  await q(`UPDATE platforms SET company_name=$1, website=$2, country=$3, contact_email=$4, primary_color=$5, public_city=$7, public_domain=$8, public_delivery=$9 WHERE id=$6`,
-    [name, String(req.body.website || '').trim().slice(0, 255) || null, String(req.body.country || '').trim().slice(0, 100) || null,
-      String(req.body.contact_email || '').trim().slice(0, 255) || null, color, pid(req), details.values.public_city, details.values.public_domain, details.values.public_delivery]);
+  await q(`UPDATE platforms SET company_name=$1, country=$2, contact_email=$3, primary_color=$4 WHERE id=$5`,
+    [name, String(req.body.country || '').trim().slice(0, 100) || null, String(req.body.contact_email || '').trim().slice(0, 255) || null, color, pid(req)]);
   await audit({ user: req.user, platformId: pid(req), action: 'platform.update_profile' });
   flash(req, 'success', 'Profile updated.');
   res.redirect('/portal/settings');

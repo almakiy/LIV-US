@@ -179,4 +179,4 @@ pre{background:#0F1B2D;color:#DDE7F3;padding:16px;border-radius:8px;overflow:aut
 .lvl-gold{background:#fbf0c9;color:#7a5a00;border-color:#e3c765}
 @media (prefers-color-scheme: dark){.lvl-bronze{background:#3a2a1c;color:#e6bf98;border-color:#6b4a2a}.lvl-silver{background:#2b3138;color:#cfd6dd;border-color:#566370}.lvl-gold{background:#3b3216;color:#f0d77b;border-color:#7a6420}}
 /* Links inside running text are underlined, so colour is not the only cue (WCAG 1.4.1). */
-p a:not(.btn),li a:not(.btn),.small a:not(.btn),.muted a:not(.btn){text-decoration:underline;text-underline-offset:3px}
+p a:not(.btn),li a:not(.btn),dd a:not(.btn),.small a:not(.btn),.muted a:not(.btn){text-decoration:underline;text-underline-offset:3px}

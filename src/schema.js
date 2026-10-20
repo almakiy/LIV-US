@@ -1110,6 +1110,50 @@ ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_delivery VARCHAR(200);
 -- A lapsed renewal is reviewed by the decision-maker; the review clears the work-queue item. It never changes the provider status.
 ALTER TABLE partner_renewals ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
 ALTER TABLE partner_renewals ADD COLUMN IF NOT EXISTS reviewed_by_label VARCHAR(200);
+-- Public profile changes (October 20, 2026): a provider's changes wait for review; the published values stay until approval.
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_about TEXT;
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_social TEXT;
+CREATE TABLE IF NOT EXISTS provider_profile_revisions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  fields JSONB NOT NULL,
+  status VARCHAR(12) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','withdrawn')),
+  submitted_by UUID REFERENCES users(id),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  decided_by_label VARCHAR(200),
+  decided_at TIMESTAMPTZ,
+  decision_note TEXT NOT NULL DEFAULT ''
+);
+CREATE UNIQUE INDEX IF NOT EXISTS provider_profile_one_pending ON provider_profile_revisions (platform_id) WHERE status = 'pending';
+-- Scope details recorded by LIV (decision-maker). Each change raises the revision; the audit log keeps before and after.
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS scope_number VARCHAR(30);
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS domain TEXT NOT NULL DEFAULT '';
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS boundaries TEXT NOT NULL DEFAULT '';
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS restrictions TEXT NOT NULL DEFAULT '';
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS delivery_methods TEXT NOT NULL DEFAULT '';
+ALTER TABLE partner_scopes ADD COLUMN IF NOT EXISTS revision INT NOT NULL DEFAULT 1;
+-- Branches and sites: requested by the provider, shown only after LIV approves, and each branch covers only the scopes approved for it.
+CREATE TABLE IF NOT EXISTS partner_branches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  address TEXT NOT NULL DEFAULT '',
+  city VARCHAR(120) NOT NULL DEFAULT '',
+  country VARCHAR(100) NOT NULL DEFAULT '',
+  status VARCHAR(12) NOT NULL DEFAULT 'requested' CHECK (status IN ('requested','approved','refused','withdrawn')),
+  requested_by UUID REFERENCES users(id),
+  requested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  decided_by_label VARCHAR(200),
+  decided_at TIMESTAMPTZ,
+  decision_note TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS partner_branch_scopes (
+  branch_id UUID NOT NULL REFERENCES partner_branches(id) ON DELETE CASCADE,
+  scope_id UUID NOT NULL REFERENCES partner_scopes(id) ON DELETE CASCADE,
+  delivery_methods TEXT NOT NULL DEFAULT '',
+  approved BOOLEAN NOT NULL DEFAULT false,
+  PRIMARY KEY (branch_id, scope_id)
+);
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},

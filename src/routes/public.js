@@ -46,23 +46,42 @@ r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.render('public/partner-verify', { title: 'Verify a provider', description: 'Check an ATP number against the public register.', raw, number, result, searched: Boolean(raw) });
 }));
+r.get('/partners/journey', (req, res) => res.render('public/partner-journey', { title: 'Your path to becoming a LIV Authorized Training Provider', description: 'How LIV reviews and authorizes a training provider, stage by stage.', publicApply: cfg.publicApply }));
 r.get('/partners/guide', (req, res) => {
   const F = require('../lib/application-form'); const T = require('../lib/title-form');
   res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
 });
 r.get('/partners/:slug', wrap(async (req, res, next) => {
-  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery, public_about, public_social, accreditation_status FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
+  const D = require('../lib/directory');
+  const AD = require('../lib/authorization-doc');
   const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
+  const social = String(p.public_social || '').split(/\s+/).filter((u) => /^https?:\/\//i.test(u));
   // Active scopes only: suspended and withdrawn scopes never appear publicly. Scopes that have ended by date are marked on the page.
-  const scopes = (await schemeStore.scopesFor(p.id)).filter((s) => s.status === 'active');
   const today = new Date().toISOString().slice(0, 10);
+  const scopes = await Promise.all((await schemeStore.scopesFor(p.id)).filter((s) => s.status === 'active').map(async (s) => ({
+    ...s, courses: await D.coursesFor(s.id), docUrl: AD.eligible(p, s, today) ? `/partners/${p.slug}/scopes/${s.id}/authorization.pdf` : null,
+  })));
   const link = `${cfg.baseUrl}/partners/${p.slug || req.params.slug}`;
   const { rows: [app] } = await q(`SELECT v.form FROM partner_application_versions v JOIN partner_applications a ON a.id = v.application_id WHERE a.platform_id = $1 AND a.state = 'activated' ORDER BY v.version DESC LIMIT 1`, [p.id]);
   const MODES = require('../lib/application-form').MODES;
   const modes = ((app && app.form && app.form.delivery_modes) || []).map((m) => MODES[m]).filter(Boolean);
   const { rows: capabilities } = await q(`SELECT description, kind, granted_on FROM partner_capabilities WHERE platform_id = $1 AND status = 'active' ORDER BY granted_on`, [p.id]);
-  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, scopes, modes, capabilities, today, link });
+  const branches = await D.publicBranches(p.id);
+  res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, social, scopes, modes, capabilities, branches, today, link });
+}));
+
+// Scope document (PDF) for one active scope of one active provider. Anything else is not found.
+r.get('/partners/:slug/scopes/:scopeId/authorization.pdf', wrap(async (req, res, next) => {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.scopeId)) return next();
+  const AD = require('../lib/authorization-doc');
+  const d = await AD.documentData(String(req.params.slug).slice(0, 120), req.params.scopeId);
+  if (!d || !AD.eligible(d.platform, d.scope)) return next();
+  const verifyUrl = `${cfg.baseUrl}/partners/verify?number=${encodeURIComponent(d.platform.public_number || '')}`;
+  const pdf = await AD.renderAuthorization(d, verifyUrl);
+  res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${AD.docNumber(d)}.pdf"`, 'Cache-Control': 'no-store' });
+  res.send(pdf);
 }));
 
 // Public verification of an ATP number: status, active scopes and level only (October 20, 2026 decision).

@@ -29,7 +29,14 @@ Answered October 20, 2026:
 - Renewal lapse: does not change the provider status automatically; staff are alerted through the work queue. Built.
 - City, training domain and delivery method: optional fields the provider fills in its profile, shown in the directory as information the provider states. Nothing is inferred. Built.
 - Public verification by ATP number: returns status, active scope and level only. Built at /api/v1/providers/:number and /partners/verify.
-- Reference images: the owner will place them in docs/references/ personally.
+- Public details (about, website, professional links): provided by the provider and reviewed by LIV before they are published; the published version stays until approval. Built.
+- Branches and sites: shown only after LIV approves them, and each branch covers only the scopes approved for it. Built.
+- Scope details (number, domain, boundaries, restrictions, delivery methods, dates): recorded by LIV with a revision and audit trail. Built.
+- Approved courses: shown under their scope, from the existing authorized course titles (no parallel catalogue). Built.
+- Scope document (PDF) with a verification QR code, downloadable from the provider page. Official issuance waits for template approval (set AUTH_DOC_TEMPLATE_APPROVED=true then); until then it is marked as a draft for review. Built.
+- Badge: the review model is in docs/previews/badge-review.html; the live site keeps the text badge until the official artwork is approved.
+- Process page: built into the site at /partners/journey, linked from the program page. Built.
+- Reference images: the owner places them in docs/references/; the folder holds a note of what is not attached.
 - Interpretations of Batch H confirmed: a refused upload is one with no valid rows or refused by issuance; no alert for providers with no issuance history on the 5-times-average rule; 5 working days is the response date and 10 the escalation date.
 
 Waiting (final list, collected for the end):

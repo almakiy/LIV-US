@@ -6,31 +6,52 @@
     <h1 style="margin:0"><%= p.company_name %></h1>
     <span><span class="badge b-active">Authorized Training Provider</span><% if (p.level) { %> <span class="lvl lvl-<%= p.level %>"><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %> partner</span><% } %></span>
   </div>
+  <% if (p.public_about) { %><p class="mt"><%= p.public_about %></p><% } %>
   <div class="card details"><dl>
     <dt>Authorization status</dt><dd>Authorized, as recorded by <%= brand %> at the time of viewing</dd>
-    <% if (p.public_number) { %><dt>ATP number</dt><dd><%= p.public_number %></dd><% } %>
+    <% if (p.public_number) { %><dt>ATP number</dt><dd><%= p.public_number %> · <a href="/partners/verify?number=<%= p.public_number %>">Verify this ATP number</a> <span class="muted small">(status, active scope and level)</span></dd><% } %>
     <% if (p.level) { %><dt>Partnership level</dt><dd><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %><% if (p.level_since) { %> <span class="muted small">since <%= longDate(p.level_since) %></span><% } %></dd><% } %>
     <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
-    <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a></dd><% } %>
     <% if (p.public_city) { %><dt>City</dt><dd><%= p.public_city %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
     <% if (p.public_domain) { %><dt>Training domain</dt><dd><%= p.public_domain %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
     <% if (p.public_delivery) { %><dt>Delivery method</dt><dd><%= p.public_delivery %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
+    <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a> <span class="muted small">(information provided by the provider)</span></dd><% } %>
+    <% if (social.length) { %><dt>Professional links</dt><dd><ul class="mb0"><% social.forEach(u => { %><li><a href="<%= u %>" rel="noopener nofollow" target="_blank"><%= u %></a></li><% }) %></ul> <span class="muted small">(information provided by the provider)</span></dd><% } %>
     <% if (modes.length) { %><dt>Delivery</dt><dd><%= modes.join(', ') %></dd><% } %>
     <% if (capabilities.length) { %><dt>Added capabilities</dt><dd><ul class="mb0"><% capabilities.forEach(c => { %><li><%= c.description %> <span class="muted small">since <%= longDate(c.granted_on) %></span></li><% }) %></ul></dd><% } %>
-    <dt>Verify</dt><dd><a href="/partners/verify?number=<%= p.public_number %>">Verify this ATP number</a> <span class="muted small">(status, active scope and level)</span></dd>
     <dt>Provider link</dt><dd><label for="plink" class="small muted">Share this permanent address:</label><div class="row" style="gap:8px"><input id="plink" type="text" readonly value="<%= link %>" style="flex:1" onfocus="this.select()"><button type="button" class="btn secondary sm" data-copy="plink">Copy Provider Link</button></div></dd>
   </dl></div>
 
-  <h2 class="mt">Authorized scope</h2>
-  <p class="small muted">Delivery is covered only within the scopes below. A scope marked Ended is no longer authorized; it is shown for the record.</p>
-  <% if (scopes.length) { %><div class="table-wrap"><table>
-    <tr><th>Scope</th><th>Credential family</th><th>Status</th><th>Granted</th><th>Ends</th></tr>
-    <% scopes.forEach(s => { const ended = s.ends_on && String(s.ends_on.toISOString ? s.ends_on.toISOString() : s.ends_on).slice(0, 10) < today; %>
-      <tr class="<%= ended ? 'muted' : '' %>"><td><%= s.title %></td><td class="small"><%= s.scheme_name || 'Training Completion Credential' %></td>
-        <td class="small"><%= ended ? 'Ended' : (s.status === 'active' ? 'Active' : s.status.charAt(0).toUpperCase() + s.status.slice(1)) %></td>
-        <td class="small"><%= longDate(s.granted_on) %></td><td class="small"><%= s.ends_on ? longDate(s.ends_on) : 'Not set' %></td></tr>
+  <h2 class="mt">Approved branches and sites</h2>
+  <p class="small muted">A branch is covered only for the scopes listed against it. Branches still waiting for LIV approval are not shown.</p>
+  <% if (branches.length) { %><div class="table-wrap"><table>
+    <tr><th>Branch</th><th>Address</th><th>Scopes covered and delivery methods</th></tr>
+    <% branches.forEach(b => { %><tr><td><%= b.name %></td><td class="small"><%= [b.address, b.city, b.country].filter(Boolean).join(', ') %></td>
+      <td class="small"><ul class="mb0"><% b.scopes.forEach(s => { %><li><%= s.title %><% if (s.delivery_methods) { %> · <%= s.delivery_methods %><% } %></li><% }) %></ul></td></tr>
     <% }) %>
   </table></div>
+  <% } else { %><p class="muted">No branch is approved yet.</p><% } %>
+
+  <h2 class="mt">Authorized scope</h2>
+  <p class="small muted">Delivery is covered only within the scopes below. A scope marked Ended is no longer authorized; it is shown for the record.</p>
+  <% if (scopes.length) { %>
+    <% scopes.forEach(s => { const ended = s.ends_on && String(s.ends_on.toISOString ? s.ends_on.toISOString() : s.ends_on).slice(0, 10) < today; %>
+      <section class="card mt <%= ended ? 'muted' : '' %>" aria-labelledby="sc-<%= s.id %>">
+        <h3 id="sc-<%= s.id %>" style="margin-top:0"><%= s.scope_number ? s.scope_number + ' · ' : '' %><%= s.title %></h3>
+        <dl class="details">
+          <dt>Status</dt><dd><%= ended ? 'Ended' : 'Active' %></dd>
+          <dt>Credential family</dt><dd><%= s.scheme_name || 'Training Completion Credential' %></dd>
+          <dt>Granted</dt><dd><%= longDate(s.granted_on) %></dd>
+          <dt>Ends</dt><dd><%= s.ends_on ? longDate(s.ends_on) : 'Not set' %></dd>
+          <% if (s.domain) { %><dt>Domain</dt><dd><%= s.domain %></dd><% } %>
+          <% if (s.boundaries) { %><dt>Boundaries</dt><dd><%= s.boundaries %></dd><% } %>
+          <% if (s.restrictions) { %><dt>Restrictions</dt><dd><%= s.restrictions %></dd><% } %>
+          <% if (s.delivery_methods) { %><dt>Delivery methods</dt><dd><%= s.delivery_methods %></dd><% } %>
+          <dt>Authorized courses</dt><dd><% if (s.courses.length) { %><ul class="mb0"><% s.courses.forEach(c => { %><li><%= c.title %> <span class="muted small">· reference <%= c.reference %> · version <%= c.revision %></span></li><% }) %></ul><% } else { %><span class="muted">No course is recorded under this scope yet.</span><% } %></dd>
+        </dl>
+        <% if (s.docUrl) { %><p class="mb0"><a class="btn secondary sm" href="<%= s.docUrl %>" rel="nofollow">Download the scope document (PDF)</a></p><% } %>
+      </section>
+    <% }) %>
   <% } else { %><p class="muted">No scope is published yet. Contact <%= brand %> to confirm whether a specific course is within this partner's authorized scope.</p><% } %>
   <p class="small muted mt">The partnership level describes the size of the commitment and the record with <%= brand %>. It does not change what a credential says. Authorization is a private, voluntary program of <%= legalEntity %> and is not a government approval.</p>
 </div></section>

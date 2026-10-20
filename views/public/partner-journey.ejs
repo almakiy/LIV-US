@@ -1,0 +1,48 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow">LIV Authorized Training Provider (ATP)</span>
+  <h1>Your Path to Becoming a LIV Authorized Training Provider</h1>
+  <p>Apply for authorization within a defined training scope. LIV reviews your organization's delivery capability, trainers, training methods and supporting evidence before making an authorization decision.</p>
+</div></section>
+<section class="section white"><div class="container" style="max-width:860px">
+  <div class="card">
+    <h2 style="margin-top:0">What LIV ATP Authorization Covers</h2>
+    <p>LIV ATP authorization permits a provider to deliver training within a scope approved by LIV. Course titles and versions must be approved before they can be used for credential requests.</p>
+    <p>The current program supports Training Completion Credentials only. Providers deliver training and submit completion records; LIV issues the credentials after the required checks. These credentials do not require an examination, do not expire, and are not professional qualifications or professional certifications.</p>
+    <p><strong>Authorization is scope-specific. Payment does not guarantee approval or activate issuance rights.</strong></p>
+  </div>
+
+  <h2 class="mt">The process</h2>
+  <ol class="mb0" style="list-style:none;padding:0;display:grid;gap:12px" aria-label="Seven stages of the ATP process">
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">1</span><div><h3 style="margin:0">Explore &amp; Request a Quote</h3><p class="muted small" style="margin:4px 0 0">Understand eligibility, scope, services and fees.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">2</span><div><h3 style="margin:0">Apply &amp; Submit Evidence</h3><p class="muted small" style="margin:4px 0 0">Your organization profile, the field you request, your trainers, delivery methods and supporting evidence.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">3</span><div><h3 style="margin:0">Completeness Check</h3><p class="muted small" style="margin:4px 0 0">LIV checks that the file is complete and the initial eligibility conditions are met. If something is missing, LIV asks you to supply it.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">4</span><div><h3 style="margin:0">Technical Review</h3><p class="muted small" style="margin:4px 0 0">LIV reviews your actual capability and evidence, and may request an interview or a sample where the policy and risk call for it.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">5</span><div><h3 style="margin:0">Independent Decision</h3><p class="muted small" style="margin:4px 0 0">Acceptance to activation, acceptance with recorded conditions, or a reasoned refusal. The reviewer does not make the decision on the same application.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">6</span><div><h3 style="margin:0">Activate Your Authorized Scope</h3><p class="muted small" style="margin:4px 0 0">Required conditions and blocking items are cleared before your scope is switched on and listed in the register.</p></div></li>
+    <li class="card" style="display:grid;grid-template-columns:40px 1fr;gap:12px"><span class="step-n" aria-hidden="true">7</span><div><h3 style="margin:0">Maintain Your Authorization</h3><p class="muted small" style="margin:4px 0 0">Monitoring, notice of material changes, and re-assessment and renewal under the published policy.</p></div></li>
+  </ol>
+
+  <h2 class="mt">If the file needs work or is refused</h2>
+  <div class="card" style="border-left:4px solid var(--gold)"><h3 style="margin-top:0">Information / Corrective Action</h3><p class="muted">You submit new evidence. The application returns to the review stage it needs. Nothing is approved automatically.</p></div>
+  <div class="card mt" style="border-left:4px solid var(--gold)"><h3 style="margin-top:0">Declined</h3><p class="muted">You receive the reasons and the appeal route set out in the published policy. A declined application does not move to activation, and an appeal does not grant issuance rights.</p></div>
+
+  <div class="card mt">
+    <h2 style="margin-top:0">From Approved Training to a LIV Credential</h2>
+    <p class="small"><strong>Approved scope → Approved course title and version → Training delivery record → Completion evidence → LIV issuance checks → Verifiable credential.</strong></p>
+    <p>Unchanged approved courses do not require a new content review for every delivery. Delivery records, reporting requirements and material changes are governed by the applicable LIV policy.</p>
+    <p>All application and credential submission data must be provided in English. Credentials are issued in English only.</p>
+  </div>
+
+  <h2 class="mt">What happens if an application is incomplete?</h2>
+  <p>If information is missing or a requirement is not met, LIV may request clarification or corrective action. Acceptance, activation and ongoing authorization are separate stages. Decisions, conditions and next steps are recorded and communicated to the applicant.</p>
+
+  <div class="actions">
+    <a class="btn gold lg" href="/contact">Request Information</a>
+    <% if (publicApply) { %><a class="btn lg" href="/apply">Start Application</a><% } %>
+    <a class="btn ghost lg" href="/partners/guide">Application guide</a>
+    <a class="btn ghost lg" href="/partners#register">Find a Training Provider</a>
+  </div>
+  <p class="small muted">Fees and decision times are published only once they are approved. The application form opens only when applications are being accepted.</p>
+</div></section>
+<%- include('../partials/foot') %>

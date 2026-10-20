@@ -1,0 +1,50 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Public directory</h1></div>
+<p class="small muted">Changes you propose are checked by LIV before they are shown publicly. The published details stay as they are until LIV approves a change. Write in English (Latin letters). Your authorization, level and scopes are not changed from this page.</p>
+
+<h2>Published details</h2>
+<div class="card"><dl class="details">
+  <dt>Website</dt><dd><%= v.published.website || 'Not set' %></dd>
+  <dt>About</dt><dd><%= v.published.public_about || 'Not set' %></dd>
+  <dt>Professional links</dt><dd><%= v.published.public_social || 'Not set' %></dd>
+  <dt>City</dt><dd><%= v.published.public_city || 'Not set' %></dd>
+  <dt>Training domain</dt><dd><%= v.published.public_domain || 'Not set' %></dd>
+  <dt>Delivery method</dt><dd><%= v.published.public_delivery || 'Not set' %></dd>
+</dl></div>
+
+<% if (v.pending) { %>
+  <div class="alert info mt" role="status"><strong>A change is waiting for LIV review</strong> (sent <%= usDate(v.pending.submitted_at) %>). The published details above are unchanged until LIV decides.</div>
+<% } else { %>
+  <form class="card mt" method="post" action="/portal/directory/profile"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Propose a change</h3>
+    <div class="field"><label for="d-website">Website</label><input id="d-website" type="url" name="website" maxlength="255" value="<%= v.published.website || '' %>"></div>
+    <div class="field"><label for="d-about">About (for the public page)</label><textarea id="d-about" name="public_about" rows="4" maxlength="1000"><%= v.published.public_about || '' %></textarea></div>
+    <div class="field"><label for="d-social">Professional links (https addresses, separated by spaces, up to five)</label><input id="d-social" type="text" name="public_social" maxlength="500" value="<%= v.published.public_social || '' %>"></div>
+    <div class="row"><div class="field"><label for="d-city">City</label><input id="d-city" type="text" name="public_city" maxlength="120" value="<%= v.published.public_city || '' %>"></div>
+    <div class="field"><label for="d-domain">Training domain</label><input id="d-domain" type="text" name="public_domain" maxlength="200" value="<%= v.published.public_domain || '' %>"></div></div>
+    <div class="field"><label for="d-delivery">Delivery method</label><input id="d-delivery" type="text" name="public_delivery" maxlength="200" value="<%= v.published.public_delivery || '' %>" placeholder="for example: classroom, online, blended"></div>
+    <button class="btn">Send for review</button>
+  </form>
+<% } %>
+<% if (v.lastDecision) { %><p class="small muted mt">Last decision on your details: <%= v.lastDecision.status %> on <%= usDate(v.lastDecision.decided_at) %>. <%= v.lastDecision.decision_note %></p><% } %>
+
+<h2 class="mt">Branches and sites</h2>
+<p class="small muted">A branch is shown publicly only after LIV approves it, and only for the scopes LIV approves for that branch.</p>
+<% if (v.branches.length) { %><div class="table-wrap"><table><tr><th>Branch</th><th>Address</th><th>Status</th><th>LIV's note</th><th></th></tr>
+<% v.branches.forEach(b => { %><tr><td><%= b.name %></td><td class="small"><%= [b.address, b.city, b.country].filter(Boolean).join(', ') %></td><td class="small"><%= b.status %></td><td class="small"><%= b.decision_note %></td><td>
+  <% if (b.status === 'requested') { %><form method="post" action="/portal/directory/branches/<%= b.id %>/withdraw"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Withdraw</button></form><% } %></td></tr><% }) %></table></div>
+<% } else { %><p class="muted">No branch has been requested.</p><% } %>
+
+<% if (v.scopes.length) { %>
+<form class="card mt" method="post" action="/portal/directory/branches"><input type="hidden" name="_csrf" value="<%= csrf %>"><h3>Request a branch or site</h3>
+  <div class="row"><div class="field"><label for="b-name">Branch name *</label><input id="b-name" name="name" maxlength="200" required></div>
+  <div class="field"><label for="b-address">Address *</label><input id="b-address" name="address" maxlength="300" required></div></div>
+  <div class="row"><div class="field"><label for="b-city">City</label><input id="b-city" name="city" maxlength="120"></div>
+  <div class="field"><label for="b-country">Country</label><input id="b-country" name="country" maxlength="100"></div></div>
+  <fieldset><legend><strong>Scopes this branch would deliver *</strong></legend>
+    <% v.scopes.forEach((s, i) => { %><div class="field"><input id="bs-<%= i %>" type="checkbox" name="scope_ids" value="<%= s.id %>"> <label for="bs-<%= i %>"><%= s.scope_number ? s.scope_number + ' · ' : '' %><%= s.title %></label>
+      <label for="bm-<%= i %>" class="small muted">Delivery methods for this branch</label><input id="bm-<%= i %>" name="delivery_<%= s.id %>" maxlength="300"></div><% }) %>
+  </fieldset>
+  <button class="btn">Send the branch for review</button>
+</form>
+<% } %>
+<%- include('../partials/app-end') %>

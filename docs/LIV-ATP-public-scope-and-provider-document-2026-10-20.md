@@ -22,5 +22,5 @@ Specification for the public directory of Authorized Training Providers, the pro
 - The reference images named in the owner's brief (an ANAB directory model, an OSHAcademy provider card and an ISO 17034 process screenshot) were not in the repository when this document was written. They are to be placed in `docs/references/` by the owner. Nothing was copied from them. Logos, seals and wording of other bodies are not reproduced in LIV's interface.
 - ISO 17034 concerns the competence of reference material producers and does not cover certification bodies for persons. The future target stated for LIV's professional certification track is ISO/IEC 17024:2026. No accreditation or conformity is claimed.
 
-## Preview of the process page
-- Standalone preview: `docs/previews/LIV-ATP-process-page-preview.html`. It is not connected to the live site.
+## Process page
+- Built into the site at `/partners/journey`, linked from the program page.

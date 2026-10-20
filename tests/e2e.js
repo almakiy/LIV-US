@@ -48,7 +48,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
@@ -1578,12 +1578,19 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(`${BASE}/admin/partner-records`);
     ok(await see(adm, 'h2:has-text("Sanctions screening")') && await see(adm, 'td:has-text("Test Screening List")') && await see(adm, 'td:has-text("Not renewed in time")'), 'partner records show renewals, notices and screenings');
     ok(await see(page, 'h2:has-text("Monitoring notices")') && await see(page, 'td:has-text("Contact or address")'), 'the provider sees its notices and changes');
-    await page.goto(BASE + '/portal/settings');
-    await page.fill('#f-public_city', 'Doha'); await page.fill('#f-public_domain', 'Workplace safety'); await page.fill('#f-public_delivery', 'Blended');
-    await page.click('form[action="/portal/settings/profile"] button:has-text("Save profile")');
-    ok(await see(page, 'text=Profile updated'), 'the provider states its city, training domain and delivery method');
-    await page.fill('#f-public_city', 'الدوحة'); await page.click('form[action="/portal/settings/profile"] button:has-text("Save profile")');
-    ok(await see(page, 'text=write in English') && psql(`SELECT public_city FROM platforms WHERE id = '${partnerPlatform}'`) === 'Doha', 'a non-Latin city is refused and the saved value is kept');
+    await page.goto(BASE + '/portal/directory');
+    await page.fill('#d-city', 'Doha'); await page.fill('#d-domain', 'Workplace safety'); await page.fill('#d-delivery', 'Blended');
+    await page.click('form[action="/portal/directory/profile"] button:has-text("Send for review")');
+    ok(await see(page, 'text=Your change is sent to LIV for review'), 'the provider proposes its city, training domain and delivery method for review');
+    ok(psql(`SELECT count(*) FROM provider_profile_revisions WHERE platform_id = '${partnerPlatform}' AND status = 'pending'`) === '1' && psql(`SELECT coalesce(public_city, 'none') FROM platforms WHERE id = '${partnerPlatform}'`) !== 'Doha', 'the published city does not change before LIV approves it');
+    await page.goto(BASE + '/portal/directory');
+    ok(await see(page, 'text=A change is waiting for LIV review'), 'the provider sees that its change is waiting');
+    const revId = psql(`SELECT id FROM provider_profile_revisions WHERE platform_id = '${partnerPlatform}' AND status = 'pending'`);
+    await require('../src/lib/directory').decideProfile(revId, assessor, { outcome: 'approved', note: 'Details checked against the register' });
+    ok(psql(`SELECT public_city FROM platforms WHERE id = '${partnerPlatform}'`) === 'Doha', 'LIV approval publishes the city');
+    await page.goto(BASE + '/portal/directory');
+    await page.fill('#d-city', 'الدوحة'); await page.click('form[action="/portal/directory/profile"] button:has-text("Send for review")');
+    ok(await see(page, 'text=write in English') && psql(`SELECT count(*) FROM provider_profile_revisions WHERE platform_id = '${partnerPlatform}' AND status = 'pending'`) === '0', 'a non-Latin city is refused and nothing is sent');
     const byCity = await anon.request.get(`${BASE}/partners?city=Doha`).then((r) => r.text());
     ok(byCity.includes('Doha') && byCity.includes('Information provided by the provider'), 'the directory filters by city and marks the details as provided by the provider');
     ok(!(await anon.request.get(`${BASE}/partners?city=Nowhere-${stamp}`).then((r) => r.text())).includes('Demo Safety Training Co.'), 'a city no provider states returns no match');
@@ -1613,6 +1620,94 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     for (const path of ['/admin/monitoring', `/admin/monitoring/${caseId}`, '/admin/partner-records', '/admin/standards', '/admin/work', '/admin/report']) await axeCheck(adm, path);
     for (const path of ['/portal/oversight', '/portal/level', '/portal/settings', '/portal/templates', '/portal/issue', '/account/security']) await axeCheck(page, path);
     for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/verify', '/credentials', '/verify']) await axeCheck(anon, path);
+  }
+
+  console.log('Public directory: reviewed details, branches, scope details, documents and the process page');
+  {
+    const D = require('../src/lib/directory');
+    const mk = (n, position) => ({ id: psql(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Directory ${n}', 'dir${n}.${stamp}@example.com', 'x', ${position ? `'${position}'` : 'NULL'}) RETURNING id`).split('\n')[0], email: `dir${n}.${stamp}@example.com`, role: 'super_admin' });
+    const assessor = mk(1, 'application_assessor'); const decider = mk(2, 'authorization_decision_maker'); const owner = mk(3, null);
+    const fails = (p, status) => p.then(() => false, (e) => !status || e.status === status);
+    const providerUser = { id: null, email: 'provider-test@example.com' };
+    const pid = psql(`SELECT platform_id FROM users WHERE email = 'demo@trainingco.example'`).split('\n')[0];
+    const slug = psql(`SELECT public_slug FROM platforms WHERE id = '${pid}'`).split('\n')[0];
+    const sc = psql(`INSERT INTO partner_scopes (platform_id, title, granted_on, decision_note) VALUES ('${pid}', 'Directory Course ${stamp}', CURRENT_DATE, 'Title request internal-${stamp} authorized') RETURNING id`).split('\n')[0];
+    const sc2 = psql(`INSERT INTO partner_scopes (platform_id, title, granted_on) VALUES ('${pid}', 'Second Directory Course ${stamp}', CURRENT_DATE) RETURNING id`).split('\n')[0];
+    const tr = psql(`INSERT INTO partner_title_requests (platform_id, title, status, form, revision, scope_id) VALUES ('${pid}', 'Directory Course ${stamp}', 'authorized', '{}', 2, '${sc}') RETURNING id`).split('\n')[0];
+
+    console.log(' profile changes');
+    ok(await fails(D.proposeProfile(pid, providerUser, { public_about: 'التدريب' }), 422), 'a description in another script is refused before it is sent');
+    const prop = await D.proposeProfile(pid, providerUser, { public_about: 'Workplace safety training for industrial sites.', public_social: 'https://www.example.org/profile', website: 'https://www.example.org' });
+    ok(psql(`SELECT status FROM provider_profile_revisions WHERE id = '${prop.id}'`) === 'pending', 'a proposed change waits for review');
+    ok(await fails(D.proposeProfile(pid, providerUser, { public_about: 'A second change' }), 409), 'a second change cannot be proposed while one waits');
+    ok(await fails(D.decideProfile(prop.id, owner, { outcome: 'approved', note: 'x' }), 403), 'the owner administrator cannot review a profile change');
+    ok(await fails(D.decideProfile(prop.id, decider, { outcome: 'approved', note: 'x' }), 403), 'the decision-maker does not review wording: the assessor does');
+    ok(psql(`SELECT coalesce(public_about, 'none') FROM platforms WHERE id = '${pid}'`) === 'none', 'nothing is published before the review');
+    const pubBefore = await (await anon.request.get(`${BASE}/partners/${slug}`)).text();
+    ok(!pubBefore.includes('Workplace safety training for industrial sites.'), 'the public page does not show the proposed text');
+    await adm.goto(`${BASE}/admin/directory`);
+    ok(await see(adm, 'text=Workplace safety training for industrial sites.'), 'the review page shows the proposed text beside the published values');
+    await D.decideProfile(prop.id, assessor, { outcome: 'rejected', note: 'The link must be the organization site' });
+    ok(psql(`SELECT status FROM provider_profile_revisions WHERE id = '${prop.id}'`) === 'rejected' && psql(`SELECT coalesce(public_about, 'none') FROM platforms WHERE id = '${pid}'`) === 'none', 'a rejected change is recorded and nothing is published');
+    const again = await D.proposeProfile(pid, providerUser, { public_about: 'Workplace safety training for industrial sites.', public_social: 'https://www.example.org/profile', website: 'https://www.example.org' });
+    await D.decideProfile(again.id, assessor, { outcome: 'approved', note: 'Checked against the organization site' });
+    const pubAfter = await (await anon.request.get(`${BASE}/partners/${slug}`)).text();
+    ok(pubAfter.includes('Workplace safety training for industrial sites.') && pubAfter.includes('https://www.example.org/profile'), 'approval publishes the description and the professional link');
+
+    console.log(' branches');
+    const body = { name: `Site ${stamp}`, address: '12 Industrial Road', city: 'Doha', country: 'Qatar', scope_ids: [sc, sc2], [`delivery_${sc}`]: 'Online and classroom', [`delivery_${sc2}`]: 'Online' };
+    ok(await fails(D.requestBranch(pid, providerUser, { ...body, scope_ids: ['00000000-0000-0000-0000-000000000000'] }), 422), 'a branch cannot cover a scope the provider does not hold');
+    const br = await D.requestBranch(pid, providerUser, body);
+    await page.goto(BASE + '/portal/directory');
+    ok(await see(page, `td:has-text("Site ${stamp}")`), 'the provider sees its branch request and its status');
+    ok(!(await (await anon.request.get(`${BASE}/partners/${slug}`)).text()).includes(`Site ${stamp}`), 'a branch waiting for approval is not shown publicly');
+    ok(await fails(D.decideBranch(br.id, assessor, { outcome: 'approved', note: 'x', scopes: [{ scope_id: sc, approve: true }] }), 403), 'the assessor cannot approve a branch: the decision-maker does');
+    ok(await fails(D.decideBranch(br.id, owner, { outcome: 'approved', note: 'x', scopes: [{ scope_id: sc, approve: true }] }), 403), 'the owner administrator cannot approve a branch');
+    await D.decideBranch(br.id, decider, { outcome: 'approved', note: 'Site details checked', scopes: [{ scope_id: sc, approve: true, delivery_methods: 'Online and classroom' }] });
+    const pubBr = await D.publicBranches(pid);
+    const mine = pubBr.find((b) => b.name === `Site ${stamp}`);
+    ok(mine && mine.scopes.length === 1 && mine.scopes[0].id === sc, 'an approved branch covers only the scope approved for it, not the other requested scope');
+    ok((await (await anon.request.get(`${BASE}/partners/${slug}`)).text()).includes(`Site ${stamp}`), 'the approved branch appears on the provider page');
+
+    console.log(' scope details and documents');
+    ok(await fails(D.updateScope(sc, assessor, { domain: 'Fire and rescue' }), 403), 'the assessor cannot record scope details: the decision-maker does');
+    const rev = Number(psql(`SELECT revision FROM partner_scopes WHERE id = '${sc}'`));
+    await D.updateScope(sc, decider, { scope_number: `S-${stamp}`, domain: 'Industrial safety', boundaries: 'Classroom and online courses', restrictions: 'No practical assessment', delivery_methods: 'Classroom, online' });
+    ok(Number(psql(`SELECT revision FROM partner_scopes WHERE id = '${sc}'`)) === rev + 1 && psql(`SELECT count(*) FROM audit_logs WHERE action = 'scope.details' AND target = '${sc}'`) === '1', 'scope details are recorded, the revision rises, and the change is in the audit log');
+    const scopePage = await (await anon.request.get(`${BASE}/partners/${slug}`)).text();
+    ok(scopePage.includes('Industrial safety') && scopePage.includes(`S-${stamp}`), 'the provider page shows the scope number and domain from the same record');
+    ok(scopePage.includes(`T-${tr.slice(0, 8).toUpperCase()}`) && scopePage.includes('version 2'), 'the authorized course appears under its scope with its reference and version');
+    ok(!scopePage.includes(`internal-${stamp}`) && !scopePage.includes(`dir2.${stamp}`) && !scopePage.includes(`bh1.${stamp}`), 'the public page shows no internal decision notes or staff names');
+    const pdfUrl = `${BASE}/partners/${slug}/scopes/${sc}/authorization.pdf`;
+    const pdf = await anon.request.get(pdfUrl);
+    ok(pdf.status() === 200 && String(pdf.headers()['content-type']).includes('application/pdf') && (await pdf.body()).slice(0, 5).toString() === '%PDF-', 'an active scope downloads as a PDF document');
+    ok(scopePage.includes(`/partners/${slug}/scopes/${sc}/authorization.pdf`), 'the provider page links to the scope document');
+    psql(`UPDATE partner_scopes SET status = 'suspended' WHERE id = '${sc}'`);
+    ok((await anon.request.get(pdfUrl)).status() === 404, 'a suspended scope has no public document');
+    psql(`UPDATE partner_scopes SET status = 'active', ends_on = CURRENT_DATE - 1 WHERE id = '${sc}'`);
+    ok((await anon.request.get(pdfUrl)).status() === 404, 'an ended scope has no public document');
+    psql(`UPDATE partner_scopes SET ends_on = NULL WHERE id = '${sc}'`);
+
+    console.log(' process page and screens');
+    const journey = await (await anon.request.get(`${BASE}/partners/journey`)).text();
+    ok(journey.includes('Your Path to Becoming a LIV Authorized Training Provider') && journey.includes('href="/contact"') && journey.includes('href="/apply"'), 'the process page is part of the site, with the contact link and the application link while applications are open');
+    await adm.goto(`${BASE}/admin/directory`);
+    ok(await see(adm, 'h2:has-text("Profile changes waiting")') && await see(adm, 'h2:has-text("Scope details")'), 'the review page lists profile changes, branches and scope details');
+    const mctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); const mp = await mctx.newPage();
+    for (const path of ['/partners/journey', `/partners/${slug}`, '/partners']) {
+      await mp.goto(BASE + path);
+      ok(!(await mp.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), `${path} fits a phone-width screen without sideways scrolling`);
+    }
+    await mctx.close();
+    const axeFor = async (p, path) => {
+      await p.goto(BASE + path); await p.evaluate(axeSource);
+      const v = await p.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      ok(v.length === 0, `${path} has no automated WCAG 2.2 AA violations${v.length ? ': ' + v.join(', ') : ''}`);
+    };
+    const axeSource = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    for (const path of ['/partners/journey', `/partners/${slug}`, '/partners/verify']) await axeFor(anon, path);
+    await axeFor(adm, '/admin/directory');
+    await axeFor(page, '/portal/directory');
   }
 
   console.log('Security');
