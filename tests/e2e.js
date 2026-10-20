@@ -1598,6 +1598,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     const providerSlug = psql(`SELECT public_slug FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
     const providerHtml = await anon.request.get(`${BASE}/partners/${providerSlug}`).then((r) => r.text());
     ok(providerHtml.includes('Copy Provider Link') && providerHtml.includes(`/partners/${providerSlug}`) && providerHtml.includes('<h2 class="mt">Authorized scope</h2>'), 'a provider page shows its permanent link and its authorized scope table');
+    ok(byNumber.includes('Each provider has its own page') && providerHtml.includes(`/partners/verify?number=${partnerNumber}`), 'the directory explains its search, and each provider page links to verification of its number');
     const anonPages = ['/admin/monitoring', '/admin/partner-records', '/admin/standards', '/portal/oversight'];
     ok((await Promise.all(anonPages.map((p) => anon.request.get(BASE + p, { maxRedirects: 0 })))).every((r) => r.status() !== 200), 'the new pages are closed to visitors');
 

@@ -19,7 +19,7 @@ Read this first in a new session, then only the sections of other docs that the 
 - Keep ADMIN_RESET_PASSWORD in Replit Secrets until the site is finished; before launch, remind the owner to delete it and turn on admin 2FA.
 
 ## Tests
-- Unit: `npm run test:unit` (121 checks).
+- Unit: `npm run test:unit` (124 checks).
 - End to end: needs local PostgreSQL (`service postgresql start`), a fresh database, `npm run migrate && npm run seed`, the server on port 3000, then `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node tests/e2e.js http://localhost:3000`. Kill any leftover server process first with `fuser -k 3000/tcp`. Run it once at the end of each batch.
 - Accessibility: the end-to-end suite runs axe-core (WCAG 2.2 AA tags) on the batch pages and the main public, admin and provider pages. Other pages are not yet covered by the automated check.
 

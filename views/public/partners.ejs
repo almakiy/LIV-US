@@ -19,7 +19,8 @@
     <div class="card"><div class="step-n">3</div><h3>Authorization</h3><p class="muted small">On approval, your authorized scope is recorded and reporting is enabled in the Partner Portal.</p></div>
     <div class="card"><div class="step-n">4</div><h3>Surveillance</h3><p class="muted small">Periodic reviews keep your authorization active. Authorization can be suspended or withdrawn.</p></div>
   </div>
-  <h2 style="margin-top:48px" id="register">Authorized Training Providers</h2>
+  <h2 style="margin-top:48px" id="register">LIV Authorized Training Providers</h2>
+  <p class="muted">Each provider has its own page, which shows the scope LIV has authorized and its status. Search by name or ATP number, or filter by country, city, training domain or delivery method.</p>
   <form method="get" action="/partners#register" class="row" style="gap:10px;align-items:flex-end" role="search">
     <div class="field"><label for="q">Search by provider, course or ATP number</label><input id="q" type="search" name="q" value="<%= term %>" maxlength="80"></div>
     <div class="field"><label for="c">Country</label><select id="c" name="country"><option value="">All</option><% countries.forEach(c => { %><option value="<%= c %>" <%= c === country ? 'selected' : '' %>><%= c %></option><% }) %></select></div>
