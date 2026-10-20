@@ -323,6 +323,8 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 -- Partner gateway slice (docs/GLOBAL-STRATEGY.md): two-factor sign-in, forced password change, partner agreement acceptance and billing details.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS partner_role VARCHAR(20) NOT NULL DEFAULT 'account_manager';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS disabled_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret_enc TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last_step BIGINT NOT NULL DEFAULT 0;

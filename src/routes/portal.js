@@ -402,11 +402,11 @@ r.post('/settings/billing', wrap(async (req, res) => {
 // ---------- Settings ----------
 r.get('/settings', wrap(async (req, res) => {
   const platform = await loadPlatform(pid(req));
-  const { rows: users } = await q('SELECT id, full_name, email, last_login_at, created_at FROM users WHERE platform_id = $1 ORDER BY created_at', [pid(req)]);
+  const { rows: users } = await q('SELECT id, full_name, email, last_login_at, created_at, partner_role, disabled_at FROM users WHERE platform_id = $1 ORDER BY created_at', [pid(req)]);
   const { rows: keys } = await q('SELECT * FROM api_keys WHERE platform_id = $1 ORDER BY created_at DESC', [pid(req)]);
   const newKey = req.session.newKey || null;
   delete req.session.newKey;
-  res.render('portal/settings', { title: 'Settings', platform, users, keys, newKey });
+  res.render('portal/settings', { title: 'Settings', platform, users, keys, newKey, ROLES: require('../lib/partner-roles').ROLES });
 }));
 
 r.post('/settings/profile', wrap(async (req, res) => {
@@ -444,13 +444,36 @@ r.post('/settings/users', wrap(async (req, res) => {
   }
   if (refusedPassword(password)) { flash(req, 'error', 'That is a published development password; choose another one.'); return res.redirect('/portal/settings'); }
   try {
-    await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash, must_change_password) VALUES ($1,'platform_admin',$2,$3,$4,true)`, [pid(req), full_name, email, await bcrypt.hash(password, 12)]);
+    const prole = String(req.body.partner_role || 'account_manager');
+    if (!require('../lib/partner-roles').ROLES[prole]) { flash(req, 'error', 'Choose a valid role.'); return res.redirect('/portal/settings'); }
+    await q(`INSERT INTO users (platform_id, role, full_name, email, password_hash, must_change_password, partner_role) VALUES ($1,'platform_admin',$2,$3,$4,true,$5)`, [pid(req), full_name, email, await bcrypt.hash(password, 12), prole]);
   } catch (e) {
     if (e.code === '23505') { flash(req, 'error', 'A user with that email already exists.'); return res.redirect('/portal/settings'); }
     throw e;
   }
   await audit({ user: req.user, platformId: pid(req), action: 'user.create', target: email });
   flash(req, 'success', `User ${email} added. Share the temporary password securely.`);
+  res.redirect('/portal/settings');
+}));
+
+// Change a colleague's role or disable the account. Server-side: only the account manager, never oneself, never the last account manager.
+r.post('/settings/users/:id/:action', wrap(async (req, res, next) => {
+  if (!['role', 'disable', 'enable'].includes(req.params.action)) return next();
+  const { ROLES } = require('../lib/partner-roles');
+  const { rows: [t] } = await q('SELECT id, email, partner_role, disabled_at FROM users WHERE id = $1 AND platform_id = $2', [req.params.id, pid(req)]);
+  if (!t) return res.status(404).render('error', { title: 'Not found', message: 'No such user.' });
+  if (t.id === req.user.id) { flash(req, 'error', 'You cannot change your own role or disable your own account.'); return res.redirect('/portal/settings'); }
+  const action = req.params.action;
+  const newRole = action === 'role' ? String(req.body.partner_role || '') : t.partner_role;
+  if (action === 'role' && !ROLES[newRole]) { flash(req, 'error', 'Choose a valid role.'); return res.redirect('/portal/settings'); }
+  if ((action === 'disable' || (action === 'role' && newRole !== 'account_manager')) && t.partner_role === 'account_manager' && !t.disabled_at) {
+    const { rows: [{ n }] } = await q(`SELECT count(*)::int AS n FROM users WHERE platform_id = $1 AND partner_role = 'account_manager' AND disabled_at IS NULL AND id <> $2`, [pid(req), t.id]);
+    if (!n) { flash(req, 'error', 'The account needs at least one active Account Manager.'); return res.redirect('/portal/settings'); }
+  }
+  if (action === 'role') await q('UPDATE users SET partner_role = $1 WHERE id = $2', [newRole, t.id]);
+  else await q('UPDATE users SET disabled_at = $1 WHERE id = $2', [action === 'disable' ? new Date() : null, t.id]);
+  await audit({ user: req.user, platformId: pid(req), action: `user.${action}`, target: t.email, metadata: action === 'role' ? { from: t.partner_role, to: newRole } : undefined });
+  flash(req, 'success', 'Saved.');
   res.redirect('/portal/settings');
 }));
 

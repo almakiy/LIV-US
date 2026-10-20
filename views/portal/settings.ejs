@@ -54,14 +54,20 @@
 <h2 class="mt">Users</h2>
 <div class="grid g2">
   <div class="table-wrap"><table>
-    <tr><th>Name</th><th>Email</th><th>Last login</th></tr>
-    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td><%= u.last_login_at ? usDate(u.last_login_at) : 'Never' %></td></tr><% }) %>
+    <tr><th>Name</th><th>Email</th><th>Role</th><th>Last login</th><th></th></tr>
+    <% users.forEach(u => { %><tr><td><%= u.full_name %></td><td><%= u.email %></td><td>
+      <% if (u.id === user.id) { %><%= ROLES[u.partner_role] %> (you)<% } else { %>
+      <form method="post" action="/portal/settings/users/<%= u.id %>/role" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <select name="partner_role" aria-label="Role for <%= u.full_name %>"><% Object.keys(ROLES).forEach(k => { %><option value="<%= k %>" <%= k === u.partner_role ? 'selected' : '' %>><%= ROLES[k] %></option><% }) %></select> <button class="btn sm">Save</button></form><% } %></td>
+      <td><%= u.disabled_at ? 'Disabled' : (u.last_login_at ? usDate(u.last_login_at) : 'Never') %></td>
+      <td><% if (u.id !== user.id) { %><form method="post" action="/portal/settings/users/<%= u.id %>/<%= u.disabled_at ? 'enable' : 'disable' %>" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm ghost"><%= u.disabled_at ? 'Enable' : 'Disable' %></button></form><% } %></td></tr><% }) %>
   </table></div>
   <form class="card" method="post" action="/portal/settings/users">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h3>Add user</h3>
     <div class="field"><label>Full name</label><input name="full_name" required></div>
     <div class="field"><label>Email</label><input type="email" name="email" required></div>
+    <div class="field"><label>Role</label><select name="partner_role"><% Object.keys(ROLES).forEach(k => { %><option value="<%= k %>"><%= ROLES[k] %></option><% }) %></select></div>
     <div class="field"><label>Temporary password</label><input type="password" name="password" minlength="10" required></div>
     <button class="btn">Add user</button>
   </form>

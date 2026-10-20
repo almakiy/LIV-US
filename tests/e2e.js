@@ -1419,6 +1419,56 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     } finally { srv.kill(); }
   }
 
+  console.log('Partner roles inside a provider account (Batch I)');
+  {
+    const roleUsers = {};
+    await page.goto(BASE + '/portal/settings');
+    for (const [k, label] of [['academic_lead', 'Academic Lead'], ['records_uploader', 'Records Uploader'], ['finance', 'Finance']]) {
+      const email = `${k}.${stamp}@example.com`; roleUsers[k] = email;
+      const f = page.locator('form[action="/portal/settings/users"]');
+      await f.locator('input[name=full_name]').fill(`Test ${label}`); await f.locator('input[name=email]').fill(email);
+      await f.locator('select[name=partner_role]').selectOption(k); await f.locator('input[name=password]').fill('Role-Test-Pass-2026x');
+      await f.locator('button:has-text("Add user")').click();
+      await see(page, 'text=added');
+    }
+    ok(psql(`SELECT count(*) FROM users WHERE email LIKE '%.${stamp}@example.com' AND partner_role IN ('academic_lead','records_uploader','finance')`) === '3', 'three colleagues were added with different roles');
+    const asRole = async (k) => {
+      const c = await browser.newContext(); const pg = await c.newPage();
+      await pg.goto(BASE + '/login'); await pg.fill('input[name=email]', roleUsers[k]); await pg.fill('input[name=password]', 'Role-Test-Pass-2026x'); await pg.click('button:has-text("Log in")');
+      await pg.waitForLoadState();
+      if (pg.url().includes('/account/security')) {
+        await pg.fill('input[name=current_password]', 'Role-Test-Pass-2026x'); await pg.fill('input[name=new_password]', 'Role-New-Pass-2026y'); await pg.fill('input[name=confirm_password]', 'Role-New-Pass-2026y');
+        await pg.click('form:has(input[name=new_password]) button.btn'); await pg.waitForLoadState();
+      }
+      return { c, pg };
+    };
+    const st = (r, path) => r.pg.request.get(BASE + path).then((x) => x.status());
+    const lead = await asRole('academic_lead'); const rec = await asRole('records_uploader'); const fin = await asRole('finance');
+    ok(await st(lead, '/portal/application') === 200 && await st(lead, '/portal/issue') === 403 && await st(lead, '/portal/billing') === 403 && await st(lead, '/portal/settings') === 403, 'an Academic Lead reaches authorization pages and nothing else');
+    ok(await st(rec, '/portal/issue') === 200 && await st(rec, '/portal/templates') === 200 && await st(rec, '/portal/application') === 403 && await st(rec, '/portal/billing') === 403, 'a Records Uploader reaches issuance and records and nothing else');
+    ok(await st(fin, '/portal/billing') === 200 && await st(fin, '/portal/issue') === 403 && await st(fin, '/portal/settings') === 403 && await st(fin, '/portal/titles') === 403, 'Finance reaches billing and nothing else');
+    ok(await st(lead, '/portal') === 200 && await st(rec, '/portal') === 200 && await st(fin, '/portal') === 200, 'every role sees the dashboard');
+    await lead.pg.goto(BASE + '/portal');
+    ok(!(await lead.pg.locator('a[href="/portal/billing"]').count()) && (await lead.pg.locator('a[href="/portal/titles"]').count()) > 0, 'the menu shows only what the role can use');
+    const sneak = await rec.pg.request.post(BASE + '/portal/settings/users', { form: { full_name: 'X', email: `x.${stamp}@example.com`, password: 'Sneaky-Pass-2026z', partner_role: 'account_manager', _csrf: 'bad' } });
+    ok([403].includes(sneak.status()) && psql(`SELECT count(*) FROM users WHERE email = 'x.${stamp}@example.com'`) === '0', 'a Records Uploader cannot add users even by posting directly');
+    // Manager: change a role, disable, cannot disable self, cannot remove last manager
+    await page.goto(BASE + '/portal/settings');
+    const row = page.locator('tr', { hasText: roleUsers.finance });
+    await row.locator('select[name=partner_role]').selectOption('academic_lead'); await row.locator('button:has-text("Save")').click();
+    ok(await see(page, 'text=Saved') && psql(`SELECT partner_role FROM users WHERE email = '${roleUsers.finance}'`) === 'academic_lead', 'the Account Manager changes a colleague\'s role');
+    ok(await st(fin, '/portal/billing') === 403 && await st(fin, '/portal/application') === 200, 'the new role applies at once, without signing in again');
+    await page.goto(BASE + '/portal/settings');
+    await page.locator('tr', { hasText: roleUsers.records_uploader }).locator('button:has-text("Disable")').click();
+    ok(await see(page, 'text=Saved') && psql(`SELECT disabled_at IS NOT NULL FROM users WHERE email = '${roleUsers.records_uploader}'`) === 't', 'the Account Manager disables a colleague');
+    ok((await rec.pg.request.get(BASE + '/portal/issue')).url().includes('/login'), 'a disabled user is signed out of the portal at once');
+    const c3 = await browser.newContext(); const p3 = await c3.newPage();
+    await p3.goto(BASE + '/login'); await p3.fill('input[name=email]', roleUsers.records_uploader); await p3.fill('input[name=password]', 'Role-New-Pass-2026y'); await p3.click('button:has-text("Log in")');
+    ok(await see(p3, 'text=Incorrect email or password') , 'a disabled user cannot sign in');
+    ok(psql(`SELECT count(*) FROM audit_logs WHERE action IN ('user.role','user.disable')`) !== '0', 'role changes and disabling are in the audit log');
+    for (const x of [lead, rec, fin]) await x.c.close(); await c3.close();
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

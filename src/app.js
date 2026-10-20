@@ -70,9 +70,10 @@ app.use(async (req, res, next) => {
     delete req.session.flash;
     if (req.session.userId) {
       const { rows: [u] } = await q(
-        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, u.totp_enabled, u.must_change_password, p.service_hold, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
+        `SELECT u.id, u.email, u.full_name, u.role, u.platform_id, u.totp_enabled, u.must_change_password, u.partner_role, u.disabled_at, p.service_hold, p.company_name, p.accreditation_status, p.logo_path, p.primary_color
            FROM users u LEFT JOIN platforms p ON p.id = u.platform_id WHERE u.id = $1`, [req.session.userId]);
-      if (u) {
+      if (u && u.disabled_at) { delete req.session.userId; }
+      else if (u) {
         req.user = { ...u, realRole: u.role };
         // Super admin acting on behalf of a provider (issuance, templates, settings). Audit rows keep the admin as actor.
         if (u.role === 'super_admin' && req.session.actAs) {
@@ -111,6 +112,7 @@ app.use(require('./routes/public'));
 app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
+app.use('/portal', require('./lib/partner-roles').gate);
 app.use('/portal', require('./routes/portal'));
 app.use('/portal/application', require('./routes/portal-application'));
 app.use('/portal/titles', require('./routes/portal-titles'));

@@ -29,9 +29,9 @@ async function startSession(req, res, u, next) {
 r.post('/login', limiter(15, 20), wrap(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
-  const { rows: [u] } = await q('SELECT id, email, role, platform_id, password_hash, totp_enabled, vacant FROM users WHERE email = $1', [email]);
+  const { rows: [u] } = await q('SELECT id, email, role, platform_id, password_hash, totp_enabled, vacant, disabled_at FROM users WHERE email = $1', [email]);
   const ok = await bcrypt.compare(password, u ? u.password_hash : DUMMY);
-  if (!u || !ok || u.vacant) {
+  if (!u || !ok || u.vacant || u.disabled_at) {
     return res.status(401).render('public/login', { title: 'Log in', error: 'Incorrect email or password.', email, next: safeNext(req.body.next) || '' });
   }
   if (refusedPassword(password)) {
