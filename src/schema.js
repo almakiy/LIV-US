@@ -1103,6 +1103,13 @@ CREATE TABLE IF NOT EXISTS partner_sanctions_checks (
 );
 DROP TRIGGER IF EXISTS partner_sanctions_lock ON partner_sanctions_checks;
 CREATE TRIGGER partner_sanctions_lock BEFORE UPDATE OR DELETE ON partner_sanctions_checks FOR EACH ROW EXECUTE FUNCTION partner_app_locked();
+-- Provider-entered public details (optional), shown in the directory as information the provider states (October 20 decision).
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_city VARCHAR(120);
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_domain VARCHAR(200);
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS public_delivery VARCHAR(200);
+-- A lapsed renewal is reviewed by the decision-maker; the review clears the work-queue item. It never changes the provider status.
+ALTER TABLE partner_renewals ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE partner_renewals ADD COLUMN IF NOT EXISTS reviewed_by_label VARCHAR(200);
 INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'draft', '[
   {"code":"C1","title":"Legal entity and accountability","if_not_met":"major"},
   {"code":"C2","title":"Training management","if_not_met":"major"},

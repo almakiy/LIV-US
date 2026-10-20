@@ -55,6 +55,14 @@ async function decideRenewal(id, user, { outcome, note }) {
 }
 
 // ----- material-change notices (the categories and the threshold for material are pending decision P-12) -----
+/** The decision-maker has seen a lapsed renewal. Only the queue item is cleared; the provider status does not change. */
+async function reviewLapsed(id, user) {
+  await P.require(user, 'decide');
+  const { rows: [r] } = await q(`UPDATE partner_renewals SET reviewed_at = now(), reviewed_by_label = $2 WHERE id = $1 AND status = 'lapsed' AND reviewed_at IS NULL RETURNING platform_id`, [id, user.email]);
+  if (!r) throw new ApplicationError('No lapsed renewal is waiting for review.', 409);
+  await audit({ user, platformId: r.platform_id, action: 'renewal.review_lapsed', target: id });
+}
+
 async function recordChange(platformId, user, { change_kind, description, effective_on }) {
   if (!CHANGE_KINDS[change_kind]) throw new ApplicationError('Choose the kind of change.');
   const text = String(description || '').trim().slice(0, 4000);
@@ -107,11 +115,13 @@ async function list() {
 /** Records waiting for a position: overdue renewals, notices not yet acknowledged, and unresolved possible matches. */
 async function openForQueue() {
   const { rows: overdue } = await q(`SELECT r.id, r.due_on AS since, to_char(r.due_on, 'YYYY-MM-DD') AS due, p.company_name FROM partner_renewals r JOIN platforms p ON p.id = r.platform_id WHERE r.status = 'scheduled' AND r.due_on < current_date`);
+  const { rows: lapsed } = await q(`SELECT r.id, r.decided_at AS since, p.company_name FROM partner_renewals r JOIN platforms p ON p.id = r.platform_id WHERE r.status = 'lapsed' AND r.reviewed_at IS NULL`);
   const { rows: notices } = await q(`SELECT c.id, c.submitted_at AS since, c.change_kind, p.company_name FROM partner_material_changes c JOIN platforms p ON p.id = c.platform_id WHERE c.status = 'submitted'`);
   const { rows: matches } = await q(`SELECT s.id, s.created_at AS since, s.list_name, p.company_name FROM partner_sanctions_checks s JOIN platforms p ON p.id = s.platform_id
     WHERE s.result <> 'no_match' AND NOT EXISTS (SELECT 1 FROM partner_sanctions_checks n WHERE n.platform_id = s.platform_id AND n.created_at > s.created_at)`);
   return [
     ...overdue.map((r) => ({ kind: 'Renewal', what: `due ${r.due}`, who: r.company_name, owner: 'authorization_decision_maker', since: r.since, url: '/admin/partner-records' })),
+    ...lapsed.map((r) => ({ kind: 'Lapsed renewal', what: 'review the record; the provider status is unchanged', who: r.company_name, owner: 'authorization_decision_maker', since: r.since, url: '/admin/partner-records' })),
     ...notices.map((r) => ({ kind: 'Material change', what: CHANGE_KINDS[r.change_kind], who: r.company_name, owner: 'application_assessor', since: r.since, url: '/admin/partner-records' })),
     ...matches.map((r) => ({ kind: 'Sanctions check', what: `possible match on ${r.list_name}`, who: r.company_name, owner: 'application_assessor', since: r.since, url: '/admin/partner-records' })),
   ];
@@ -121,4 +131,4 @@ async function changesFor(platformId) {
   return (await q(`SELECT id, change_kind, description, effective_on, status, submitted_at, handling_note, handled_at FROM partner_material_changes WHERE platform_id = $1 ORDER BY submitted_at DESC`, [platformId])).rows;
 }
 
-module.exports = { CHANGE_KINDS, CHANGE_STATUS, SANCTION_RESULTS, scheduleRenewal, decideRenewal, recordChange, handleChange, recordSanctions, list, openForQueue, changesFor };
+module.exports = { CHANGE_KINDS, CHANGE_STATUS, SANCTION_RESULTS, scheduleRenewal, decideRenewal, reviewLapsed, recordChange, handleChange, recordSanctions, list, openForQueue, changesFor };

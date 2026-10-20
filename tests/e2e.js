@@ -48,7 +48,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
@@ -1518,6 +1518,11 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     const providerStatus = psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`);
     await PR.decideRenewal(rn, decider, { outcome: 'lapsed', note: 'Not renewed in time' });
     ok(psql(`SELECT status FROM partner_renewals WHERE id = '${rn}'`) === 'lapsed' && psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`) === providerStatus, 'a lapsed renewal is recorded and the provider status is unchanged');
+    ok((await PR.openForQueue()).some((i) => i.kind === 'Lapsed renewal' && i.who === `Monitor Test ${stamp}` && i.owner === 'authorization_decision_maker'), 'a lapsed renewal waits for the decision-maker to review it');
+    ok(await fails(PR.reviewLapsed(rn, owner), 403), 'the owner administrator cannot review a lapsed renewal');
+    await PR.reviewLapsed(rn, decider);
+    ok(!(await PR.openForQueue()).some((i) => i.kind === 'Lapsed renewal' && i.who === `Monitor Test ${stamp}`) && psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`) === providerStatus, 'the review clears the queue item and does not change the provider status');
+    ok(await fails(PR.reviewLapsed(rn, decider), 409), 'a lapsed renewal is reviewed once');
     await page.goto(BASE + '/portal/oversight');
     await page.selectOption('select[name=change_kind]', 'contact_or_address');
     await page.fill('textarea[name=description]', 'The training office moved to a new address.');
@@ -1573,7 +1578,20 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(`${BASE}/admin/partner-records`);
     ok(await see(adm, 'h2:has-text("Sanctions screening")') && await see(adm, 'td:has-text("Test Screening List")') && await see(adm, 'td:has-text("Not renewed in time")'), 'partner records show renewals, notices and screenings');
     ok(await see(page, 'h2:has-text("Monitoring notices")') && await see(page, 'td:has-text("Contact or address")'), 'the provider sees its notices and changes');
+    await page.goto(BASE + '/portal/settings');
+    await page.fill('#f-public_city', 'Doha'); await page.fill('#f-public_domain', 'Workplace safety'); await page.fill('#f-public_delivery', 'Blended');
+    await page.click('form[action="/portal/settings/profile"] button:has-text("Save profile")');
+    ok(await see(page, 'text=Profile updated'), 'the provider states its city, training domain and delivery method');
+    await page.fill('#f-public_city', 'الدوحة'); await page.click('form[action="/portal/settings/profile"] button:has-text("Save profile")');
+    ok(await see(page, 'text=write in English') && psql(`SELECT public_city FROM platforms WHERE id = '${partnerPlatform}'`) === 'Doha', 'a non-Latin city is refused and the saved value is kept');
+    const byCity = await anon.request.get(`${BASE}/partners?city=Doha`).then((r) => r.text());
+    ok(byCity.includes('Doha') && byCity.includes('Information provided by the provider'), 'the directory filters by city and marks the details as provided by the provider');
+    ok(!(await anon.request.get(`${BASE}/partners?city=Nowhere-${stamp}`).then((r) => r.text())).includes('Demo Safety Training Co.'), 'a city no provider states returns no match');
     const partnerNumber = psql(`SELECT public_number FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
+    const verified = await anon.request.get(`${BASE}/api/v1/providers/${partnerNumber}`);
+    const vb = await verified.json();
+    ok(verified.status() === 200 && Object.keys(vb).sort().join(',') === 'active_scopes,atp_number,level,status' && vb.atp_number === partnerNumber && vb.status === 'active', 'the verification endpoint answers with status, active scope and level only');
+    ok((await anon.request.get(`${BASE}/api/v1/providers/ATP-9999`)).status() === 404 && (await anon.request.get(`${BASE}/partners/verify?number=${partnerNumber}`).then((r) => r.text())).includes(partnerNumber), 'an unknown number is not found, and the verification page answers a known one');
     const partnerName = psql(`SELECT company_name FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
     const byNumber = await anon.request.get(`${BASE}/partners?q=${encodeURIComponent(partnerNumber)}`).then((r) => r.text());
     ok(partnerNumber && byNumber.includes(partnerName), 'the directory finds a provider by its ATP number');
@@ -1593,7 +1611,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     };
     for (const path of ['/admin/monitoring', `/admin/monitoring/${caseId}`, '/admin/partner-records', '/admin/standards', '/admin/work', '/admin/report']) await axeCheck(adm, path);
     for (const path of ['/portal/oversight', '/portal/level', '/portal/settings', '/portal/templates', '/portal/issue', '/account/security']) await axeCheck(page, path);
-    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/credentials', '/verify']) await axeCheck(anon, path);
+    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/verify', '/credentials', '/verify']) await axeCheck(anon, path);
   }
 
   console.log('Security');

@@ -12,6 +12,9 @@
     <% if (p.level) { %><dt>Partnership level</dt><dd><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %><% if (p.level_since) { %> <span class="muted small">since <%= longDate(p.level_since) %></span><% } %></dd><% } %>
     <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
     <% if (p.website) { %><dt>Website</dt><dd><a href="<%= p.website %>" rel="noopener nofollow" target="_blank"><%= p.website %></a></dd><% } %>
+    <% if (p.public_city) { %><dt>City</dt><dd><%= p.public_city %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
+    <% if (p.public_domain) { %><dt>Training domain</dt><dd><%= p.public_domain %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
+    <% if (p.public_delivery) { %><dt>Delivery method</dt><dd><%= p.public_delivery %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
     <% if (modes.length) { %><dt>Delivery</dt><dd><%= modes.join(', ') %></dd><% } %>
     <% if (capabilities.length) { %><dt>Added capabilities</dt><dd><ul class="mb0"><% capabilities.forEach(c => { %><li><%= c.description %> <span class="muted small">since <%= longDate(c.granted_on) %></span></li><% }) %></ul></dd><% } %>
     <dt>Provider link</dt><dd><label for="plink" class="small muted">Share this permanent address:</label><div class="row" style="gap:8px"><input id="plink" type="text" readonly value="<%= link %>" style="flex:1" onfocus="this.select()"><button type="button" class="btn secondary sm" data-copy="plink">Copy Provider Link</button></div></dd>

@@ -23,23 +23,29 @@ Read this first in a new session, then only the sections of other docs that the 
 - End to end: needs local PostgreSQL (`service postgresql start`), a fresh database, `npm run migrate && npm run seed`, the server on port 3000, then `CHROMIUM_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node tests/e2e.js http://localhost:3000`. Kill any leftover server process first with `fuser -k 3000/tcp`. Run it once at the end of each batch.
 - Accessibility: the end-to-end suite runs axe-core (WCAG 2.2 AA tags) on the batch pages and the main public, admin and provider pages. Other pages are not yet covered by the automated check.
 
-## Owner decisions waiting (final list, collected for the end)
+## Owner decisions
+Answered October 20, 2026:
+- Standards transition (P-9): a new version applies to later applications only. Built.
+- Renewal lapse: does not change the provider status automatically; staff are alerted through the work queue. Built.
+- City, training domain and delivery method: optional fields the provider fills in its profile, shown in the directory as information the provider states. Nothing is inferred. Built.
+- Public verification by ATP number: returns status, active scope and level only. Built at /api/v1/providers/:number and /partners/verify.
+- Reference images: the owner will place them in docs/references/ personally.
+- Interpretations of Batch H confirmed: a refused upload is one with no valid rows or refused by issuance; no alert for providers with no issuance history on the 5-times-average rule; 5 working days is the response date and 10 the escalation date.
+
+Waiting (final list, collected for the end):
 - Fee approval (P-6).
 - Level thresholds (P-15), Gold commitments (P-17), badge licence conditions (P-16).
 - Trainer thresholds (P-5).
 - Agreement text from counsel (P-7).
-- Transition between standards versions (P-9). Built default: open applications keep their version.
-- Renewal period (P-11). Built: due dates are set by hand.
-- Material-change notice (P-12). Built: six categories as a placeholder, and any change is recorded.
-- Whether a lapsed renewal changes a provider's status (built: it does not; a separate decision).
+- Renewal period (P-11). Dates are set by hand.
+- Material-change categories and materiality (P-12). The six categories are placeholders.
 - Records retention periods (P-14), with counsel.
 - Wording of public claims (D-C).
 - Email footer from counsel; SMTP provider and SPF, DKIM, DMARC records.
-- Naming the people for the four staff positions.
+- Names for the four staff positions.
 - First specialty and scope.
 - List of allowed exception types.
-- Error handling policy for records (counsel).
+- Error-handling policy for records (counsel).
 - Reopening the certificate design (P-21 and P-22).
 - Turning on `PUBLIC_APPLY` and `PUBLIC_FEES`.
 - Before launch: delete `ADMIN_RESET_PASSWORD` and turn on two-step sign-in for the admin account.
-- Interpretations to confirm in Batch H: a refused batch is an upload refused with no valid rows or by issuance; a provider with no issuance history is not flagged by the 5-times average rule; the 5-working-day period is the response date and the 10-working-day period is the escalation date.

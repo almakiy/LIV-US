@@ -10,7 +10,7 @@
 <% if (d.renewals.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Provider</th><th>Due</th><th>Status</th><th>Note</th><th>Decision</th></tr>
 <% d.renewals.forEach(r => { %><tr><td><%= r.company_name %></td><td class="small"><%= usDate(r.due_on) %></td><td class="small"><%= r.status %></td><td class="small"><%= r.note %></td><td class="small">
   <% if (r.status === 'scheduled' && can.decide) { %><form method="post" action="/admin/partner-records/renewals/<%= r.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>"><select name="outcome" aria-label="Outcome"><option value="renewed">Renewed</option><option value="lapsed">Lapsed</option></select> <input name="note" aria-label="Reason" placeholder="Reason *" required maxlength="2000"> <button class="btn sm">Record</button></form>
-  <% } else if (r.status !== 'scheduled') { %><%= r.decided_by_label %>, <%= usDate(r.decided_at) %><% } else { %>Needs the Authorization Decision-Maker<% } %></td></tr><% }) %></table></div>
+  <% } else if (r.status !== 'scheduled') { %><%= r.decided_by_label %>, <%= usDate(r.decided_at) %><% if (r.status === 'lapsed' && !r.reviewed_at && can.decide) { %><form method="post" action="/admin/partner-records/renewals/<%= r.id %>/review" style="margin-top:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Mark the lapse reviewed</button></form><% } else if (r.reviewed_at) { %><br><span class="small muted">Reviewed by <%= r.reviewed_by_label %></span><% } %><% } else { %>Needs the Authorization Decision-Maker<% } %></td></tr><% }) %></table></div>
 <% } else { %><p class="muted">No renewals scheduled.</p><% } %>
 
 <h2 class="mt">Material-change notices</h2>

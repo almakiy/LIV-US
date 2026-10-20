@@ -20,6 +20,7 @@ r.get('/partner-records', wrap(async (req, res) => {
 }));
 r.post('/partner-records/renewals', go(async (req) => { await PR.scheduleRenewal(String(req.body.platform_id || ''), req.user, { due_on: req.body.due_on, note: req.body.note }); return 'Renewal scheduled.'; }));
 r.post('/partner-records/renewals/:id/decide', go(async (req) => { await PR.decideRenewal(req.params.id, req.user, { outcome: req.body.outcome, note: req.body.note }); return 'Renewal outcome recorded. The provider status is unchanged; any change is a separate decision.'; }));
+r.post('/partner-records/renewals/:id/review', go(async (req) => { await PR.reviewLapsed(req.params.id, req.user); return 'Lapsed renewal reviewed. The provider status is unchanged.'; }));
 r.post('/partner-records/changes/:id/handle', go(async (req) => { await PR.handleChange(req.params.id, req.user, { outcome: req.body.outcome, note: req.body.note }); return 'Notice handled.'; }));
 r.post('/partner-records/sanctions', go(async (req) => {
   await PR.recordSanctions(String(req.body.platform_id || ''), req.user, { list_name: req.body.list_name, checked_on: req.body.checked_on, result: req.body.result, note: req.body.note });

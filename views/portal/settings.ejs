@@ -9,6 +9,12 @@
     <div class="field"><label for="f-country">Country</label><input id="f-country" type="text" name="country" value="<%= platform.country || '' %>"></div></div>
     <div class="row"><div class="field"><label for="f-contact_email">Contact email</label><input id="f-contact_email" type="email" name="contact_email" value="<%= platform.contact_email || '' %>"></div>
     <div class="field" style="flex:0"><label for="f-primary_color">Brand color</label><input id="f-primary_color" type="color" name="primary_color" value="<%= platform.primary_color || '#0B2545' %>"></div></div>
+    <fieldset class="mt"><legend><strong>Public details (optional)</strong></legend>
+      <p class="small muted">Shown in the public directory as information you state. Write in English. Leave blank what does not apply.</p>
+      <div class="row"><div class="field"><label for="f-public_city">City</label><input id="f-public_city" type="text" name="public_city" maxlength="120" value="<%= platform.public_city || '' %>"></div>
+      <div class="field"><label for="f-public_domain">Training domain</label><input id="f-public_domain" type="text" name="public_domain" maxlength="200" value="<%= platform.public_domain || '' %>"></div></div>
+      <div class="field"><label for="f-public_delivery">Delivery method</label><input id="f-public_delivery" type="text" name="public_delivery" maxlength="200" value="<%= platform.public_delivery || '' %>" placeholder="for example: classroom, online, blended"></div>
+    </fieldset>
     <button class="btn">Save profile</button>
   </form>
   <form class="card" method="post" action="/portal/settings/logo" enctype="multipart/form-data">

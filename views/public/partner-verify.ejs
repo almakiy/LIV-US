@@ -1,0 +1,24 @@
+<%- include('../partials/head') %>
+<section class="section"><div class="container" style="max-width:720px">
+  <h1>Verify a provider</h1>
+  <p class="muted">Enter an ATP number (for example ATP-0001). The answer shows the provider's status, its active authorized scope and its partnership level. It does not show internal records.</p>
+  <form class="card" method="get" action="/partners/verify" role="search">
+    <div class="field"><label for="vn">ATP number</label><input id="vn" type="text" name="number" maxlength="20" value="<%= raw %>" required></div>
+    <button class="btn">Check</button>
+  </form>
+  <% if (searched) { %>
+    <% if (result) { %>
+      <div class="card mt" aria-live="polite">
+        <h2 style="margin-top:0">ATP number <%= result.atp_number %></h2>
+        <dl class="details">
+          <dt>Status</dt><dd><%= result.status === 'active' ? 'Authorized' : result.status.charAt(0).toUpperCase() + result.status.slice(1) %></dd>
+          <dt>Partnership level</dt><dd><%= result.level ? result.level.charAt(0).toUpperCase() + result.level.slice(1) : 'Not set' %></dd>
+          <dt>Active scope</dt><dd><% if (result.active_scopes.length) { %><ul class="mb0"><% result.active_scopes.forEach(t => { %><li><%= t %></li><% }) %></ul><% } else { %>No active scope.<% } %></dd>
+        </dl>
+      </div>
+    <% } else { %>
+      <div class="alert warn mt" role="status">No provider has this ATP number. Check the number and try again.</div>
+    <% } %>
+  <% } %>
+</div></section>
+<%- include('../partials/foot') %>

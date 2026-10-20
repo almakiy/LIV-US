@@ -23,14 +23,19 @@
   <form method="get" action="/partners#register" class="row" style="gap:10px;align-items:flex-end" role="search">
     <div class="field"><label for="q">Search by provider, course or ATP number</label><input id="q" type="search" name="q" value="<%= term %>" maxlength="80"></div>
     <div class="field"><label for="c">Country</label><select id="c" name="country"><option value="">All</option><% countries.forEach(c => { %><option value="<%= c %>" <%= c === country ? 'selected' : '' %>><%= c %></option><% }) %></select></div>
-    <button class="btn">Search</button><% if (term || country) { %><a class="btn secondary" href="/partners#register">Clear</a><% } %></form>
+    <% if (options.cities.length) { %><div class="field"><label for="ci">City</label><select id="ci" name="city"><option value="">All</option><% options.cities.forEach(c => { %><option value="<%= c %>" <%= c === city ? 'selected' : '' %>><%= c %></option><% }) %></select></div><% } %>
+    <% if (options.domains.length) { %><div class="field"><label for="dm">Training domain</label><select id="dm" name="domain"><option value="">All</option><% options.domains.forEach(c => { %><option value="<%= c %>" <%= c === domain ? 'selected' : '' %>><%= c %></option><% }) %></select></div><% } %>
+    <% if (options.deliveries.length) { %><div class="field"><label for="dl">Delivery method</label><select id="dl" name="delivery"><option value="">All</option><% options.deliveries.forEach(c => { %><option value="<%= c %>" <%= c === delivery ? 'selected' : '' %>><%= c %></option><% }) %></select></div><% } %>
+    <button class="btn">Search</button><% if (term || country || city || domain || delivery) { %><a class="btn secondary" href="/partners#register">Clear filters</a><% } %></form>
+  <p class="small muted mt">Verify an ATP number: <a href="/partners/verify">check a provider's status, active scope and level</a>.</p>
   <% if (partners.length) { %><div class="grid g3 mt"><% partners.forEach(p => { %>
     <div class="card"><% if (p.has_logo) { %><img src="/logo/<%= p.id %>" alt="<%= p.company_name %> logo" width="48" height="48" style="object-fit:contain;float:right;margin-left:12px"><% } %><h3 style="margin-bottom:4px"><a href="/partners/<%= p.slug %>"><%= p.company_name %></a></h3>
       <p class="small muted" style="margin:0"><%= p.country || '' %><%= p.public_number ? ' · ' + p.public_number : '' %></p>
+      <% if (p.public_city || p.public_domain || p.public_delivery) { %><p class="small" style="margin:6px 0 0"><span class="muted">Information provided by the provider:</span> <%= [p.public_city, p.public_domain, p.public_delivery].filter(Boolean).join(' · ') %></p><% } %>
       <p style="margin:8px 0"><span class="badge b-active">Authorized</span><% if (p.level) { %> <span class="lvl lvl-<%= p.level %>"><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %> partner</span><% } %></p>
       <% if (p.titles && p.titles.length) { %><p class="small muted" style="margin:0"><%= p.titles.join(' · ') %></p><% } %>
       <p style="margin:12px 0 0"><a class="btn secondary sm" href="/partners/<%= p.slug %>">View Provider &amp; Authorized Scope</a></p></div><% }) %></div>
-  <% } else if (term || country) { %><p class="muted mt">No provider matches that search.</p>
+  <% } else if (term || country || city || domain || delivery) { %><p class="muted mt">No provider matches that search. <a href="/partners#register">Clear the filters</a> to see all providers.</p>
   <% } else { %><p class="muted mt">The register will list partners once they are authorized.</p><% } %>
   <h2 style="margin-top:48px">References</h2>
   <p><%= brand %> review criteria reference recognized frameworks where relevant to a course, including ISO 45001, ISO 14001, ISO 9001, ANSI/ASSP Z490.1 and US OSHA training requirements.</p>

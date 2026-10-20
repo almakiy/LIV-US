@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const cfg = require('../config');
+const providerPublic = require('../lib/provider-public');
 const { q, tx } = require('../db');
 const { verifyCertificate, CERT_RE } = require('../lib/verify');
 const { qrToken, safeEqual } = require('../lib/crypto');
@@ -21,22 +22,36 @@ r.get('/about', (req, res) => res.render('public/about', { title: 'About Us' }))
 r.get('/accreditation', (req, res) => res.redirect(301, '/partners'));
 const likeEscape = (v) => String(v).replace(/[\\%_]/g, (c) => `\\${c}`);
 r.get('/partners', wrap(async (req, res) => {
+  const PP = require('../lib/provider-public');
   const term = String(req.query.q || '').trim().slice(0, 80), country = String(req.query.country || '').trim().slice(0, 80);
-  const { rows: partners } = await q(`SELECT p.id, p.company_name, p.country, p.public_slug AS slug, p.level, p.public_number, p.logo_path IS NOT NULL AS has_logo,
+  const city = String(req.query.city || '').trim().slice(0, 120), domain = String(req.query.domain || '').trim().slice(0, 200), delivery = String(req.query.delivery || '').trim().slice(0, 200);
+  const number = PP.normalizeNumber(req.query.q) || '';
+  const { rows: partners } = await q(`SELECT p.id, p.company_name, p.country, p.public_slug AS slug, p.level, p.public_number, p.logo_path IS NOT NULL AS has_logo, p.public_city, p.public_domain, p.public_delivery,
       (SELECT array_agg(title ORDER BY title) FROM (SELECT title FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' ORDER BY title LIMIT 3) t) AS titles
     FROM platforms p WHERE p.accreditation_status = 'active' AND p.public_slug IS NOT NULL
       AND ($1 = '' OR p.company_name ILIKE '%' || $2 || '%' OR p.public_number ILIKE '%' || $2 || '%' OR EXISTS (SELECT 1 FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' AND s.title ILIKE '%' || $2 || '%'))
       AND ($3 = '' OR lower(p.country) = lower($3))
-    ORDER BY p.company_name LIMIT 200`, [term, likeEscape(term), country]);
+      AND ($4 = '' OR lower(p.public_city) = lower($4))
+      AND ($5 = '' OR lower(p.public_domain) = lower($5))
+      AND ($6 = '' OR lower(p.public_delivery) = lower($6))
+    ORDER BY p.company_name LIMIT 200`, [term, likeEscape(term), country, city, domain, delivery]);
   const { rows: countries } = await q(`SELECT DISTINCT country FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND country IS NOT NULL AND country <> '' ORDER BY country`);
-  res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners, countries: countries.map((c) => c.country), term, country });
+  const options = await PP.filterOptions();
+  res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners, countries: countries.map((c) => c.country), term, country, city, domain, delivery, options, number });
+}));
+r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
+  const raw = String(req.query.number || '').trim().slice(0, 20);
+  const number = providerPublic.normalizeNumber(raw);
+  const result = number ? await providerPublic.lookupByNumber(number) : null;
+  res.set('Cache-Control', 'no-store');
+  res.render('public/partner-verify', { title: 'Verify a provider', description: 'Check an ATP number against the public register.', raw, number, result, searched: Boolean(raw) });
 }));
 r.get('/partners/guide', (req, res) => {
   const F = require('../lib/application-form'); const T = require('../lib/title-form');
   res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
 });
 r.get('/partners/:slug', wrap(async (req, res, next) => {
-  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
   const website = /^https?:\/\//i.test(p.website || '') ? p.website : '';
   // Active scopes only: suspended and withdrawn scopes never appear publicly. Scopes that have ended by date are marked on the page.
@@ -48,6 +63,15 @@ r.get('/partners/:slug', wrap(async (req, res, next) => {
   const modes = ((app && app.form && app.form.delivery_modes) || []).map((m) => MODES[m]).filter(Boolean);
   const { rows: capabilities } = await q(`SELECT description, kind, granted_on FROM partner_capabilities WHERE platform_id = $1 AND status = 'active' ORDER BY granted_on`, [p.id]);
   res.render('public/partner', { title: p.company_name, description: `${p.company_name} is an Authorized Training Provider of ${cfg.brand}.`, p: { ...p, website }, scopes, modes, capabilities, today, link });
+}));
+
+// Public verification of an ATP number: status, active scopes and level only (October 20, 2026 decision).
+r.get('/api/v1/providers/:number', limiter(1, 60, true), wrap(async (req, res) => {
+  const number = providerPublic.normalizeNumber(req.params.number);
+  const body = number && await providerPublic.lookupByNumber(number);
+  res.set('Cache-Control', 'no-store');
+  if (!body) return res.status(404).json({ error: 'No provider has this ATP number.' });
+  res.json(body);
 }));
 
 // Credential types and credential families.
