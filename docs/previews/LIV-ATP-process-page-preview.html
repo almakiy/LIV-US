@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIV ATP process page: preview</title>
+<style>
+  :root { --navy:#0B1F3A; --ink:#111827; --muted:#4B5563; --line:#D9DEE5; --bg:#F7F6F2; --card:#FFFFFF; --gold:#8A6A2E; --focus:#1B4F8A; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --navy:#0B1F3A; --ink:#F3F4F6; --muted:#C7CDD6; --line:#3A4454; --bg:#111827; --card:#1B2433; --gold:#E0C98E; --focus:#8FB8F0; }
+  }
+  :root[data-theme="dark"] { --navy:#0B1F3A; --ink:#F3F4F6; --muted:#C7CDD6; --line:#3A4454; --bg:#111827; --card:#1B2433; --gold:#E0C98E; --focus:#8FB8F0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.5; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  .notice { background:#FFF7E0; color:#4A3500; border-bottom:1px solid #E5C77A; padding:10px 16px; font-size:14px; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .notice { background:#3A2E12; color:#F6E7B5; } }
+  :root[data-theme="dark"] .notice { background:#3A2E12; color:#F6E7B5; }
+  header { background: var(--navy); color:#fff; padding: 22px 0; }
+  header .brand { font-weight:700; letter-spacing:1px; }
+  h1 { font-size: 1.8rem; margin: 28px 0 8px; }
+  h2 { font-size: 1.25rem; margin: 32px 0 10px; }
+  p, li { color: var(--ink); }
+  .muted { color: var(--muted); }
+  .eyebrow { color: var(--gold); font-weight:700; text-transform: uppercase; letter-spacing:1px; font-size:.8rem; }
+  .card { background: var(--card); border:1px solid var(--line); border-radius: 8px; padding: 18px; margin: 14px 0; }
+  ol.path { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  ol.path li { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; grid-template-columns: 40px 1fr; gap: 12px; }
+  .num { width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: #fff; display: inline-grid; place-items: center; font-weight: 700; }
+  .branch { border-left: 4px solid var(--gold); padding: 10px 14px; margin: 12px 0; background: var(--card); border-radius: 6px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+  .btn { display: inline-block; padding: 11px 18px; border-radius: 6px; font-weight: 700; border: 2px solid var(--navy); color: var(--navy); background: transparent; text-decoration: none; }
+  .btn.primary { background: var(--navy); color: #fff; }
+  .btn[aria-disabled="true"] { opacity: .75; cursor: not-allowed; }
+  .btn:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .flow { font-size: .95rem; }
+  footer { color: var(--muted); font-size: .85rem; padding: 24px 0 40px; border-top: 1px solid var(--line); margin-top: 40px; }
+  @media (max-width: 480px) { h1 { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+<div class="notice" role="note">Preview only. This page is standalone: it is not connected to the live site, collects no data, and its buttons are not active. Publication is a separate step.</div>
+<header><div class="wrap"><span class="brand">LIV · Leadership Institute of Validation</span></div></header>
+<main class="wrap">
+  <p class="eyebrow">LIV Authorized Training Provider (ATP)</p>
+  <h1>Your Path to Becoming a LIV Authorized Training Provider</h1>
+  <p>Apply for authorization within a defined training scope. LIV reviews your organization's delivery capability, trainers, training methods and supporting evidence before making an authorization decision.</p>
+
+  <section class="card" aria-labelledby="cover">
+    <h2 id="cover">What LIV ATP Authorization Covers</h2>
+    <p>LIV ATP authorization permits a provider to deliver training within a scope approved by LIV. Course titles and versions must be approved before they can be used for credential requests.</p>
+    <p>The current program supports Training Completion Credentials only. Providers deliver training and submit completion records; LIV issues the credentials after the required checks. These credentials do not require an examination, do not expire, and are not professional qualifications or professional certifications.</p>
+    <p><strong>Authorization is scope-specific. Payment does not guarantee approval or activate issuance rights.</strong></p>
+  </section>
+
+  <h2>The process</h2>
+  <ol class="path" aria-label="Seven stages of the ATP process">
+    <li><span class="num" aria-hidden="true">1</span><div><strong>Explore &amp; Request a Quote</strong><p class="muted">Understand eligibility, scope, services and fees.</p></div></li>
+    <li><span class="num" aria-hidden="true">2</span><div><strong>Apply &amp; Submit Evidence</strong><p class="muted">Your organization profile, the field you request, your trainers, delivery methods and supporting evidence.</p></div></li>
+    <li><span class="num" aria-hidden="true">3</span><div><strong>Completeness Check</strong><p class="muted">LIV checks that the file is complete and the initial eligibility conditions are met. If something is missing, LIV asks you to supply it.</p></div></li>
+    <li><span class="num" aria-hidden="true">4</span><div><strong>Technical Review</strong><p class="muted">LIV reviews your actual capability and evidence, and may request an interview or a sample where the policy and risk call for it.</p></div></li>
+    <li><span class="num" aria-hidden="true">5</span><div><strong>Independent Decision</strong><p class="muted">Acceptance to activation, acceptance with recorded conditions, or a reasoned refusal. The reviewer does not make the decision on the same application.</p></div></li>
+    <li><span class="num" aria-hidden="true">6</span><div><strong>Activate Your Authorized Scope</strong><p class="muted">Required conditions and blocking items are cleared before your scope is switched on and listed in the register.</p></div></li>
+    <li><span class="num" aria-hidden="true">7</span><div><strong>Maintain Your Authorization</strong><p class="muted">Monitoring, notice of material changes, and re-assessment and renewal under the published policy.</p></div></li>
+  </ol>
+
+  <section aria-labelledby="branches">
+    <h2 id="branches">If the file needs work or is refused</h2>
+    <div class="branch"><strong>Information / Corrective Action</strong><p class="muted">You submit new evidence. The application returns to the review stage it needs. Nothing is approved automatically.</p></div>
+    <div class="branch"><strong>Declined</strong><p class="muted">You receive the reasons and the appeal route set out in the published policy. A declined application does not move to activation, and an appeal does not grant issuance rights.</p></div>
+  </section>
+
+  <section class="card" aria-labelledby="after">
+    <h2 id="after">From Approved Training to a LIV Credential</h2>
+    <p class="flow">Approved scope → Approved course title and version → Training delivery record → Completion evidence → LIV issuance checks → Verifiable credential.</p>
+    <p>Unchanged approved courses do not require a new content review for every delivery. Delivery records, reporting requirements and material changes are governed by the applicable LIV policy.</p>
+    <p>All application and credential submission data must be provided in English. Credentials are issued in English only.</p>
+  </section>
+
+  <h2>What happens if the application is incomplete?</h2>
+  <p>If information is missing or a requirement is not met, LIV may request clarification or corrective action. Acceptance, activation and ongoing authorization are separate stages. Decisions, conditions and next steps are recorded and communicated to the applicant.</p>
+
+  <div class="actions" aria-label="Actions (inactive in this preview)">
+    <span class="btn primary" role="link" aria-disabled="true" tabindex="-1">Request Information</span>
+    <span class="btn" role="link" aria-disabled="true" tabindex="-1" title="Available when applications open">Start Application</span>
+  </div>
+  <p class="muted small">In the preview both actions are disabled. Request Information will connect to the existing LIV contact channel once it is verified. Start Application appears only when the application portal is open. No fees or decision times are shown until they are approved.</p>
+</main>
+<footer class="wrap">Leadership Institute of Validation (LIV). Preview of a page under review; wording is subject to the owner's review and counsel's review of public claims.</footer>
+</body>
+</html>

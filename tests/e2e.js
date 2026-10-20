@@ -1324,7 +1324,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     const country = psql(`SELECT country FROM platforms WHERE id = '${platformId}'`);
     if (country) { await anon.goto(`${BASE}/partners?country=${encodeURIComponent(country)}`); ok(await see(anon, `a:has-text("${name}")`), 'the register filters by country'); }
     await anon.goto(`${BASE}/partners/${slug}`);
-    ok(await see(anon, 'dt:has-text("Provider number")') && await see(anon, 'dt:has-text("Partnership level")') && await see(anon, 'text=Bronze'), 'the provider page shows its number, level and authorized scope');
+    ok(await see(anon, 'dt:has-text("ATP number")') && await see(anon, 'dt:has-text("Partnership level")') && await see(anon, 'text=Bronze'), 'the provider page shows its number, level and authorized scope');
     await anon.goto(`${BASE}/partners/guide`);
     ok(await see(anon, 'h1:has-text("Application guide")') && await see(anon, 'text=Legal name of the organization') && await see(anon, 'text=Learning objectives'), 'the application guide lists what is asked, stage by stage and for titles');
     const cert = psql(`SELECT cert_number FROM certificates WHERE platform_id = '${platformId}' ORDER BY created_at LIMIT 1`);
@@ -1573,6 +1573,13 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(`${BASE}/admin/partner-records`);
     ok(await see(adm, 'h2:has-text("Sanctions screening")') && await see(adm, 'td:has-text("Test Screening List")') && await see(adm, 'td:has-text("Not renewed in time")'), 'partner records show renewals, notices and screenings');
     ok(await see(page, 'h2:has-text("Monitoring notices")') && await see(page, 'td:has-text("Contact or address")'), 'the provider sees its notices and changes');
+    const partnerNumber = psql(`SELECT public_number FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
+    const partnerName = psql(`SELECT company_name FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
+    const byNumber = await anon.request.get(`${BASE}/partners?q=${encodeURIComponent(partnerNumber)}`).then((r) => r.text());
+    ok(partnerNumber && byNumber.includes(partnerName), 'the directory finds a provider by its ATP number');
+    const providerSlug = psql(`SELECT public_slug FROM platforms WHERE id = '${partnerPlatform}'`).split('\n')[0];
+    const providerHtml = await anon.request.get(`${BASE}/partners/${providerSlug}`).then((r) => r.text());
+    ok(providerHtml.includes('Copy Provider Link') && providerHtml.includes(`/partners/${providerSlug}`) && providerHtml.includes('<h2 class="mt">Authorized scope</h2>'), 'a provider page shows its permanent link and its authorized scope table');
     const anonPages = ['/admin/monitoring', '/admin/partner-records', '/admin/standards', '/portal/oversight'];
     ok((await Promise.all(anonPages.map((p) => anon.request.get(BASE + p, { maxRedirects: 0 })))).every((r) => r.status() !== 200), 'the new pages are closed to visitors');
 
