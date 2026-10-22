@@ -38,7 +38,7 @@ function verifyPayload({ public_number, accreditation_status, level }, scopes, t
 }
 
 async function lookupByNumber(number) {
-  const { rows: [p] } = await q(`SELECT id, public_number, accreditation_status, level FROM platforms WHERE public_number = $1`, [number]);
+  const { rows: [p] } = await q(`SELECT id, public_number, accreditation_status, level FROM platforms WHERE public_number = $1 AND NOT is_preview`, [number]);
   if (!p) return null;
   const { rows: scopes } = await q(`SELECT title, status, ends_on FROM partner_scopes WHERE platform_id = $1 ORDER BY title`, [p.id]);
   return verifyPayload(p, scopes, new Date().toISOString().slice(0, 10));
@@ -46,8 +46,11 @@ async function lookupByNumber(number) {
 
 /** Values offered by the directory filters: only what active partners have stated. */
 async function filterOptions() {
-  const one = async (col) => (await q(`SELECT DISTINCT ${col} AS v FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND ${col} IS NOT NULL AND ${col} <> '' ORDER BY ${col}`)).rows.map((r) => r.v);
+  const one = async (col) => (await q(`SELECT DISTINCT ${col} AS v FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND NOT is_preview AND ${col} IS NOT NULL AND ${col} <> '' ORDER BY ${col}`)).rows.map((r) => r.v);
   return { cities: await one('public_city'), domains: await one('public_domain'), deliveries: await one('public_delivery') };
 }
 
-module.exports = { FIELDS, ATP_RE, clean, readFields, normalizeNumber, verifyPayload, lookupByNumber, filterOptions };
+// Shown in the public register: active, with a public address, and not the preview provider.
+const PUBLIC_FILTER = `p.accreditation_status = 'active' AND p.public_slug IS NOT NULL AND NOT p.is_preview`;
+
+module.exports = { PUBLIC_FILTER, FIELDS, ATP_RE, clean, readFields, normalizeNumber, verifyPayload, lookupByNumber, filterOptions };

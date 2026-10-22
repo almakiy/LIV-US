@@ -8,14 +8,15 @@ const { refusedPassword } = require('../lib/dev-defaults');
 
 const r = express.Router();
 const DUMMY = bcrypt.hashSync('timing-equalizer', 12); // compared when the email is unknown
+const homeFor = (u) => ({ super_admin: '/admin', individual: '/me' }[u.role] || '/portal');
 const safeNext = (n) => (typeof n === 'string' && /^\/(?!\/)[\w\-/?=&.%]*$/.test(n) ? n : null);
 
 r.get('/login', (req, res) => {
-  if (req.user) return res.redirect(req.user.realRole === 'super_admin' ? '/admin' : '/portal');
+  if (req.user) return res.redirect(homeFor({ role: req.user.realRole }));
   res.render('public/login', { title: 'Log in', error: null, email: '', next: safeNext(req.query.next) || '' });
 });
 
-const homeFor = (u) => (u.role === 'super_admin' ? '/admin' : '/portal');
+
 async function startSession(req, res, u, next) {
   req.session.regenerate(async (err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Could not start session.' });
@@ -81,8 +82,13 @@ r.post('/login/2fa', limiter(15, 20), wrap(async (req, res) => {
 
 // Leave "act on behalf of provider" mode (real role is still super_admin while acting).
 r.post('/admin-exit', (req, res) => {
-  if (req.user?.realRole === 'super_admin') delete req.session.actAs;
-  res.redirect('/admin/platforms');
+  // Leaves "act on behalf" mode: a provider, or a preview individual opened from Admin > Preview accounts.
+  if (req.user?.realRole === 'super_admin' || req.session.actAsIndividual) {
+    const back = req.session.previewReturn ? '/admin/preview' : '/admin/platforms';
+    delete req.session.actAs; delete req.session.actAsIndividual; delete req.session.previewReturn;
+    return res.redirect(back);
+  }
+  res.redirect('/');
 });
 
 r.post('/logout', (req, res) => req.session.destroy(() => { res.clearCookie('liv.sid'); res.redirect('/'); }));

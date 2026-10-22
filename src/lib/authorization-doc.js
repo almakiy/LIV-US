@@ -20,7 +20,7 @@ function eligible(platform, scope, day = today()) {
 }
 
 async function documentData(platformSlug, scopeId) {
-  const { rows: [p] } = await q(`SELECT id, company_name, public_number, level, accreditation_status FROM platforms WHERE public_slug = $1`, [platformSlug]);
+  const { rows: [p] } = await q(`SELECT id, company_name, public_number, level, accreditation_status FROM platforms WHERE public_slug = $1 AND NOT is_preview`, [platformSlug]);
   if (!p) return null;
   const { rows: [s] } = await q(`SELECT * FROM partner_scopes WHERE id = $1 AND platform_id = $2`, [scopeId, p.id]);
   if (!eligible(p, s)) return null;

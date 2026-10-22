@@ -115,7 +115,7 @@ tr.err td{background:#FFF8F7}
 .status-banner{border-radius:14px;padding:26px 28px;display:flex;align-items:center;gap:18px;color:#fff;margin-bottom:20px}
 .status-banner .icon{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:30px;font-weight:800;flex:none}
 .status-banner h2{margin:0;font-size:1.6rem;letter-spacing:1px;color:#fff}.status-banner p{margin:4px 0 0;opacity:.92}
-.sb-valid{background:var(--green)}.sb-revoked,.sb-tampered,.sb-not_found,.sb-invalid_format{background:var(--red)}.sb-expired,.sb-unavailable{background:#B26A00}
+.sb-valid{background:var(--green)}.sb-revoked,.sb-tampered,.sb-not_found,.sb-invalid_format{background:var(--red)}.sb-expired,.sb-unavailable,.sb-preview{background:#B26A00}
 .vsec{margin:0 0 .25rem;font-size:1rem}.vsec+dl{margin-top:.25rem}.details hr{border:0;border-top:1px solid #e3e6ea;margin:1rem 0}
 .details dl{display:grid;grid-template-columns:180px 1fr;gap:0;margin:0}
 .details dt,.details dd{padding:12px 0;border-bottom:1px solid var(--line);margin:0}
@@ -201,3 +201,18 @@ p a:not(.btn),li a:not(.btn),dd a:not(.btn),.small a:not(.btn),.muted a:not(.btn
 .auth-right a{color:var(--gold-2);text-decoration:underline}
 .auth-legal{color:#D6DCE6;margin-top:1.5rem}
 @media (max-width:900px){.auth{grid-template-columns:1fr}.auth-left{padding:32px 20px}.auth-right{padding:36px 20px}}
+
+/* Individuals portal */
+.me-wrap{margin:32px auto 56px}
+.me-nav{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 20px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.me-nav a{padding:6px 12px;border-radius:8px;color:var(--navy);text-decoration:none}
+.me-nav a:hover,.me-nav a.on{background:#EEF1F6;text-decoration:none}
+.me-nav a.on{font-weight:600}
+.me-stat{font-size:1.8rem;font-weight:700;color:var(--navy);margin:4px 0}
+.me-wrap .linkbtn{color:var(--accent);padding:0;text-decoration:underline}
+form.inline{display:inline}
+.h3{font-family:Inter,sans-serif;font-size:1.05rem;font-weight:600;color:var(--ink)}
+label.check{display:flex;gap:8px;align-items:flex-start;font-weight:400}
+label.check input{margin-top:4px;width:auto}
+fieldset.field{border:0;padding:0;margin:0 0 14px}fieldset.field legend{font-weight:600;margin-bottom:6px}
+.label{font-weight:600;display:block;margin-bottom:4px}

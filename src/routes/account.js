@@ -38,7 +38,7 @@ r.post('/password', limiter(15, 10), wrap(async (req, res) => {
   await q(`DELETE FROM sessions WHERE sess->>'userId' = $1 AND sid <> $2`, [u.id, req.sessionID]).catch(() => {});
   await audit({ user: u, platformId: u.platform_id, action: 'user.password_change', target: u.email });
   flash(req, 'success', 'Password changed. Other sessions were signed out.');
-  res.redirect(u.role === 'super_admin' ? '/admin' : '/portal');
+  res.redirect({ super_admin: '/admin', individual: '/me' }[u.role] || '/portal');
 }));
 
 r.post('/2fa/enable', limiter(15, 10), wrap(async (req, res) => {

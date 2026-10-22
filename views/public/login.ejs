@@ -1,6 +1,6 @@
 <%- include('../partials/auth-top') %>
       <h1>Sign in</h1>
-      <p class="muted">Authorized Training Providers and <%= brand %> staff.</p>
+      <p class="muted"><%= individualAccounts ? 'Individuals, Authorized Training Providers and ' + brand + ' staff.' : 'Authorized Training Providers and ' + brand + ' staff.' %></p>
       <%- include('../partials/flash') %>
       <% if (error) { %><div class="alert error" role="alert"><%= error %></div><% } %>
       <form method="post" action="/login">

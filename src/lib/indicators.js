@@ -45,6 +45,9 @@ const caseNo = (now) => `MC-${iso(now).replace(/-/g, '')}-${crypto.randomBytes(2
 
 /** Opens a case unless the same indicator already has one. Count indicators wait 90 days; batch indicators are per batch. */
 async function openCase(platformId, trigger, sourceRef, detail, { windowed = false } = {}) {
+  // The preview provider is a test account: its activity never opens an audit case.
+  const { rows: [pv] } = await q('SELECT is_preview FROM platforms WHERE id = $1', [platformId]);
+  if (pv?.is_preview) return null;
   const { rows: [dup] } = await q(`SELECT 1 FROM partner_audit_cases WHERE platform_id = $1 AND trigger_code = $2
     AND (source_ref = $3 OR ($4 AND opened_at > now() - ($5::int * interval '1 day'))) LIMIT 1`, [platformId, trigger, sourceRef, windowed, T.windowDays]);
   if (dup) return null;

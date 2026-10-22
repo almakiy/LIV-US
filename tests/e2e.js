@@ -1713,6 +1713,162 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await axeFor(page, '/portal/directory');
   }
 
+  console.log('Individuals portal (M1): accounts, safe credential claims, privacy');
+  {
+    const certA = psql(`SELECT id || '|' || cert_number || '|' || lower(recipient_email) FROM certificates WHERE status = 'active' AND lower(recipient_email) NOT IN (SELECT lower(email) FROM users) ORDER BY created_at LIMIT 1`).split('|');
+    const certB = psql(`SELECT id || '|' || cert_number || '|' || lower(recipient_email) FROM certificates WHERE status = 'active' AND lower(recipient_email) <> '${certA[2]}' AND lower(recipient_email) NOT IN (SELECT lower(email) FROM users) ORDER BY created_at LIMIT 1`).split('|');
+    ok(certA[1] && certB[1], 'two issued credentials with different recorded emails are available for the test');
+    const PW = 'Person-Pass-2026x';
+    const signup = async (pg, email, name) => {
+      await pg.goto(BASE + '/signup');
+      await pg.fill('#s-name', name); await pg.fill('#s-email', email); await pg.fill('#s-pw', PW); await pg.fill('#s-pw2', PW);
+      await pg.check('input[name=terms]'); await pg.click('button:has-text("Create account")');
+      return see(pg, 'h1:has-text("Check your email")');
+    };
+    const signin = async (pg, email, pw = PW) => { await pg.goto(BASE + '/login'); await pg.fill('input[name=email]', email); await pg.fill('input[name=password]', pw); await pg.click('button:has-text("Log in")'); await pg.waitForLoadState(); };
+    const tokenFor = (email, path) => (psql(`SELECT text_body FROM email_outbox WHERE to_email = '${email}' AND text_body LIKE '%${path}%' ORDER BY created_at DESC LIMIT 1`).match(/t=([a-f0-9]{48})/) || [])[1];
+    const csrfOf = async (pg) => pg.locator('input[name=_csrf]').first().inputValue();
+    const ic = await browser.newContext(); const ip = await ic.newPage();
+    ok(await signup(ip, certA[2], 'Test Person'), 'a person creates an individual account');
+    ok(psql(`SELECT role || ',' || (email_verified_at IS NULL) || ',' || marketing_opt_in FROM users WHERE email = '${certA[2]}'`) === 'individual,true,false', 'the account starts unconfirmed, with marketing off unless chosen');
+    ok(await signup(ip, certA[2], 'Someone Else') && psql(`SELECT count(*) FROM users WHERE lower(email) = '${certA[2]}'`) === '1'
+      && psql(`SELECT count(*) FROM email_outbox WHERE to_email = '${certA[2]}' AND template = 'individual_exists'`) === '1', 'signing up again with the same email shows the same page, creates nothing and tells the owner of the address');
+    await ip.goto(BASE + '/signup'); await ip.fill('#s-name', 'محمد'); await ip.fill('#s-email', `x.${stamp}@example.com`); await ip.fill('#s-pw', PW); await ip.fill('#s-pw2', PW); await ip.check('input[name=terms]'); await ip.click('button:has-text("Create account")');
+    ok(await see(ip, 'text=Write your name in English'), 'a name in non-Latin letters is refused with a clear message, never converted');
+    await signin(ip, certA[2]);
+    ok(ip.url().endsWith('/me') && await see(ip, 'text=Confirm your email address'), 'the person lands on their dashboard and is asked to confirm the address');
+    await ip.goto(BASE + '/me/credentials');
+    let r = await ip.request.post(BASE + '/me/credentials/claim', { form: { _csrf: await csrfOf(ip), certificate_id: certA[0] } });
+    ok(psql(`SELECT count(*) FROM credential_claims WHERE certificate_id = '${certA[0]}'`) === '0', 'nothing can be linked before the email address is confirmed');
+    const vt = tokenFor(certA[2], '/signup/verify');
+    await ip.goto(`${BASE}/signup/verify?t=${vt}`);
+    ok(await see(ip, 'text=Your email address is confirmed'), 'the confirmation link confirms the address');
+    await ip.goto(`${BASE}/signup/verify?t=${vt}`);
+    ok(await see(ip, 'text=not valid or has expired'), 'a confirmation link works only once');
+    await ip.goto(BASE + '/me/credentials');
+    ok(await see(ip, `text=${certA[1]}`) && !(await ip.content()).includes(certB[1]), 'the credential recorded under the confirmed address is found, and no other');
+    await ip.click(`button[aria-label="Add ${certA[1]} to my account"]`);
+    ok(await see(ip, `text=Credential ${certA[1]} is now in your account`) && psql(`SELECT method FROM credential_claims WHERE certificate_id = '${certA[0]}' AND released_at IS NULL`) === 'email_match', 'the person links it; the link records the email-match method');
+    const hashBefore = psql(`SELECT verification_hash || pdf_path FROM certificates WHERE id = '${certA[0]}'`);
+    r = await ip.request.post(BASE + '/me/credentials/claim', { form: { _csrf: await csrfOf(ip), certificate_id: certB[0] } });
+    ok(r.status() >= 400 || (await r.text()).includes('cannot be linked'), 'a credential recorded under another address cannot be linked by its id');
+    ok(psql(`SELECT count(*) FROM credential_claims WHERE certificate_id = '${certB[0]}'`) === '0', 'and no link exists for it');
+    await ip.goto(BASE + '/me/credentials');
+    r = await ip.request.post(BASE + '/me/credentials/request', { form: { _csrf: await csrfOf(ip), cert_number: certB[1], statement: 'Short' }, maxRedirects: 0 });
+    await ip.goto(BASE + '/me/credentials');
+    ok(await see(ip, 'text=Explain in 20 to 2000 characters') && psql(`SELECT count(*) FROM credential_claim_requests WHERE cert_number = '${certB[1]}'`) === '0', 'the number alone is not enough: a request needs an explanation');
+    await ip.fill('#q-num', certB[1]); await ip.fill('#q-why', 'My training provider recorded my old work address, which I no longer use.');
+    await ip.click('button:has-text("Send request")');
+    ok(await see(ip, 'text=Your request is sent') && psql(`SELECT count(*) FROM credential_claims WHERE certificate_id = '${certB[0]}'`) === '0', 'a request is recorded and links nothing by itself');
+    await adm.goto(BASE + '/admin/individuals');
+    const row = adm.locator('tr', { hasText: certB[1] });
+    await row.locator('input[name=reason]').fill('Provider confirmed the address change by email.');
+    await row.locator('button:has-text("Approve")').click();
+    ok(await see(adm, 'text=Approved. The credential is linked') && psql(`SELECT method FROM credential_claims WHERE certificate_id = '${certB[0]}' AND released_at IS NULL`) === 'staff_review'
+      && psql(`SELECT count(*) FROM audit_logs WHERE action = 'credential.claim_approve' AND target = '${certB[1]}'`) === '1', 'LIV staff approve the request with a reason; the link and the decision are recorded');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE to_email = '${certA[2]}' AND template = 'claim_outcome'`) === '1', 'the person is told the outcome (a service message, sent whatever the marketing choice)');
+    ok(psql(`SELECT verification_hash || pdf_path FROM certificates WHERE id = '${certA[0]}'`) === hashBefore, 'linking never changes the certificate record or its PDF');
+    // Isolation
+    const oc = await browser.newContext(); const op = await oc.newPage();
+    const otherEmail = `other.${stamp}@example.com`;
+    await signup(op, otherEmail, 'Other Person'); await op.goto(`${BASE}/signup/verify?t=${tokenFor(otherEmail, '/signup/verify')}`); await signin(op, otherEmail);
+    const claimA = psql(`SELECT id FROM credential_claims WHERE certificate_id = '${certA[0]}' AND released_at IS NULL`);
+    await op.goto(BASE + '/me/credentials');
+    r = await op.request.post(`${BASE}/me/credentials/${claimA}/release`, { form: { _csrf: await csrfOf(op) } });
+    ok(psql(`SELECT count(*) FROM credential_claims WHERE id = '${claimA}' AND released_at IS NULL`) === '1', 'another person cannot remove someone else\'s credential');
+    r = await op.request.post(BASE + '/me/credentials/claim', { form: { _csrf: await csrfOf(op), certificate_id: certA[0] } });
+    ok(psql(`SELECT count(*) FROM credential_claims WHERE certificate_id = '${certA[0]}' AND released_at IS NULL`) === '1', 'nor link a credential that belongs to someone else');
+    ok(!(await (await op.request.get(BASE + '/me/credentials')).text()).includes(certA[1]), 'and does not see it');
+    ok((await op.request.get(BASE + '/portal')).url().endsWith('/me') && (await op.request.get(BASE + '/admin')).status() === 403, 'an individual cannot reach the provider portal or the admin area');
+    ok((await page.request.get(BASE + '/me')).status() === 403, 'a provider account cannot open the individuals area');
+    // Basic access and preferences
+    ok((await anon.request.get(`${BASE}/verify/${certA[1]}`)).status() === 200, 'the credential still verifies publicly; no membership is needed');
+    await ip.goto(BASE + '/me/profile'); await ip.check('input[name=marketing]'); await ip.click('button:has-text("Save")');
+    ok(await see(ip, 'text=Service messages about your account') && psql(`SELECT marketing_opt_in AND marketing_opt_in_at IS NOT NULL FROM users WHERE email = '${certA[2]}'`) === 't', 'marketing consent is a separate, dated choice');
+    const exp = await (await ip.request.get(BASE + '/me/privacy/export.json')).text();
+    ok(exp.includes(certA[1]) && exp.includes(certB[1]) && !exp.includes('password_hash') && !exp.includes(otherEmail), 'the data export holds the person\'s own data and no secrets');
+    // Release, closure, password reset
+    await ip.goto(BASE + '/me/credentials'); await ip.click(`button[aria-label="Remove ${certA[1]} from my account"]`);
+    ok(await see(ip, 'text=still verifies') && (await anon.request.get(`${BASE}/verify/${certA[1]}`)).status() === 200, 'removing a credential from the account leaves the credential valid');
+    await ip.goto(BASE + '/me/privacy'); await ip.fill('#c-confirm', 'CLOSE'); await ip.click('button:has-text("Request closure")');
+    ok(await see(ip, 'text=Your request to close the account is recorded') && psql(`SELECT closure_requested_at IS NOT NULL FROM users WHERE email = '${certA[2]}'`) === 't', 'the person can ask to close the account; credentials stay valid');
+    const partnerQueued = psql(`SELECT count(*) FROM email_outbox WHERE template = 'individual_reset'`);
+    const anonPg = await (await browser.newContext()).newPage();
+    await anonPg.goto(BASE + '/password/forgot'); await anonPg.fill('#r-email', psql(`SELECT email FROM users WHERE role = 'platform_admin' LIMIT 1`)); await anonPg.click('button:has-text("Send reset link")');
+    ok(await see(anonPg, 'text=If an individual account uses this address') && psql(`SELECT count(*) FROM email_outbox WHERE template = 'individual_reset'`) === partnerQueued, 'password reset by email is for individual accounts only, with the same answer for any address');
+    await anonPg.goto(BASE + '/password/forgot'); await anonPg.fill('#r-email', otherEmail); await anonPg.click('button:has-text("Send reset link")');
+    await anonPg.goto(`${BASE}/password/reset?t=${tokenFor(otherEmail, '/password/reset')}`);
+    await anonPg.fill('#n-pw', 'Person-New-2026y'); await anonPg.fill('#n-pw2', 'Person-New-2026y'); await anonPg.click('button:has-text("Save new password")');
+    ok(await see(anonPg, 'text=Your password is changed'), 'an individual resets the password with a one-hour, one-time link');
+    const c4 = await browser.newContext(); const p4 = await c4.newPage();
+    await signin(p4, otherEmail); ok(await see(p4, 'text=Incorrect email or password'), 'the old password no longer works');
+    await signin(p4, otherEmail, 'Person-New-2026y'); ok(p4.url().endsWith('/me'), 'the new one does');
+    // Phone width and accessibility
+    const axeSrc = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    await ip.setViewportSize({ width: 390, height: 844 });
+    for (const path of ['/me', '/me/credentials', '/me/profile', '/me/support', '/me/privacy']) {
+      await ip.goto(BASE + path); await ip.evaluate(axeSrc);
+      const v = await ip.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      const hs = await ip.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      ok(!v.length && !hs, `${path} at phone width: no automated WCAG 2.2 AA violations and no sideways scrolling${v.length ? ': ' + v.join(', ') : ''}`);
+    }
+    await anonPg.setViewportSize({ width: 390, height: 844 }); await anonPg.goto(BASE + '/signup'); await anonPg.evaluate(axeSrc);
+    const sv = await anonPg.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => x.id));
+    ok(!sv.length, `/signup has no automated WCAG 2.2 AA violations${sv.length ? ': ' + sv.join(', ') : ''}`);
+    await anonPg.keyboard.press('Tab'); let reached = false;
+    for (let i = 0; i < 25 && !reached; i++) { reached = await anonPg.evaluate(() => document.activeElement && /Create account/.test(document.activeElement.textContent || '')); if (!reached) await anonPg.keyboard.press('Tab'); }
+    ok(reached, 'the sign-up form can be completed with the keyboard alone (the submit button is reachable by Tab)');
+    for (const c of [ic, oc, c4]) await c.close();
+  }
+
+  console.log('Preview accounts (main account): preview training provider and preview individual');
+  {
+    await adm.goto(BASE + '/admin/preview');
+    await adm.click('button:has-text("Create preview training provider")');
+    ok(await see(adm, 'text=The preview training provider is ready'), 'the main account creates the preview training provider');
+    ok(psql(`SELECT accreditation_status || ',' || is_preview FROM platforms WHERE is_preview`) === 'active,true', 'it is active and marked as preview');
+    await adm.click('button:has-text("Open as training provider")');
+    ok(adm.url().endsWith('/portal') && await see(adm, 'text=Acting on behalf of'), 'the main account opens the portal as the preview provider');
+    await adm.goto(BASE + '/portal/settings'); await adm.fill('input[name=label]', 'Preview key'); await adm.click('button:has-text("Generate key")');
+    const pkey = (await adm.textContent('.keybox')).trim();
+    const pr = await adm.request.fetch(BASE + '/api/v1/certificates', { method: 'POST', headers: { 'X-API-Key': pkey },
+      data: { certificates: [{ first_name: 'Preview', last_name: 'Person', email: 'individual.basic@preview.liv.invalid', course_name: 'Preview Course (test records only)', completion_date: new Date().toISOString().slice(0, 10) }] } });
+    const pj = await pr.json();
+    const pnum = pj.certificates && pj.certificates[0] && pj.certificates[0].cert_number;
+    ok(pr.status() === 201 && pnum, 'the preview provider issues a test record through the normal issuance path');
+    await adm.click('button:has-text("Return to admin")');
+    ok(adm.url().endsWith('/admin/preview'), 'leaving the portal returns to the preview page');
+    const pubList = await (await anon.request.get(BASE + '/partners')).text();
+    const pnumAtp = psql('SELECT public_number FROM platforms WHERE is_preview');
+    ok(!pubList.includes('LIV Preview Training Provider') && (await anon.request.get(`${BASE}/api/v1/providers/${pnumAtp}`)).status() === 404
+      && !(await (await anon.request.get(BASE + '/sitemap.xml')).text()).includes('liv-preview'), 'the preview provider is not in the public register, the number lookup or the sitemap');
+    const vhtml = await (await anon.request.get(`${BASE}/verify/${pnum}`)).text();
+    ok(vhtml.includes('PREVIEW RECORD') && !vhtml.includes('>VALID<') && !vhtml.includes('Preview Person'), 'a preview record verifies as "preview record", never as a valid credential, and shows no details');
+    const vj = await (await anon.request.get(`${BASE}/api/v1/verify/${pnum}`)).json();
+    ok(vj.result === 'preview' && !vj.certificate, 'the verification API answers "preview" with no credential details');
+    const ph = psql(`SELECT verification_hash FROM certificates WHERE cert_number = '${pnum}'`);
+    const { qrToken } = require('../src/lib/crypto');
+    ok((await anon.request.get(`${BASE}/verify/${pnum}/pdf?t=${qrToken(ph)}`)).status() === 404, 'a preview record has no public PDF');
+    await adm.click('form[action="/admin/preview/individual/basic"] button');
+    ok(await see(adm, 'text=The preview individual is ready') && psql(`SELECT is_preview AND email_verified_at IS NOT NULL FROM users WHERE email = 'individual.basic@preview.liv.invalid'`) === 't', 'the main account creates a preview individual (no membership)');
+    ok(await see(adm, 'text=Available once memberships are built'), 'the preview with membership is shown as not available yet, not faked');
+    await adm.click('form[action="/admin/preview/individual/basic/open"] button');
+    ok(adm.url().endsWith('/me') && await see(adm, 'text=Preview mode'), 'the main account opens the individuals area as the preview individual');
+    await adm.goto(BASE + '/me/credentials');
+    await adm.click(`button[aria-label="Add ${pnum} to my account"]`);
+    ok(await see(adm, `text=Credential ${pnum} is now in your account`), 'the claim flow works end to end on preview records');
+    await adm.click('button:has-text("Return to admin")');
+    ok(adm.url().endsWith('/admin/preview'), 'and the main account returns to the preview page');
+    ok((await adm.request.get(BASE + '/me')).status() === 403, 'after leaving, the admin session is no longer an individual');
+    await adm.click('button:has-text("Run checks now")');
+    await see(adm, '#checks');
+    ok(psql(`SELECT string_agg(result, ',') FROM preview_checks WHERE automatic AND area IN ('Preview provider hidden from the public register', 'Preview records: integrity', 'Preview provider', 'Database', 'Public page /verify')`) === 'pass,pass,pass,pass,pass', 'the automatic checks pass for the preview accounts, record integrity and public pages');
+    await adm.fill('#ck-area', 'Issuance by API (preview)'); await adm.fill('#ck-detail', 'Issued and claimed one test record.'); await adm.click('button:has-text("Record check")');
+    ok(await see(adm, 'text=Check recorded') && psql(`SELECT count(*) FROM preview_checks WHERE NOT automatic`) === '1', 'a manual check is recorded in the log');
+    ok(psql(`SELECT count(*) FROM partner_audit_cases a JOIN platforms p ON p.id = a.platform_id WHERE p.is_preview`) === '0', 'preview activity opens no audit case');
+    ok((await page.request.get(BASE + '/admin/preview')).url().endsWith('/admin/preview') === false || (await page.request.get(BASE + '/admin/preview')).status() === 403, 'a provider account cannot open the preview page');
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

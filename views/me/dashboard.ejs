@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Hello, <%= u.full_name %></h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <% if (!u.email_verified_at) { %><div class="alert info" role="status">Confirm your email address (<%= u.email %>) to see the credentials recorded under it. Look for our message, or
+    <form method="post" action="/me/verify/resend" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">send a new link</button></form>.</div><% } %>
+  <div class="grid g3 mt">
+    <div class="card"><h2 class="h3">Credentials in your account</h2><p class="me-stat"><%= linked.length %></p><p class="small"><a href="/me/credentials">Open credentials</a></p></div>
+    <div class="card"><h2 class="h3">Found under your email</h2><p class="me-stat"><%= claimable.length %></p><p class="small muted">Credentials recorded under your confirmed addresses that you can add.</p></div>
+    <div class="card"><h2 class="h3">Requests under review</h2><p class="me-stat"><%= openRequests %></p><p class="small muted">Requests LIV staff are checking.</p></div>
+  </div>
+  <div class="card mt"><h2 class="h3">Good to know</h2><ul class="small">
+    <li>Anyone can verify a <%= brand %> credential at <a href="/verify">the verification portal</a>, without an account.</li>
+    <li>Your credentials and their verification never depend on a paid membership.</li>
+    <li>Two-factor sign-in protects your account: <a href="/account/security">set it up</a>.</li></ul></div>
+</div>
+<%- include('../partials/foot') %>

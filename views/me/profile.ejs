@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Profile and preferences</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <% if (errors.length) { %><div class="alert error" role="alert"><%= errors.join(' ') %></div><% } %>
+  <form class="card" method="post" action="/me/profile" style="max-width:560px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="p-name">Full name (in English)</label><input id="p-name" name="full_name" value="<%= u.full_name %>" maxlength="200" required>
+      <p class="small muted" style="margin:4px 0 0">Changing your account name does not change any issued credential.</p></div>
+    <div class="field"><span class="label">Email address</span><p style="margin:0"><%= u.email %> <%= u.email_verified_at ? '(confirmed)' : '(not confirmed yet)' %></p></div>
+    <fieldset class="field"><legend>Communication</legend>
+      <label class="check"><input type="checkbox" name="marketing" value="yes" <%= u.marketing_opt_in ? 'checked' : '' %>> Send me news and offers from <%= brand %></label>
+      <p class="small muted" style="margin:4px 0 0">Optional. Messages about your account, security and credentials are always sent and are not affected by this choice.<% if (u.marketing_opt_in_at) { %> Last changed <%= usDate(u.marketing_opt_in_at) %>.<% } %></p></fieldset>
+    <button class="btn">Save</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

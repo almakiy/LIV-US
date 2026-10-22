@@ -19,6 +19,8 @@ module.exports = {
   certHmacSecret: must('CERT_HMAC_SECRET', isProd ? undefined : 'dev-hmac-secret-change-me'),
   // Public provider application + provider login are hidden until the application gateway ships (roadmap Phase 2).
   publicApply: process.env.PUBLIC_APPLY === 'true',
+  // Individuals portal: public sign-up for individual accounts stays closed until the owner turns it on (terms and privacy notice from counsel).
+  individualAccounts: process.env.INDIVIDUAL_ACCOUNTS === 'true',
   // Excel (.xlsx) uploads are enabled for testing; set ALLOW_XLSX=false to accept CSV only.
   allowXlsx: process.env.ALLOW_XLSX !== 'false',
   // Quality records: allow one person to author and approve a document / verify their own action while the team is small (recorded on the record). Set false when staff grows.

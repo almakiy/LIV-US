@@ -42,7 +42,7 @@ async function report() {
   const titles = await one(`SELECT count(*) FILTER (WHERE status NOT IN ('draft','withdrawn'))::int AS total, count(*) FILTER (WHERE status = 'authorized')::int AS authorized, count(*) FILTER (WHERE status IN ('needs_changes','needs_wider_review','needs_scope_expansion'))::int AS returned, count(*) FILTER (WHERE status = 'refused')::int AS refused FROM partner_title_requests`);
   const exc = (await q(`SELECT case_type, count(*)::int AS n FROM policy_exceptions GROUP BY case_type ORDER BY n DESC`)).rows;
   const emails = (await q(`SELECT status, count(*)::int AS n FROM email_outbox GROUP BY status`)).rows;
-  const levels = (await q(`SELECT level, count(*)::int AS n FROM platforms WHERE accreditation_status = 'active' GROUP BY level ORDER BY level`)).rows;
+  const levels = (await q(`SELECT level, count(*)::int AS n FROM platforms WHERE accreditation_status = 'active' AND NOT is_preview GROUP BY level ORDER BY level`)).rows;
   const rev = (await q(`SELECT p.company_name, sum(i.amount_paid_cents)::bigint AS cents FROM invoices i JOIN platforms p ON p.id = i.platform_id WHERE i.status IN ('open','paid') AND i.created_at > now() - interval '12 months' GROUP BY p.company_name ORDER BY cents DESC`)).rows;
   const total = rev.reduce((s, r) => s + Number(r.cents), 0);
   const top = (n) => (total ? Math.round((rev.slice(0, n).reduce((s, r) => s + Number(r.cents), 0) / total) * 100) : 0);

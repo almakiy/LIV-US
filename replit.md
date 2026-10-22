@@ -22,6 +22,7 @@ First run only:
 
 ## Configuration (not secrets)
 - `PUBLIC_APPLY`, `PUBLIC_FEES`: keep `false` until the owner approves.
+- `INDIVIDUAL_ACCOUNTS`: keep `false` until the individual terms and privacy notice are approved (opens public sign-up for individuals).
 - `EMAIL_DRIVER`, `EMAIL_FROM`.
 - `AUTH_DOC_TEMPLATE_APPROVED`: `true` only after the authorization document template is approved.
 - `REQUIRE_2FA`: `admin` or `all`.

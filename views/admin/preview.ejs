@@ -1,0 +1,41 @@
+<%- include('../partials/app-start') %>
+<h1>Preview accounts</h1>
+<p class="muted">Open the platform as a training provider or as an individual to try new features before they reach real users, and record periodic checks. Preview records never appear in the public register; they verify as "preview record", never as a credential, and have no public PDF. Preview activity opens no audit case.</p>
+<% if (!isMain) { %><div class="alert info">You can run and record checks. Only the main account creates or opens preview accounts.</div><% } %>
+
+<div class="grid g2 mt">
+  <div class="card"><h2 class="h3">Preview training provider</h2>
+    <% if (partner) { %><p class="small"><strong><%= partner.company_name %></strong><br>Status: <%= partner.accreditation_status %> · Active scopes: <%= partner.scopes %> · Records: <%= partner.records %></p>
+      <p class="small muted">Issue test records for the course "<%= scopeTitle %>". Use the preview individual's address (below) to try the claim flow.</p>
+      <% if (isMain) { %><form method="post" action="/admin/preview/partner/open"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Open as training provider</button></form><% } %>
+    <% } else { %><p class="small muted">Not created yet.</p>
+      <% if (isMain) { %><form method="post" action="/admin/preview/partner"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Create preview training provider</button></form><% } %><% } %>
+  </div>
+  <div class="card"><h2 class="h3">Preview individuals</h2>
+    <% people.forEach(p => { %><div style="border-top:1px solid var(--line);padding:10px 0">
+      <strong><%= p.name %></strong><br><span class="small muted mono"><%= p.email %></span>
+      <% if (!p.available) { %><p class="small muted" style="margin:6px 0 0"><%= p.note %></p>
+      <% } else if (p.account) { %><p class="small" style="margin:6px 0">Linked records: <%= p.account.linked %></p>
+        <% if (isMain) { %><form method="post" action="/admin/preview/individual/<%= p.key %>/open"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Open as this individual</button></form><% } %>
+      <% } else if (isMain) { %><form method="post" action="/admin/preview/individual/<%= p.key %>" style="margin-top:6px"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Create</button></form><% } %>
+    </div><% }) %>
+  </div>
+</div>
+
+<h2 class="mt" id="checks">Automatic checks</h2>
+<p class="small muted">Read-only checks: database, preview accounts, preview record integrity, the email queue and the main public pages.</p>
+<form method="post" action="/admin/preview/checks/run"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn">Run checks now</button></form>
+<% if (lastRun) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Area</th><th>Result</th><th>Detail</th></tr>
+  <% lastRun.forEach(x => { %><tr><td><%= x.area %></td><td><span class="badge <%= x.ok ? 'b-active' : 'b-revoked' %>"><%= x.ok ? 'Pass' : 'Needs attention' %></span></td><td class="small"><%= x.detail %></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt" id="log">Check log</h2>
+<form class="card" method="post" action="/admin/preview/checks" style="max-width:720px">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="row"><div class="field"><label for="ck-area">Area checked</label><input id="ck-area" name="area" maxlength="80" placeholder="e.g. Issuance by CSV" required></div>
+    <div class="field"><label for="ck-result">Result</label><select id="ck-result" name="result"><option value="pass">Pass</option><option value="fail">Problem found</option><option value="note">Note</option></select></div></div>
+  <div class="field"><label for="ck-detail">Detail</label><textarea id="ck-detail" name="detail" rows="3" maxlength="1000"></textarea></div>
+  <button class="btn sm">Record check</button>
+</form>
+<% if (history.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>When</th><th>Area</th><th>Result</th><th>Detail</th><th>By</th></tr>
+  <% history.forEach(h => { %><tr><td><%= usDateTime(h.checked_at) %></td><td><%= h.area %><%= h.automatic ? ' (automatic)' : '' %></td><td><%= h.result %></td><td class="small"><%= h.detail %></td><td><%= h.full_name || '' %></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

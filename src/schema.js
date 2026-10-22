@@ -1165,4 +1165,79 @@ INSERT INTO partner_criteria_sets (version, status, criteria) VALUES ('v0.1', 'd
   {"code":"C8","title":"Records and data","if_not_met":"major"},
   {"code":"C9","title":"Integrity and marketing","if_not_met":"minor, or major for a misleading claim"}
 ]'::jsonb) ON CONFLICT (version) DO NOTHING;
+
+-- Individuals portal (M1, October 22, 2026): individual accounts, email verification, credential claims, support link.
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin','platform_admin','individual'));
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_check;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_scope_check;
+ALTER TABLE users ADD CONSTRAINT users_scope_check CHECK ((role = 'super_admin' AND platform_id IS NULL) OR (role = 'platform_admin' AND platform_id IS NOT NULL) OR (role = 'individual' AND platform_id IS NULL));
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS marketing_opt_in BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS marketing_opt_in_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS closure_requested_at TIMESTAMPTZ;
+-- Extra addresses a person proves they control, used only to find their credentials.
+CREATE TABLE IF NOT EXISTS individual_emails (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_individual_email_verified ON individual_emails (lower(email)) WHERE verified_at IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_individual_email_per_user ON individual_emails (user_id, lower(email));
+-- One-time tokens (verification, extra address, password reset). Only a hash is kept.
+CREATE TABLE IF NOT EXISTS individual_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  purpose VARCHAR(20) NOT NULL CHECK (purpose IN ('verify_email','extra_email','password_reset')),
+  email VARCHAR(255) NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- A credential linked to a person. The certificate row, its hash and its PDF are never changed by a link.
+CREATE TABLE IF NOT EXISTS credential_claims (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  certificate_id UUID NOT NULL REFERENCES certificates(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  method VARCHAR(20) NOT NULL CHECK (method IN ('email_match','staff_review')),
+  request_id UUID,
+  claimed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  released_at TIMESTAMPTZ,
+  released_reason TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_credential_claim_active ON credential_claims (certificate_id) WHERE released_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_credential_claim_user ON credential_claims (user_id) WHERE released_at IS NULL;
+-- Requests reviewed by LIV staff when the recorded email is not one of the person's addresses.
+CREATE TABLE IF NOT EXISTS credential_claim_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  cert_number VARCHAR(20) NOT NULL,
+  statement TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','approved','refused','withdrawn')),
+  decided_by UUID REFERENCES users(id),
+  decided_at TIMESTAMPTZ,
+  decision_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_claim_request_open ON credential_claim_requests (user_id, cert_number) WHERE status = 'submitted';
+ALTER TABLE contact_messages ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+
+-- Preview accounts (October 22, 2026): a preview training provider and preview individuals that the main account opens to
+-- check new features. They never appear in the public register, and their records verify as "preview record", never as credentials.
+ALTER TABLE platforms ADD COLUMN IF NOT EXISTS is_preview BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_preview BOOLEAN NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_one_preview_platform ON platforms ((true)) WHERE is_preview;
+CREATE TABLE IF NOT EXISTS preview_checks (
+  id BIGSERIAL PRIMARY KEY,
+  area VARCHAR(80) NOT NULL,
+  result VARCHAR(10) NOT NULL CHECK (result IN ('pass','fail','note')),
+  detail TEXT NOT NULL DEFAULT '',
+  automatic BOOLEAN NOT NULL DEFAULT false,
+  run_id UUID,
+  checked_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;

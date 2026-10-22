@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Support</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <% if (error) { %><div class="alert error" role="alert"><%= error %></div><% } %>
+  <form class="card" method="post" action="/me/support" style="max-width:640px">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="t-topic">Topic</label><select id="t-topic" name="topic">
+      <% [['account','My account'],['credentials','My credentials'],['privacy','Privacy and my data'],['billing','Payments'],['general','Something else']].forEach(([v,l]) => { %><option value="<%= v %>" <%= form.topic === v ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label for="t-msg">Message (in English)</label><textarea id="t-msg" name="message" rows="6" required><%= form.message || '' %></textarea></div>
+    <button class="btn">Send</button>
+    <p class="small muted mt">For a complaint or an appeal, use the <a href="/contact">contact form</a> so it is recorded in our quality register with its deadlines.</p>
+  </form>
+  <% if (rows.length) { %><h2 class="mt">Your messages</h2><div class="table-wrap" tabindex="0"><table><tr><th>Sent</th><th>Topic</th><th>Message</th><th>Status</th></tr>
+    <% rows.forEach(m => { %><tr><td><%= usDate(m.created_at) %></td><td><%= m.topic %></td><td><%= m.message.slice(0, 160) %></td><td><%= m.handled ? 'Handled' : 'Open' %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

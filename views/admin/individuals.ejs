@@ -1,0 +1,27 @@
+<%- include('../partials/app-start') %>
+<h1>Individuals</h1>
+<p class="muted">Individual accounts and requests to link a credential. Approve only when the request shows the credential belongs to the person (for example, the training provider confirms the address change). Each decision needs a reason and is audited.</p>
+<div class="grid g4">
+  <div class="card"><div class="small muted">Accounts</div><div class="me-stat"><%= stats.accounts %></div></div>
+  <div class="card"><div class="small muted">Email confirmed</div><div class="me-stat"><%= stats.verified %></div></div>
+  <div class="card"><div class="small muted">Linked credentials</div><div class="me-stat"><%= stats.linked %></div></div>
+  <div class="card"><div class="small muted">Closure requests</div><div class="me-stat"><%= stats.closures %></div></div>
+</div>
+<h2 class="mt">Claim requests</h2>
+<% if (!requests.length) { %><p class="muted">No requests.</p><% } else { %><div class="table-wrap" tabindex="0"><table>
+  <tr><th>Sent</th><th>Person</th><th>Credential</th><th>Recorded recipient</th><th>Statement</th><th>Status</th><th>Decision</th></tr>
+  <% requests.forEach(r => { %><tr><td><%= usDate(r.created_at) %></td><td><%= r.full_name %><br><span class="small muted"><%= r.email %></span></td>
+    <td><%= r.cert_number %><% if (!r.cert_id) { %><br><span class="small muted">No credential has this number</span><% } else if (r.taken) { %><br><span class="small muted">Already linked to an account</span><% } %></td>
+    <td><%= r.recipient || '' %><% if (r.course_name) { %><br><span class="small muted"><%= r.course_name %></span><% } %></td>
+    <td class="small"><%= r.statement %></td><td><%= r.status %><% if (r.decision_reason) { %><br><span class="small muted"><%= r.decision_reason %></span><% } %></td>
+    <td><% if (r.status === 'submitted') { %><form method="post" action="/admin/individuals/requests/<%= r.id %>/decide"><input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label class="small" for="why-<%= r.id %>">Reason</label><input id="why-<%= r.id %>" name="reason" required minlength="5">
+      <button class="btn sm" name="decision" value="approve">Approve</button> <button class="btn sm secondary" name="decision" value="refuse">Refuse</button></form><% } %></td></tr><% }) %>
+</table></div><% } %>
+<h2 class="mt">Accounts</h2>
+<% if (!people.length) { %><p class="muted">No individual accounts yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table>
+  <tr><th>Name</th><th>Email</th><th>Confirmed</th><th>Linked</th><th>Created</th><th>Notes</th></tr>
+  <% people.forEach(p => { %><tr><td><%= p.full_name %></td><td><%= p.email %></td><td><%= p.email_verified_at ? 'Yes' : 'No' %></td><td><%= p.linked %></td><td><%= usDate(p.created_at) %></td>
+    <td class="small"><%= p.closure_requested_at ? 'Closure requested' : '' %><%= p.disabled_at ? ' Disabled' : '' %></td></tr><% }) %>
+</table></div><% } %>
+<%- include('../partials/app-end') %>

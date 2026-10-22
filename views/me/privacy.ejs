@@ -1,0 +1,16 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Privacy and your data</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <div class="grid g2">
+    <div class="card"><h2 class="h3">Download your data</h2><p class="small muted">A file with your account details, confirmed addresses, linked credentials, requests and support messages.</p>
+      <a class="btn sm" href="/me/privacy/export.json">Download (JSON)</a></div>
+    <div class="card"><h2 class="h3">Close your account</h2>
+      <% if (u.closure_requested_at) { %><p class="small">Your request was recorded on <%= usDate(u.closure_requested_at) %>. LIV support will confirm by email.</p>
+      <% } else { %><p class="small muted">Credentials issued to you stay valid and verifiable: they are records of the training provider's report, not of this account. Type CLOSE to send the request.</p>
+      <form method="post" action="/me/privacy/close"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="field"><label for="c-confirm">Type CLOSE</label><input id="c-confirm" name="confirm" autocomplete="off" required></div><button class="btn sm secondary">Request closure</button></form><% } %></div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

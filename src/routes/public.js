@@ -28,14 +28,14 @@ r.get('/partners', wrap(async (req, res) => {
   const number = PP.normalizeNumber(req.query.q) || '';
   const { rows: partners } = await q(`SELECT p.id, p.company_name, p.country, p.public_slug AS slug, p.level, p.public_number, p.logo_path IS NOT NULL AS has_logo, p.public_city, p.public_domain, p.public_delivery,
       (SELECT array_agg(title ORDER BY title) FROM (SELECT title FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' ORDER BY title LIMIT 3) t) AS titles
-    FROM platforms p WHERE p.accreditation_status = 'active' AND p.public_slug IS NOT NULL
+    FROM platforms p WHERE p.accreditation_status = 'active' AND p.public_slug IS NOT NULL AND NOT p.is_preview
       AND ($1 = '' OR p.company_name ILIKE '%' || $2 || '%' OR p.public_number ILIKE '%' || $2 || '%' OR EXISTS (SELECT 1 FROM partner_scopes s WHERE s.platform_id = p.id AND s.status = 'active' AND s.title ILIKE '%' || $2 || '%'))
       AND ($3 = '' OR lower(p.country) = lower($3))
       AND ($4 = '' OR lower(p.public_city) = lower($4))
       AND ($5 = '' OR lower(p.public_domain) = lower($5))
       AND ($6 = '' OR lower(p.public_delivery) = lower($6))
     ORDER BY p.company_name LIMIT 200`, [term, likeEscape(term), country, city, domain, delivery]);
-  const { rows: countries } = await q(`SELECT DISTINCT country FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND country IS NOT NULL AND country <> '' ORDER BY country`);
+  const { rows: countries } = await q(`SELECT DISTINCT country FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND NOT is_preview AND country IS NOT NULL AND country <> '' ORDER BY country`);
   const options = await PP.filterOptions();
   res.render('public/partners', { title: 'Authorized Training Provider Program', description: 'Become an Authorized Training Provider and see the public register of partners.', partners, countries: countries.map((c) => c.country), term, country, city, domain, delivery, options, number });
 }));
@@ -54,7 +54,7 @@ r.get('/partners/guide', (req, res) => {
   res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
 });
 r.get('/partners/:slug', wrap(async (req, res, next) => {
-  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery, public_about, public_social, accreditation_status FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active'`, [String(req.params.slug).slice(0, 120)]);
+  const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery, public_about, public_social, accreditation_status FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active' AND NOT is_preview`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();
   const D = require('../lib/directory');
   const AD = require('../lib/authorization-doc');
@@ -144,8 +144,8 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
 // Original PDF download — requires the QR token so PDFs can't be scraped by guessing IDs alone.
 r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   const id = String(req.params.cert).toUpperCase();
-  const { rows: [c] } = await q(`SELECT cert_number, pdf_path, verification_hash FROM certificates WHERE cert_number = $1`, [id]);
-  if (!c || !req.query.t || !safeEqual(String(req.query.t), qrToken(c.verification_hash))) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
+  const { rows: [c] } = await q(`SELECT c.cert_number, c.pdf_path, c.verification_hash, p.is_preview FROM certificates c JOIN platforms p ON p.id = c.platform_id WHERE c.cert_number = $1`, [id]);
+  if (!c || c.is_preview || !req.query.t || !safeEqual(String(req.query.t), qrToken(c.verification_hash))) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
   const file = c.pdf_path && await getFile(c.pdf_path);
   if (!file) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
   res.attachment(`${c.cert_number}.pdf`).type(file.type).send(file.content);

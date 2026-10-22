@@ -1,8 +1,14 @@
-      <p class="small muted auth-help">Need help signing in? <a href="/contact">Contact <%= brand %></a>.<% if (publicApply) { %> New training provider? <a href="/apply">Apply to become an Authorized Training Provider</a>.<% } else { %> New training provider? <a href="/partners">Learn about the Authorized Training Provider program</a>.<% } %></p>
+      <p class="small muted auth-help"><% if (individualAccounts) { %>New to <%= brand %>? <a href="/signup">Create an individual account</a>. <a href="/password/forgot">Forgot your password?</a> (individual accounts)<br><% } %>Need help signing in? <a href="/contact">Contact <%= brand %></a>.<% if (publicApply) { %> New training provider? <a href="/apply">Apply to become an Authorized Training Provider</a>.<% } else { %> New training provider? <a href="/partners">Learn about the Authorized Training Provider program</a>.<% } %></p>
     </div>
   </main>
   <aside class="auth-right" aria-label="What you can do after signing in">
     <div class="auth-inner">
+      <% if (individualAccounts) { %><h2>For individuals</h2>
+      <ul class="auth-list">
+        <li>See the credentials recorded under your email address</li>
+        <li>Download your records and share their verification links</li>
+        <li>Manage your profile and communication preferences</li>
+      </ul><% } %>
       <h2>For Authorized Training Providers</h2>
       <ul class="auth-list">
         <li>Manage your organization profile and authorized scope</li>

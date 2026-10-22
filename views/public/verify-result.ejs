@@ -7,6 +7,7 @@ const banner = {
   tampered: ['✕', 'INVALID', 'The record or QR code failed the integrity check. Do not rely on this credential.'],
   not_found: ['?', 'NOT FOUND', 'No credential matches these details. Check the ID and try again.'],
   invalid_format: ['?', 'NOT FOUND', 'That Credential ID is not in a valid format.'],
+  preview: ['!', 'PREVIEW RECORD', 'This is a test record from the LIV preview account. It is not a credential and must not be relied on.'],
   unavailable: ['!', 'TEMPORARILY UNAVAILABLE', 'Verification is temporarily unavailable. Please try again later. Do not treat this page as confirmation that the credential is valid.'],
 }[R];
 // Provider status labels. The status at issuance comes only from the record made at issuance; it is never inferred.
@@ -18,7 +19,7 @@ const provLabel = (st) => st === 'active' ? 'LIV Authorized Training Provider' :
     <div class="icon"><%= banner[0] %></div>
     <div><h2><%= banner[1] %></h2><p><%= banner[2] %></p></div>
   </div>
-  <% if (c && R !== 'tampered') { %>
+  <% if (c && R !== 'tampered' && R !== 'preview') { %>
   <div class="card details">
     <% const RT = (recordTypes[c.record_type] || recordTypes.training_completion); %>
     <h3 class="vsec">1. Record integrity</h3>

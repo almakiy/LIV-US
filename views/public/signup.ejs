@@ -1,0 +1,17 @@
+<%- include('../partials/auth-top') %>
+      <h1>Create an account</h1>
+      <p class="muted">An individual account lets you find and keep the <%= brand %> credentials recorded under your email address. It is free, and you never need it to verify a credential.</p>
+      <% if (errors.length) { %><div class="alert error" role="alert"><ul style="margin:0;padding-left:18px"><% errors.forEach(e => { %><li><%= e %></li><% }) %></ul></div><% } %>
+      <form method="post" action="/signup">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="field"><label for="s-name">Full name (in English)</label><input id="s-name" name="full_name" value="<%= form.full_name || '' %>" autocomplete="name" maxlength="200" required></div>
+        <div class="field"><label for="s-email">Email address</label><input id="s-email" type="email" name="email" value="<%= form.email || '' %>" autocomplete="email" required>
+          <p class="small muted" style="margin:4px 0 0">Use the address you gave your training provider, so your credentials can be found.</p></div>
+        <div class="field"><label for="s-pw">Password (10+ characters)</label><input id="s-pw" type="password" name="password" minlength="10" autocomplete="new-password" required></div>
+        <div class="field"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" name="confirm_password" minlength="10" autocomplete="new-password" required></div>
+        <div class="field"><label class="check"><input type="checkbox" name="terms" value="yes" required> I have read the <a href="/contact">privacy notice</a> and agree that <%= brand %> keeps my account data to run this account.</label></div>
+        <div class="field"><label class="check"><input type="checkbox" name="marketing" value="yes" <%= form.marketing ? 'checked' : '' %>> Optional: send me news and offers from <%= brand %>. You can change this at any time. Messages about your account and credentials are sent either way.</label></div>
+        <button class="btn lg" style="width:100%">Create account</button>
+      </form>
+      <p class="small muted mt">Already have an account? <a href="/login">Sign in</a>.</p>
+<%- include('../partials/auth-bottom') %>

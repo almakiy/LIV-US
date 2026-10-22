@@ -3,6 +3,7 @@ const rateLimit = require('express-rate-limit');
 const requireLogin = (req, res, next) => (req.user ? next() : res.redirect('/login?next=' + encodeURIComponent(req.originalUrl)));
 const requirePlatformAdmin = (req, res, next) => {
   if (!req.user) return requireLogin(req, res, next);
+  if (req.user.role === 'individual') return res.redirect('/me');
   if (req.user.role !== 'platform_admin') return res.redirect('/admin');
   next();
 };

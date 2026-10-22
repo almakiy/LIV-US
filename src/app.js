@@ -64,6 +64,7 @@ app.use(async (req, res, next) => {
     res.locals.usDateTime = usDateTime;
     res.locals.baseUrl = cfg.baseUrl;
     res.locals.publicApply = cfg.publicApply;
+    res.locals.individualAccounts = cfg.individualAccounts;
     res.locals.path = req.path;
     res.locals.longDate = longDate;
     res.locals.flash = req.session.flash || null;
@@ -80,6 +81,12 @@ app.use(async (req, res, next) => {
           const { rows: [p] } = await q('SELECT id, company_name, accreditation_status, logo_path, primary_color FROM platforms WHERE id = $1', [req.session.actAs]);
           if (p) req.user = { ...req.user, role: 'platform_admin', platform_id: p.id, company_name: p.company_name, accreditation_status: p.accreditation_status, logo_path: p.logo_path, primary_color: p.primary_color, actingAs: true };
           else delete req.session.actAs;
+        }
+        // Main account previewing an individual account. Only preview individuals can be opened this way.
+        if (u.role === 'super_admin' && req.session.actAsIndividual) {
+          const { rows: [iu] } = await q(`SELECT id, email, full_name, role, totp_enabled FROM users WHERE id = $1 AND role = 'individual' AND is_preview`, [req.session.actAsIndividual]);
+          if (iu) req.user = { ...iu, platform_id: null, realRole: 'individual', actingAs: true, previewAdminId: u.id };
+          else delete req.session.actAsIndividual;
         }
       } else delete req.session.userId;
     }
@@ -112,6 +119,8 @@ app.use(require('./routes/public'));
 app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
+app.use(require('./routes/individuals'));
+app.use('/me', require('./routes/me'));
 app.use('/portal', require('./lib/partner-roles').gate);
 app.use('/portal', require('./routes/portal'));
 app.use('/portal/application', require('./routes/portal-application'));
@@ -136,6 +145,8 @@ app.use('/admin', require('./routes/admin-standards'));
 app.use('/admin', require('./routes/admin-directory'));
 app.use('/admin', require('./routes/admin-schemes')); // after admin: it ends 'act as partner' mode before the super-admin check
 app.use('/admin', require('./routes/admin-system'));
+app.use('/admin', require('./routes/admin-individuals'));
+app.use('/admin', require('./routes/admin-preview'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 

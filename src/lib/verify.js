@@ -16,7 +16,7 @@ async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'we
     let row;
     try {
       ({ rows: [row] } = await q(
-      `SELECT c.*, p.company_name, p.logo_path, p.primary_color, p.accreditation_status, p.website, p.level AS provider_level,
+      `SELECT c.*, p.company_name, p.logo_path, p.primary_color, p.accreditation_status, p.website, p.level AS provider_level, p.is_preview AS provider_is_preview,
               ps.title AS scope_title, ps.status AS scope_status, cs.name AS scheme_name
          FROM certificates c JOIN platforms p ON p.id = c.platform_id
          LEFT JOIN partner_scopes ps ON ps.id = c.partner_scope_id LEFT JOIN credential_schemes cs ON cs.id = c.scheme_id
@@ -42,6 +42,8 @@ async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'we
       if (!intact || !tokenOk) result = 'tampered';
       else if (row.status === 'revoked') result = 'revoked';
       else result = 'valid';
+      // Records of the preview provider are tests: never shown as a credential.
+      if (result !== 'tampered' && row.provider_is_preview) result = 'preview';
       out = { result, cert: row };
     }
   }
@@ -52,7 +54,7 @@ async function verifyCertificate(rawNumber, { token, lastName, ip, channel = 'we
 
 /** Public-safe projection — never exposes the trainee email or internal ids. */
 function publicView(out, baseUrl) {
-  if (!out.cert) return { result: out.result };
+  if (!out.cert || out.result === 'preview') return { result: out.result };
   const c = out.cert;
   const d = (x) => x || null;
   return {

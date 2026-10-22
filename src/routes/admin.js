@@ -15,7 +15,7 @@ const { refusedPassword } = require('../lib/dev-defaults');
 const r = express.Router();
 // Visiting /admin while acting on behalf of a provider returns to admin mode.
 r.use((req, res, next) => {
-  if (req.user?.actingAs) { delete req.session.actAs; return res.redirect(req.originalUrl); }
+  if (req.user?.actingAs) { delete req.session.actAs; delete req.session.actAsIndividual; return res.redirect(req.originalUrl); }
   next();
 });
 r.use(requireSuper);

@@ -41,6 +41,25 @@ const TEMPLATES = {
   { label: 'Open your title requests', url: `${cfg.baseUrl}/portal/titles` }) }),
   status_update: (d) => ({ subject: clip(d.title, 120), ...layout(clip(d.title, 120), [clip(d.message, 1500)].concat(d.reason ? [clip(d.reason, 1500)] : []),
   d.url ? { label: clip(d.label || 'Open', 40), url: `${cfg.baseUrl}${d.url}` } : null) }),
+  individual_verify: (d) => ({ subject: 'Confirm your email address for your LIV account', ...layout(`Welcome, ${clip(d.name, 100)}`, [
+    'Confirm this email address to finish setting up your LIV account. Once it is confirmed, LIV can show you the credentials recorded under this address.',
+    'The link works for 72 hours and only once. If you did not create this account, ignore this message.'],
+  { label: 'Confirm my email', url: `${cfg.baseUrl}/signup/verify?t=${encodeURIComponent(d.token)}` }) }),
+  individual_extra_email: (d) => ({ subject: 'Confirm this address for your LIV account', ...layout('Confirm this address', [
+    'Someone asked to add this address to a LIV account so that credentials recorded under it can be found. Confirm only if the account is yours.',
+    'The link works for 72 hours and only once.'],
+  { label: 'Confirm this address', url: `${cfg.baseUrl}/me/emails/verify?t=${encodeURIComponent(d.token)}` }) }),
+  individual_exists: () => ({ subject: 'You already have a LIV account', ...layout('You already have a LIV account', [
+    'Someone tried to create a LIV account with this email address, which already has one. No new account was created.',
+    'If it was you, sign in instead, or reset your password. If it was not you, no action is needed.'],
+  { label: 'Sign in', url: `${cfg.baseUrl}/login` }) }),
+  individual_reset: (d) => ({ subject: 'Reset your LIV password', ...layout('Reset your password', [
+    'Use the link below to choose a new password. It works for one hour and only once.',
+    'If you did not ask for this, ignore this message: your password stays the same.'],
+  { label: 'Choose a new password', url: `${cfg.baseUrl}/password/reset?t=${encodeURIComponent(d.token)}` }) }),
+  claim_outcome: (d) => ({ subject: `Your request for credential ${clip(d.cert, 20)}`, ...layout('An update on your request', [
+    `LIV reviewed your request to link credential ${clip(d.cert, 20)} to your account. Outcome: ${d.approved ? 'approved' : 'not approved'}.`, clip(d.reason, 1500)],
+  { label: 'Open your credentials', url: `${cfg.baseUrl}/me/credentials` }) }),
   application_fee_received: (d) => ({ subject: 'Application fee received', ...layout('Thank you, the fee is received', [
     `LIV received the application fee for ${clip(d.company, 200)}. The completeness check is done within 5 working days.`, 'The fee pays for the review work. It does not affect the decision.'],
   { label: 'View your application', url: `${cfg.baseUrl}/portal/application` }) }),
@@ -56,7 +75,8 @@ async function queue({ to, name = null, template, data = {}, platformId = null, 
   const { rows: [sup] } = await q('SELECT 1 FROM email_suppressions WHERE email = $1', [email]);
   const { rows: [row] } = await q(`INSERT INTO email_outbox (to_email, to_name, template, subject, text_body, html_body, platform_id, dedupe_key, status)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (dedupe_key) DO NOTHING RETURNING id, status`,
-  [email, name, template, m.subject, m.text, m.html, platformId, dedupeKey, sup ? 'suppressed' : 'queued']);
+  // Preview accounts use a reserved domain: their messages are kept for review and never sent.
+  [email, name, template, m.subject, m.text, m.html, platformId, dedupeKey, sup || email.endsWith('@preview.liv.invalid') ? 'suppressed' : 'queued']);
   return row || null;
 }
 

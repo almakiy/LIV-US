@@ -36,7 +36,7 @@
       <a href="/about" class="<%= path === '/about' ? 'on' : '' %>">About</a>
       <a href="/contact" class="<%= path === '/contact' ? 'on' : '' %>">Contact</a>
       <% if (user) { %>
-        <a href="<%= user.realRole === 'super_admin' ? '/admin' : '/portal' %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') ? 'on' : '' %>"><%= user.realRole === 'super_admin' ? 'Admin' : 'Portal' %></a>
+        <% const homeLink = { super_admin: ['/admin', 'Admin'], individual: ['/me', 'My account'] }[user.realRole] || ['/portal', 'Portal']; %><a href="<%= homeLink[0] %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') || path.startsWith('/me') ? 'on' : '' %>"><%= homeLink[1] %></a>
         <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Log out</button></form>
       <% } else { %>
         <a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Partner sign-in</a>
