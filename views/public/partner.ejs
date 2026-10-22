@@ -10,7 +10,7 @@
   <div class="card details"><dl>
     <dt>Authorization status</dt><dd>Authorized, as recorded by <%= brand %> at the time of viewing</dd>
     <% if (p.public_number) { %><dt>ATP number</dt><dd><%= p.public_number %> · <a href="/partners/verify?number=<%= p.public_number %>">Verify this ATP number</a> <span class="muted small">(status, active scope and level)</span></dd><% } %>
-    <% if (p.level) { %><dt>Partnership level</dt><dd><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %><% if (p.level_since) { %> <span class="muted small">since <%= longDate(p.level_since) %></span><% } %></dd><% } %>
+    <% if (p.level) { %><dt>Partnership level</dt><dd><%= p.level.charAt(0).toUpperCase() + p.level.slice(1) %><% if (p.level_since) { %> <span class="muted small">since <%= longDate(p.level_since) %></span><% } %> <a class="small" href="/partners/levels">About levels</a></dd><% } %>
     <% if (p.country) { %><dt>Country</dt><dd><%= p.country %></dd><% } %>
     <% if (p.public_city) { %><dt>City</dt><dd><%= p.public_city %> <span class="muted small">(information provided by the provider)</span></dd><% } %>
     <% if (p.public_domain) { %><dt>Training domain</dt><dd><%= p.public_domain %> <span class="muted small">(information provided by the provider)</span></dd><% } %>

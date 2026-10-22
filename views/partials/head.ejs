@@ -39,7 +39,7 @@
         <a href="<%= user.realRole === 'super_admin' ? '/admin' : '/portal' %>" class="<%= path.startsWith('/portal') || path.startsWith('/admin') ? 'on' : '' %>"><%= user.realRole === 'super_admin' ? 'Admin' : 'Portal' %></a>
         <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Log out</button></form>
       <% } else { %>
-        <% if (publicApply) { %><a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Partner Portal</a><% } %>
+        <a href="/login" class="<%= path === '/login' ? 'on' : '' %>">Partner sign-in</a>
       <% } %>
     </nav>
   </div>

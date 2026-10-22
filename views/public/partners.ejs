@@ -3,7 +3,7 @@
   <span class="eyebrow"><%= brand %> Authorized Training Provider Program</span>
   <h1>Become a LIV Authorized Training Provider (ATP)</h1>
   <p>Authorized Training Providers deliver education within a scope approved by <%= brand %>. <%= brand %> issues every credential and keeps the authoritative record that employers can verify.</p>
-  <div class="actions"><a class="btn ghost lg" href="#register">Find a Training Provider</a><a class="btn ghost lg" href="/partners/journey">How the process works</a><a class="btn ghost lg" href="/partners/fees-and-timelines">Fees and timelines</a><% if (publicApply) { %><a class="btn gold lg" href="/apply">Apply to become a partner</a><% } else { %><a class="btn gold lg" href="/contact">Request Information</a><% } %><a class="btn ghost lg" href="/partners/guide">Application guide</a><a class="btn ghost lg" href="/credentials">Credential types</a></div>
+  <div class="actions"><a class="btn ghost lg" href="#register">Find a Training Provider</a><a class="btn ghost lg" href="/partners/journey">How the process works</a><a class="btn ghost lg" href="/partners/fees-and-timelines">Fees and timelines</a><a class="btn ghost lg" href="/partners/levels">Partner levels</a><a class="btn ghost lg" href="/login">Partner sign-in</a><% if (publicApply) { %><a class="btn gold lg" href="/apply">Apply to become a partner</a><% } else { %><a class="btn gold lg" href="/contact">Request Information</a><% } %><a class="btn ghost lg" href="/partners/guide">Application guide</a><a class="btn ghost lg" href="/credentials">Credential types</a></div>
 </div></section>
 <section class="section white"><div class="container">
   <h2>What authorization means</h2>
@@ -37,7 +37,7 @@
       <% if (p.titles && p.titles.length) { %><p class="small muted" style="margin:0"><%= p.titles.join(' · ') %></p><% } %>
       <p style="margin:12px 0 0"><a class="btn secondary sm" href="/partners/<%= p.slug %>">View Provider &amp; Authorized Scope</a></p></div><% }) %></div>
   <% } else if (term || country || city || domain || delivery) { %><p class="muted mt">No provider matches that search. <a href="/partners#register">Clear the filters</a> to see all providers.</p>
-  <% } else { %><p class="muted mt">The register will list partners once they are authorized.</p><% } %>
+  <% } else { %><p class="muted mt">No provider has been authorized yet. Once LIV authorizes a provider, the register lists its name, country, ATP number and <a href="/partners/levels">partner level</a>, with a page showing its authorized scope.</p><% } %>
   <h2 style="margin-top:48px">References</h2>
   <p><%= brand %> review criteria reference recognized frameworks where relevant to a course, including ISO 45001, ISO 14001, ISO 9001, ANSI/ASSP Z490.1 and US OSHA training requirements.</p>
   <div class="alert info small"><strong>Important:</strong> Partner authorization is a private, voluntary program operated by <%= legalEntity %>. <%= brand %> is not a government agency or a regulatory authority and does not claim ISO or any other external accreditation or recognition. Referencing a framework does not mean endorsement, certification or approval by ISO, ANSI, ASSP, OSHA, PMI, CQI, IRCA, NEBOSH, IOSH or any other body, and authorization by <%= brand %> does not make a course approved by them. Authorization reflects that a partner met <%= brand %> criteria at the time of review; it is not a government license.</div>

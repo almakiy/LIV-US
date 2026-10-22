@@ -48,7 +48,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|fees-and-timelines")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|levels"|fees-and-timelines")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
@@ -1619,7 +1619,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     };
     for (const path of ['/admin/monitoring', `/admin/monitoring/${caseId}`, '/admin/partner-records', '/admin/standards', '/admin/work', '/admin/report']) await axeCheck(adm, path);
     for (const path of ['/portal/oversight', '/portal/level', '/portal/settings', '/portal/templates', '/portal/issue', '/account/security']) await axeCheck(page, path);
-    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/verify', '/partners/fees-and-timelines', '/credentials', '/verify']) await axeCheck(anon, path);
+    for (const path of ['/', '/login', '/apply', '/contact', '/about', '/partners', '/partners/guide', '/partners/levels', '/partners/verify', '/partners/fees-and-timelines', '/credentials', '/verify']) await axeCheck(anon, path);
   }
 
   console.log('Public directory: reviewed details, branches, scope details, documents and the process page');

@@ -48,6 +48,7 @@ r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
 }));
 r.get('/partners/fees-and-timelines', (req, res) => res.render('public/partner-fees-timelines', { title: 'Fees and timelines', description: 'Service timelines for applicants, and how fees are published.', publicFees: cfg.publicFees }));
 r.get('/partners/journey', (req, res) => res.render('public/partner-journey', { title: 'Your path to becoming a LIV Authorized Training Provider', description: 'How LIV reviews and authorizes a training provider, stage by stage.', publicApply: cfg.publicApply }));
+r.get('/partners/levels', (req, res) => res.render('public/partner-levels', { title: 'Partner levels', description: 'Bronze, Silver and Gold partner levels, and where a level appears.' }));
 r.get('/partners/guide', (req, res) => {
   const F = require('../lib/application-form'); const T = require('../lib/title-form');
   res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
