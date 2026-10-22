@@ -1,6 +1,6 @@
 # Individuals portal, membership and related services
 
-Scope reference: owner instruction of October 22, 2026 and its scope document "LIV — بوابة الأفراد والعضويات والمزايا" (October 22, 2026).
+Scope reference: owner instruction of October 22, 2026 and its scope document "LIV — بوابة الأفراد والعضويات والمزايا" (October 22, 2026), kept at `docs/scope/LIV-Individual-Portal-Memberships-and-Benefits-ar.md`.
 
 ## Governance rules (fixed)
 1. Membership is optional and separate from credentials, eligibility and assessment results. No membership or preparation purchase is required to apply for an available assessment.
