@@ -1,7 +1,41 @@
-run = "npm start"
-entrypoint = "src/server.js"
-modules = ["nodejs-20"]
+modules = ["nodejs-24", "postgresql-16"]
+run = '''export DATABASE_URL="$(node -e 'const url=new URL(process.env.DATABASE_URL);url.searchParams.set("options","-c search_path=liv_github_preview,public");process.stdout.write(url.toString())')" && node -e 'const {Client}=require("pg"); const c=new Client({connectionString:process.env.DATABASE_URL}); c.connect().then(()=>c.query("CREATE SCHEMA IF NOT EXISTS liv_github_preview")).then(()=>c.end()).catch(e=>{console.error(e.message);process.exit(1)})' && BASE_URL="https://$REPLIT_DEV_DOMAIN" npm run migrate && env -u ADMIN_RESET_PASSWORD BASE_URL="https://$REPLIT_DEV_DOMAIN" PG_SCHEMA=liv_github_preview PORT=5000 npm start'''
 
 [[ports]]
-localPort = 3000
+localPort = 5000
 externalPort = 80
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "export DATABASE_URL=\"$(node -e 'const url=new URL(process.env.DATABASE_URL);url.searchParams.set(\"options\",\"-c search_path=liv_github_preview,public\");process.stdout.write(url.toString())')\" && node -e 'const {Client}=require(\"pg\"); const c=new Client({connectionString:process.env.DATABASE_URL}); c.connect().then(()=>c.query(\"CREATE SCHEMA IF NOT EXISTS liv_github_preview\")).then(()=>c.end()).catch(e=>{console.error(e.message);process.exit(1)})' && BASE_URL=\"https://$REPLIT_DEV_DOMAIN\" npm run migrate && env -u ADMIN_RESET_PASSWORD BASE_URL=\"https://$REPLIT_DEV_DOMAIN\" PG_SCHEMA=liv_github_preview PORT=5000 npm start"
+waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["sh", "-c", "export DATABASE_URL=\"$(node -e 'const url=new URL(process.env.DATABASE_URL);url.searchParams.set(\"options\",\"-c search_path=liv_github_preview,public\");process.stdout.write(url.toString())')\" && node -e 'const {Client}=require(\"pg\"); const c=new Client({connectionString:process.env.DATABASE_URL}); c.connect().then(()=>c.query(\"CREATE SCHEMA IF NOT EXISTS liv_github_preview\")).then(()=>c.end()).catch(e=>{console.error(e.message);process.exit(1)})' && BASE_URL=\"https://us-project.replit.app\" npm run migrate && BASE_URL=\"https://us-project.replit.app\" PG_SCHEMA=liv_github_preview PORT=5000 npm start"]
