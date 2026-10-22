@@ -22,6 +22,10 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false,
 }));
+// Asset version: a short hash of the stylesheet and scripts, added to their links so a new release is never hidden by the 7-day cache.
+const assetV = require('crypto').createHash('sha256').update(['style.css', 'app.js', 'provider-link.js']
+  .map((f) => { try { return require('fs').readFileSync(path.join(__dirname, '..', 'public', f)); } catch { return ''; } }).join('')).digest('hex').slice(0, 10);
+app.locals.assetV = assetV;
 app.use('/static', express.static(path.join(__dirname, '..', 'public'), { maxAge: '7d' }));
 // Stripe needs the exact raw body to verify its signature, so this route is registered before the JSON parser.
 app.post('/api/webhooks/stripe', express.raw({ type: '*/*', limit: '1mb' }), require('./routes/stripe-webhook'));
