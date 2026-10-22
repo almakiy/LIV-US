@@ -22,4 +22,9 @@ test('benefit lines: "+" marks a benefit available now', () => {
   assert.deepStrictEqual(M.parseBenefits('+ Card\nLibrary\n\n'), [{ text: 'Card', available: true }, { text: 'Library', available: false }]);
   assert.strictEqual(M.benefitsText(M.parseBenefits('+ Card\nLibrary')), '+ Card\nLibrary');
 });
-test('the proposed plans carry no price or period', () => assert.ok(M.PROPOSED.every((p) => !('price' in p) && !('period' in p))));
+test('proposed starting prices are whole dollars for 12 months, with member above student and plus above member', () => {
+  const by = Object.fromEntries(M.PROPOSED.map((p) => [p.code, p]));
+  assert.ok(M.PROPOSED.every((p) => p.period_months === 12 && p.price_cents % 100 === 0));
+  assert.ok(by.student.price_cents < by.corporate.price_cents && by.corporate.price_cents < by.member.price_cents && by.member.price_cents < by.member_plus.price_cents);
+});
+test('the proposed terms cannot be approved until counsel confirms refunds', () => assert.match(M.PROPOSED_TERMS, /\[TO BE CONFIRMED/));

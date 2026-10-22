@@ -1878,7 +1878,11 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await mp.goto(`${BASE}/signup/verify?t=${vt}`);
     await mp.goto(BASE + '/login'); await mp.fill('input[name=email]', memEmail); await mp.fill('input[name=password]', PW); await mp.click('button:has-text("Log in")'); await mp.waitForLoadState();
     const uid = psql(`SELECT id FROM users WHERE email = '${memEmail}'`);
-    ok(psql(`SELECT count(*) FROM membership_plans`) === '4' && psql(`SELECT count(*) FROM membership_plan_versions WHERE status = 'draft' AND price_cents IS NULL AND period_months IS NULL`) === '4', 'the four proposed plans exist as drafts with no price or period');
+    ok(psql(`SELECT count(*) FROM membership_plans`) === '4' && psql(`SELECT string_agg(p.code || ':' || v.price_cents || '/' || v.period_months, ',' ORDER BY p.sort) FROM membership_plan_versions v JOIN membership_plans p ON p.id = v.plan_id WHERE v.status = 'draft'`) === 'member:19500/12,member_plus:34500/12,student:4900/12,corporate:16500/12', 'the four proposed plans exist as drafts carrying the proposed starting prices');
+    ok(psql(`SELECT count(*) FROM membership_plan_versions WHERE status <> 'draft'`) === '0', 'no proposed price is approved or on sale by itself');
+    await adm.goto(BASE + '/admin/memberships');
+    await adm.locator('#plan-member_plus button:has-text("Approve these terms")').click();
+    ok(await see(adm, 'text=Replace every [TO BE CONFIRMED'), 'proposed terms with the refund line still open cannot be approved');
     ok((await (await anon.request.get(BASE + '/membership')).text()).includes('Plans are being prepared'), 'the public page shows no plan until terms are approved');
     await mp.goto(BASE + '/me/membership');
     ok(await see(mp, 'text=Membership plans are not available yet'), 'the member sees that no plan can be bought yet');

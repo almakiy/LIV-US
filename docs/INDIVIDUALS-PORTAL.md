@@ -48,6 +48,20 @@ A credential links to one account at a time (database-enforced). Linking never c
 - I-5. Student status check method before the Student Membership can be sold.
 - I-6. Card payment: `STRIPE_SECRET_KEY` and the webhook secret; until then LIV records payments by hand.
 
+## Proposed starting prices (owner request, October 22, 2026)
+Written into the draft terms only. The main account approves them in Admin > Memberships; until then nothing is sold. The refund line in the draft terms stays open for counsel, so the terms cannot be approved as they stand.
+
+| Plan | Proposed price | Period | Basis |
+|---|---|---|---|
+| LIV Member | $195 | 12 months | Within the range of established US professional bodies (ASQ Professional about $185, ASSP member about $180 to $205), above PMI (about $139 to $165) and below SHRM ($299). A round figure, no "$x.99", to read as a professional institution rather than a retail offer. |
+| LIV Member Plus | $345 | 12 months | About 1.75 times the core plan; sold only once its extra benefits exist. |
+| Student Membership | $49 | 12 months | Above the lowest student rates (ASSP about $15, ASQ about $31, PMI about $32), below SHRM ($75); sold only once a student status check exists. |
+| Corporate Membership Package | $165 per named seat | 12 months | About 15% below the core plan; minimum 5 seats; sold with seat management (M4). |
+
+Reference figures come from public web sources gathered on October 22, 2026; several are third-party summaries and should be checked on each body's site before the prices are published. They are a market reference only: LIV does not copy another body's prices or products.
+
+Before approval: compare each price with the cost of the benefits actually delivered (support, library, sessions), and confirm the refund and renewal terms with counsel.
+
 ## Progress
 - October 22, 2026: M0 mapping written.
 - October 22, 2026: **M1 done.** Individual accounts (role `individual`; sign-up at `/signup` behind `INDIVIDUAL_ACCOUNTS`, off by default; email confirmation; password reset by email for individual accounts only; same answer whether or not an address has an account). Safe credential link (`credential_claims`, one active link per credential enforced by the database; email match on confirmed addresses, extra addresses confirmed by link; otherwise a staff-reviewed request with a recorded reason at Admin > Individuals). Dashboard `/me`, credentials with verification link and PDF, profile with a separate dated marketing choice, support linked to the account, data export (JSON) and closure request. Individuals cannot reach the provider portal or admin; providers cannot reach `/me`.

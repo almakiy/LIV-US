@@ -11,15 +11,17 @@ const { isMainAccount } = require('./exceptions');
 
 class MembershipError extends Error { constructor(msg, status = 400) { super(msg); this.status = status; } }
 
-// Proposed plans from the owner's scope document (October 22, 2026). Names are proposals; no price, period or discount is set.
+// Proposed plans from the owner's scope document (October 22, 2026). Starting prices proposed on the owner's request of the same day
+// (docs/INDIVIDUALS-PORTAL.md, "Proposed starting prices"): they are written into the draft terms only; the main account still
+// approves them, and nothing is sold before that. Group price is per named seat.
 const PROPOSED = [
-  { code: 'member', name: 'LIV Member', audience: 'The core paid membership for individuals.', kind: 'individual', sort: 1,
+  { code: 'member', name: 'LIV Member', audience: 'The core paid membership for individuals.', kind: 'individual', sort: 1, price_cents: 19500, period_months: 12,
     benefits: ['Digital membership card with a verification link', 'Selected library resources', 'Member prices on eligible products', 'Included community sessions'] },
-  { code: 'member_plus', name: 'LIV Member Plus', audience: 'A wider plan, offered only once its extra benefits exist.', kind: 'individual', sort: 2,
+  { code: 'member_plus', name: 'LIV Member Plus', audience: 'A wider plan, offered only once its extra benefits exist.', kind: 'individual', sort: 2, price_cents: 34500, period_months: 12,
     benefits: ['Everything in LIV Member', 'Wider library and tools', 'Additional defined services'] },
-  { code: 'student', name: 'Student Membership', audience: 'For students, after their student status is checked.', kind: 'individual', sort: 3, student: true,
+  { code: 'student', name: 'Student Membership', audience: 'For students, after their student status is checked.', kind: 'individual', sort: 3, student: true, price_cents: 4900, period_months: 12,
     benefits: ['Membership at a student price after a student status check'] },
-  { code: 'corporate', name: 'Corporate Membership Package', audience: 'Named memberships bought by an organization for its people.', kind: 'group', sort: 4,
+  { code: 'corporate', name: 'Corporate Membership Package', audience: 'Named memberships bought by an organization for its people. Price per named seat; minimum 5 seats.', kind: 'group', sort: 4, price_cents: 16500, period_months: 12,
     benefits: ['Named member seats', 'Invitation and seat management', 'Group invoicing'] },
 ];
 
@@ -38,6 +40,27 @@ async function seedProposed() {
   }
   return PROPOSED.length;
 }
+
+/** Writes the proposed starting price and period into drafts that have none yet. Approved terms and edited drafts are never touched. */
+async function applyProposedPrices() {
+  let n = 0;
+  for (const p of PROPOSED) {
+    const r = await q(`UPDATE membership_plan_versions v SET price_cents = $2, period_months = $3, terms = CASE WHEN v.terms = '' THEN $4 ELSE v.terms END
+      FROM membership_plans pl WHERE pl.id = v.plan_id AND pl.code = $1 AND v.status = 'draft' AND v.price_cents IS NULL AND v.period_months IS NULL
+      AND v.version = (SELECT max(version) FROM membership_plan_versions WHERE plan_id = pl.id)`, [p.code, p.price_cents, p.period_months, PROPOSED_TERMS]);
+    n += r.rowCount;
+  }
+  return n;
+}
+// Draft terms. The refund line stays open until counsel confirms it, so these terms are not ready to approve as they stand.
+const PROPOSED_TERMS = [
+  'Membership runs for 12 months from the day payment is confirmed.',
+  'It does not renew automatically. LIV reminds you 30 days before the end, and you choose whether to renew.',
+  'Membership is not a professional credential, does not certify competence, and gives no advantage in eligibility, assessment or any certification decision.',
+  'Your LIV credentials stay valid and verifiable whether or not you are a member.',
+  'Prices are in US dollars. Benefits are those listed when you join; a later change does not reduce a membership already paid.',
+  'Refunds: [TO BE CONFIRMED BY COUNSEL BEFORE SALE].',
+].join('\n');
 
 /** Why a plan cannot be bought right now. An empty list means it can. */
 function saleBlockers(plan, version, { salesOpen = cfg.membershipSales } = {}) {
@@ -91,6 +114,7 @@ async function approve(user, planId) {
     if (!v || v.status !== 'draft') throw new MembershipError('There is no draft to approve. Edit the plan to create a new draft.');
     if (v.price_cents == null || !v.period_months) throw new MembershipError('Set a price and a period before approving.');
     if (!v.terms.trim()) throw new MembershipError('Write the terms shown to the buyer before approving.');
+    if (/\[TO BE CONFIRMED[^\]]*\]/i.test(v.terms)) throw new MembershipError('Replace every [TO BE CONFIRMED ...] line in the terms before approving.');
     if (!(v.benefits || []).length) throw new MembershipError('List at least one benefit before approving.');
     await c.query(`UPDATE membership_plan_versions SET status = 'superseded' WHERE plan_id = $1 AND status = 'approved'`, [planId]);
     await c.query(`UPDATE membership_plan_versions SET status = 'approved', approved_by = $1, approved_at = now() WHERE id = $2`, [user.id, v.id]);
@@ -255,4 +279,4 @@ async function stats() {
   return rows;
 }
 
-module.exports = { MembershipError, PROPOSED, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };
+module.exports = { MembershipError, PROPOSED, PROPOSED_TERMS, applyProposedPrices, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };
