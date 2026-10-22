@@ -180,3 +180,24 @@ pre{background:#0F1B2D;color:#DDE7F3;padding:16px;border-radius:8px;overflow:aut
 @media (prefers-color-scheme: dark){.lvl-bronze{background:#3a2a1c;color:#e6bf98;border-color:#6b4a2a}.lvl-silver{background:#2b3138;color:#cfd6dd;border-color:#566370}.lvl-gold{background:#3b3216;color:#f0d77b;border-color:#7a6420}}
 /* Links inside running text are underlined, so colour is not the only cue (WCAG 1.4.1). */
 p a:not(.btn),li a:not(.btn),dd a:not(.btn),.small a:not(.btn),.muted a:not(.btn){text-decoration:underline;text-underline-offset:3px}
+
+/* Sign-in pages: form on the left, what the portal is for on the right. */
+.auth-body{background:#fff}
+.auth{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.auth-left{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#fff}
+.auth-left .auth-inner{width:100%;max-width:440px}
+.auth-brand{display:inline-block;margin-bottom:36px}.auth-brand img{max-width:100%;height:auto;display:block}
+.auth-left h1{font-size:2rem;margin-bottom:.35em}
+.auth-left form{margin-top:1.5rem}
+.auth-help{margin-top:1.75rem;border-top:1px solid var(--line);padding-top:1.25rem}
+.auth-right{position:relative;display:flex;align-items:center;justify-content:center;padding:48px 32px;color:#fff;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 100%);overflow:hidden}
+.auth-right::before{content:"";position:absolute;right:-120px;bottom:-120px;width:520px;height:520px;background:url(/static/brand/liv-seal-mono-white.svg) center/contain no-repeat;opacity:.07;pointer-events:none}
+.auth-right .auth-inner{position:relative;width:100%;max-width:460px}
+.auth-right h2{color:#fff;font-size:1.35rem;margin:0 0 .75rem}
+.auth-list{list-style:none;margin:0 0 2rem;padding:0}
+.auth-list li{position:relative;padding:6px 0 6px 32px}
+.auth-list li::before{content:"\2713";position:absolute;left:0;top:6px;color:var(--gold-2);font-weight:700}
+.auth-verify{margin-top:1rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,.25)}
+.auth-right a{color:var(--gold-2);text-decoration:underline}
+.auth-legal{color:#D6DCE6;margin-top:1.5rem}
+@media (max-width:900px){.auth{grid-template-columns:1fr}.auth-left{padding:32px 20px}.auth-right{padding:36px 20px}}

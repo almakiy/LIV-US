@@ -1,0 +1,27 @@
+      <p class="small muted auth-help">Need help signing in? <a href="/contact">Contact <%= brand %></a>.<% if (publicApply) { %> New training provider? <a href="/apply">Apply to become an Authorized Training Provider</a>.<% } else { %> New training provider? <a href="/partners">Learn about the Authorized Training Provider program</a>.<% } %></p>
+    </div>
+  </main>
+  <aside class="auth-right" aria-label="What you can do after signing in">
+    <div class="auth-inner">
+      <h2>For Authorized Training Providers</h2>
+      <ul class="auth-list">
+        <li>Manage your organization profile and authorized scope</li>
+        <li>Report completions by CSV, Excel or the REST API</li>
+        <li>Track your application, titles, trainers and level</li>
+        <li>Download records and verification links</li>
+        <li>See invoices and billing</li>
+      </ul>
+      <h2>For <%= brand %> staff</h2>
+      <ul class="auth-list">
+        <li>Review applications and requests</li>
+        <li>Maintain the public register of providers</li>
+        <li>Monitor issuance, audit cases and records</li>
+        <li>Oversee verification and compliance</li>
+      </ul>
+      <p class="auth-verify">Verifying a credential? <a href="/verify">Go to the verification portal</a>.</p>
+      <p class="auth-legal small"><%= brandDescriptor %></p>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

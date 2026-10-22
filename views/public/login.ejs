@@ -1,14 +1,12 @@
-<%- include('../partials/head') %>
-<div class="container form-narrow">
-  <h1>Provider &amp; admin login</h1>
-  <%- include('../partials/flash') %>
-  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
-  <form class="card" method="post" action="/login">
-    <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
-    <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" name="email" value="<%= email %>" required autofocus></div>
-    <div class="field"><label for="f-password">Password</label><input id="f-password" type="password" name="password" required></div>
-    <button class="btn lg" style="width:100%">Log in</button>
-  </form>
-  <% if (publicApply) { %><p class="small muted center">New training provider? <a href="/apply">Apply to become an Authorized Training Provider</a></p><% } %>
-</div>
-<%- include('../partials/foot') %>
+<%- include('../partials/auth-top') %>
+      <h1>Sign in</h1>
+      <p class="muted">Authorized Training Providers and <%= brand %> staff.</p>
+      <%- include('../partials/flash') %>
+      <% if (error) { %><div class="alert error" role="alert"><%= error %></div><% } %>
+      <form method="post" action="/login">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+        <div class="field"><label for="f-email">Email address</label><input id="f-email" type="email" name="email" value="<%= email %>" autocomplete="username" required autofocus></div>
+        <div class="field"><label for="f-password">Password</label><input id="f-password" type="password" name="password" autocomplete="current-password" required></div>
+        <button class="btn lg" style="width:100%">Log in</button>
+      </form>
+<%- include('../partials/auth-bottom') %>
