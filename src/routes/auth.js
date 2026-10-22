@@ -21,6 +21,7 @@ async function startSession(req, res, u, next) {
   req.session.regenerate(async (err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Could not start session.' });
     req.session.userId = u.id;
+    if (u.role === 'super_admin') await clearPreview(u.id, 'sign-in after an unfinished session').catch((e) => console.error('[preview] reset failed:', e.message));
     await q('UPDATE users SET last_login_at = now() WHERE id = $1', [u.id]);
     await audit({ user: u, platformId: u.platform_id, action: 'user.login', target: u.email }).catch(() => {});
     res.redirect(next || homeFor(u));
@@ -91,6 +92,15 @@ r.post('/admin-exit', (req, res) => {
   res.redirect('/');
 });
 
-r.post('/logout', (req, res) => req.session.destroy(() => { res.clearCookie('liv.sid'); res.redirect('/'); }));
+// Signing out of the main account clears the data entered in the preview accounts (src/lib/preview.js).
+const clearPreview = async (userId, reason) => {
+  if (!userId || !(await require('../lib/exceptions').isMainAccount({ id: userId }))) return;
+  const P = require('../lib/preview');
+  if (await P.hasData()) await P.resetData({ id: userId }, reason);
+};
+r.post('/logout', wrap(async (req, res) => {
+  await clearPreview(req.session.userId, 'sign-out').catch((e) => console.error('[preview] reset failed:', e.message));
+  req.session.destroy(() => { res.clearCookie('liv.sid'); res.redirect('/'); });
+}));
 
 module.exports = r;

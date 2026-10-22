@@ -1,0 +1,52 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>My membership</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <p class="muted small">Membership is optional. It is not a professional credential, and your credentials stay valid and verifiable with or without it.</p>
+  <% const a = cur.active; const t = a ? a.terms : null; %>
+  <% if (a) { %>
+  <div class="grid g2">
+    <div class="member-card" id="card" aria-label="Membership card">
+      <div class="mc-top"><img src="/static/brand/liv-seal-mono-white.svg" alt="" width="40" height="40"><span>LIV Membership</span></div>
+      <div class="mc-name"><%= u.full_name %></div>
+      <div class="mc-plan"><%= t.plan_name %></div>
+      <div class="mc-meta"><span>Member <%= a.member_number %></span><span><%= usDate(a.starts_on) %> to <%= usDate(a.ends_on) %></span></div>
+      <div class="mc-foot">Membership only. Not a professional qualification or an accreditation.</div>
+    </div>
+    <div class="card">
+      <h2 class="h3">Status: <%= a.status === 'active' ? 'Active' : a.status %><%= a.is_preview ? ' (preview)' : '' %></h2>
+      <p class="small">Ends on <strong><%= usDate(a.ends_on) %></strong>. <%= a.renewal_declined_at ? 'You told us you will not renew; the membership stays active until then.' : 'Nothing renews automatically: you can renew from this page before the end date.' %></p>
+      <form method="post" action="/me/membership/<%= a.id %>/renewal"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="declined" value="<%= a.renewal_declined_at ? 'no' : 'yes' %>">
+        <button class="btn sm secondary"><%= a.renewal_declined_at ? 'I may renew after all' : 'I will not renew' %></button></form>
+      <h3 class="h3 mt">Share and verify</h3>
+      <p class="small">Verification link: <a href="<%= verifyUrl %>"><%= verifyUrl %></a></p>
+      <img src="<%= qr %>" alt="QR code for the membership verification link" width="120" height="120">
+      <p class="small"><a href="https://www.linkedin.com/sharing/share-offsite/?url=<%= encodeURIComponent(verifyUrl) %>" rel="noopener" target="_blank">Share on LinkedIn</a> — suggested text: "I'm a member of the LIV professional community."</p>
+      <form method="post" action="/me/membership/card" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="check"><input type="checkbox" name="show_name" value="yes" <%= cardShowName ? 'checked' : '' %>> Show my name on the verification page (otherwise only the membership status shows)</label>
+        <button class="btn sm">Save</button></form>
+    </div>
+  </div>
+  <div class="card mt"><h2 class="h3">Your benefits (as in the terms you took)</h2><ul class="small">
+    <% (t.benefits || []).forEach(b => { %><li><%= b.text %><%= b.available ? '' : ' (not available yet)' %></li><% }) %></ul>
+    <% if (t.terms) { %><details><summary class="small">Terms of this membership</summary><p class="small" style="white-space:pre-wrap"><%= t.terms %></p></details><% } %></div>
+  <% } else { %><div class="card"><p>You do not have an active membership.</p></div><% } %>
+
+  <% if (cur.pending) { %><div class="alert info mt" role="status">A <%= cur.pending.terms.plan_name %> membership is waiting for payment (invoice <%= cur.pending.invoice_number %>).
+    <a href="/me/billing/<%= cur.pending.invoice_id %>">Open the invoice</a>
+    <form method="post" action="/me/membership/<%= cur.pending.id %>/cancel-pending" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Cancel it</button></form></div><% } %>
+
+  <h2 class="mt"><%= a ? 'Renew or change plan' : 'Membership plans' %></h2>
+  <% if (!plans.length) { %><p class="muted">Membership plans are not available yet. Your account and credentials work without a membership.</p>
+  <% } else { %><div class="grid g3"><% plans.forEach(p => { const v = p.approved; %>
+    <div class="card"><h3 class="h3"><%= p.name %></h3><p class="small muted"><%= p.audience %></p>
+      <p><strong><%= v.price_cents == null ? 'Price not set' : '$' + (v.price_cents / 100).toFixed(2) %></strong><%= v.period_months ? ' for ' + v.period_months + ' month(s)' : '' %></p>
+      <ul class="small"><% (v.benefits || []).forEach(b => { %><li><%= b.text %><%= b.available ? '' : ' (not available yet)' %></li><% }) %></ul>
+      <% if (p.blockers.length) { %><p class="small muted">Not available to buy: <%= p.blockers.join(' ') %></p>
+      <% } else { %><form method="post" action="/me/membership/join/<%= p.code %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm"><%= a ? 'Renew with this plan' : 'Take this plan' %></button></form><% } %></div><% }) %></div><% } %>
+
+  <% const past = cur.history.filter(m => m !== a && m !== cur.pending); if (past.length) { %><h2 class="mt">History</h2><div class="table-wrap" tabindex="0"><table><tr><th>Plan</th><th>Status</th><th>From</th><th>To</th><th>Source</th></tr>
+    <% past.forEach(m => { %><tr><td><%= m.terms.plan_name %></td><td><%= m.status %></td><td><%= m.starts_on ? usDate(m.starts_on) : '' %></td><td><%= m.ends_on ? usDate(m.ends_on) : '' %></td><td><%= m.source %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

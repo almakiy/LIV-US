@@ -1,0 +1,17 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Invoice <%= inv.number %></h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <% if (paidReturn && inv.status !== 'paid') { %><div class="alert info" role="status">Thank you. The payment is being confirmed; this page updates once the payment provider confirms it.</div><% } %>
+  <div class="card" style="max-width:720px">
+    <p>Status: <strong><%= inv.status %></strong><% if (inv.due_date) { %> · Due <%= usDate(inv.due_date) %><% } %></p>
+    <div class="table-wrap" tabindex="0"><table><tr><th>Item</th><th>Amount</th></tr>
+      <% lines.forEach(l => { %><tr><td><%= l.description %></td><td><%= money(Number(l.amount_cents)) %></td></tr><% }) %>
+      <tr><th>Total</th><th><%= money(Number(inv.total_cents)) %></th></tr><tr><td>Paid</td><td><%= money(Number(inv.amount_paid_cents)) %></td></tr></table></div>
+    <p class="mt"><a class="btn sm secondary" href="/me/billing/<%= inv.id %>/pdf">Download PDF</a>
+    <% if (inv.status === 'open') { %><% if (cardPay) { %><form method="post" action="/me/billing/<%= inv.id %>/pay" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Pay by card</button></form>
+      <% } else { %><span class="small muted">Card payment is not available yet. <a href="/me/support">Ask LIV support</a> for payment instructions.</span><% } %><% } %></p>
+  </div>
+</div>
+<%- include('../partials/foot') %>

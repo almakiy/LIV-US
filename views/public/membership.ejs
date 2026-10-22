@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow"><%= brand %> membership</span>
+  <h1>Membership and benefits</h1>
+  <p>Membership is optional. It is not a professional credential, it is never required to apply for an assessment, and it never affects eligibility, results or a credential's validity.</p>
+</div></section>
+<section class="section white"><div class="container">
+  <% if (preview) { %><div class="alert warn" role="status">Admin preview: draft plans are shown as they would appear. Nothing here is on sale.</div><% } %>
+  <% if (!plans.length) { %><div class="card" style="max-width:720px"><h2 class="h3">Plans are being prepared</h2><p class="small muted">Membership plans, their benefits and prices will be published here once they are approved. A free account already lets you keep and share your credentials.</p></div>
+  <% } else { %><div class="grid g3"><% plans.forEach(p => { const v = p.shown || p.approved; %>
+    <div class="card"><h2 class="h3"><%= p.name %></h2><p class="small muted"><%= p.audience %></p>
+      <p><strong><%= v.price_cents == null ? 'Price to be announced' : '$' + (v.price_cents / 100).toFixed(2) %></strong><%= v.period_months ? ' for ' + v.period_months + ' month(s)' : '' %></p>
+      <ul class="small"><% (v.benefits || []).forEach(b => { %><li><%= b.text %><%= b.available ? '' : ' (planned)' %></li><% }) %></ul>
+      <p class="small muted"><%= p.blockers.length ? 'Not available to buy yet.' : 'Available from your account.' %></p></div><% }) %></div><% } %>
+  <h2 class="mt">What membership never does</h2>
+  <ul><li>It does not certify competence or grant a professional title.</li><li>It does not give an advantage in eligibility, assessment or any certification decision.</li><li>Your credentials stay valid and verifiable when a membership ends.</li></ul>
+  <p><a href="/membership/verify">Verify a membership card</a> · <a href="/individuals">For individuals</a></p>
+</div></section>
+<%- include('../partials/foot') %>

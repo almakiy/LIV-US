@@ -22,6 +22,7 @@ jobs:
       PUBLIC_FEES: 'true'    # e2e covers the public fee schedule
       EMAIL_DRIVER: 'off'    # e2e drives the email queue itself with its own test drivers
       INDIVIDUAL_ACCOUNTS: 'true'   # e2e covers individual sign-up and credential claims
+      MEMBERSHIP_SALES: 'true'      # e2e covers membership purchase (test plans and prices only)
       STRIPE_WEBHOOK_SECRET: whsec_ci_test   # e2e covers signed webhook delivery (no Stripe account involved)
     steps:
       - uses: actions/checkout@v4

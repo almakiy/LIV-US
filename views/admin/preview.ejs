@@ -1,6 +1,8 @@
 <%- include('../partials/app-start') %>
 <h1>Preview accounts</h1>
 <p class="muted">Open the platform as a training provider or as an individual to try new features before they reach real users, and record periodic checks. Preview records never appear in the public register; they verify as "preview record", never as a credential, and have no public PDF. Preview activity opens no audit case.</p>
+<div class="alert info" role="status"><strong>Test data only.</strong> Everything entered in the preview accounts (records, applications, requests, invoices, memberships, messages) is cleared when the main account signs out, or at its next sign-in if a session ended without signing out. Use this for quality checks and for live training sessions. The audit log keeps a record of the actions, because it cannot be edited.
+  <% if (isMain) { %><form method="post" action="/admin/preview/reset" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Clear preview data now<%= hasData ? '' : ' (nothing to clear)' %></button></form><% } %></div>
 <% if (!isMain) { %><div class="alert info">You can run and record checks. Only the main account creates or opens preview accounts.</div><% } %>
 
 <div class="grid g2 mt">

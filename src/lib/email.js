@@ -57,6 +57,10 @@ const TEMPLATES = {
     'Use the link below to choose a new password. It works for one hour and only once.',
     'If you did not ask for this, ignore this message: your password stays the same.'],
   { label: 'Choose a new password', url: `${cfg.baseUrl}/password/reset?t=${encodeURIComponent(d.token)}` }) }),
+  membership_reminder: (d) => ({ subject: 'Your LIV membership ends in 30 days', ...layout('Your membership ends soon', [
+    `Your ${clip(d.plan, 120)} membership ends on ${clip(d.ends, 10)}. You can renew from your account; nothing renews automatically.`,
+    'Your credentials stay valid and verifiable whether or not you renew.'],
+  { label: 'Open my membership', url: `${cfg.baseUrl}/me/membership` }) }),
   claim_outcome: (d) => ({ subject: `Your request for credential ${clip(d.cert, 20)}`, ...layout('An update on your request', [
     `LIV reviewed your request to link credential ${clip(d.cert, 20)} to your account. Outcome: ${d.approved ? 'approved' : 'not approved'}.`, clip(d.reason, 1500)],
   { label: 'Open your credentials', url: `${cfg.baseUrl}/me/credentials` }) }),

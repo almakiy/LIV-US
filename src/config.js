@@ -21,6 +21,8 @@ module.exports = {
   publicApply: process.env.PUBLIC_APPLY === 'true',
   // Individuals portal: public sign-up for individual accounts stays closed until the owner turns it on (terms and privacy notice from counsel).
   individualAccounts: process.env.INDIVIDUAL_ACCOUNTS === 'true',
+  // Membership sales: closed until the owner approves plans, prices and terms. A plan also has to be on sale with an approved version.
+  membershipSales: process.env.MEMBERSHIP_SALES === 'true',
   // Excel (.xlsx) uploads are enabled for testing; set ALLOW_XLSX=false to accept CSV only.
   allowXlsx: process.env.ALLOW_XLSX !== 'false',
   // Quality records: allow one person to author and approve a document / verify their own action while the team is small (recorded on the record). Set false when staff grows.

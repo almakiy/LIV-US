@@ -154,6 +154,8 @@ async function exportData(userId) {
     extra_emails: await one('SELECT email, verified_at, created_at FROM individual_emails WHERE user_id = $1 ORDER BY created_at', [userId]),
     linked_credentials: (await linked(userId)).map((c) => ({ cert_number: c.cert_number, course_name: c.course_name, provider: c.company_name, issue_date: c.issue_date, status: c.status, linked_at: c.claimed_at, method: c.method })),
     claim_requests: await one('SELECT cert_number, statement, status, decision_reason, created_at, decided_at FROM credential_claim_requests WHERE user_id = $1 ORDER BY created_at', [userId]),
+    memberships: await one(`SELECT member_number, status, source, terms->>'plan_name' AS plan, starts_on, ends_on, renewal_declined_at, created_at FROM memberships WHERE user_id = $1 AND status <> 'void' ORDER BY created_at`, [userId]),
+    invoices: await one(`SELECT number, status, issue_date, total_cents, amount_paid_cents, currency FROM invoices WHERE user_id = $1 AND status <> 'draft' ORDER BY created_at`, [userId]),
     support_messages: await one('SELECT topic, message, created_at FROM contact_messages WHERE user_id = $1 ORDER BY created_at', [userId]),
   };
 }

@@ -692,6 +692,8 @@ CREATE INDEX IF NOT EXISTS idx_partner_app_events ON partner_application_events(
 CREATE OR REPLACE FUNCTION partner_app_locked() RETURNS trigger AS $f$
 BEGIN
   IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN RETURN OLD; END IF;
+  -- The preview reset (src/lib/preview.js) deletes only preview-account rows, inside a transaction that sets this flag.
+  IF TG_OP = 'DELETE' AND current_setting('liv.preview_reset', true) = 'on' THEN RETURN OLD; END IF;
   IF TG_TABLE_NAME = 'partner_application_evidence' THEN
     IF TG_OP = 'DELETE' AND OLD.version IS NULL THEN RETURN OLD; END IF;
     IF TG_OP = 'UPDATE' AND OLD.version IS NULL AND NEW.version IS NOT NULL
@@ -1240,4 +1242,86 @@ CREATE TABLE IF NOT EXISTS preview_checks (
   checked_by UUID REFERENCES users(id) ON DELETE SET NULL,
   checked_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Individuals portal M2 (October 22, 2026): membership plans with locked, versioned terms; memberships; invoices for individuals.
+-- A membership is never a credential and never affects eligibility, assessment or a credential's validity.
+ALTER TABLE invoices ALTER COLUMN platform_id DROP NOT NULL;
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id);
+ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_owner_check;
+ALTER TABLE invoices ADD CONSTRAINT invoices_owner_check CHECK ((platform_id IS NOT NULL) <> (user_id IS NOT NULL));
+CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id, created_at DESC) WHERE user_id IS NOT NULL;
+CREATE TABLE IF NOT EXISTS membership_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  audience VARCHAR(300) NOT NULL DEFAULT '',
+  kind VARCHAR(12) NOT NULL DEFAULT 'individual' CHECK (kind IN ('individual','group')),
+  status VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','on_sale','withdrawn')),
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS membership_plan_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_id UUID NOT NULL REFERENCES membership_plans(id) ON DELETE CASCADE,
+  version INT NOT NULL,
+  price_cents INT CHECK (price_cents IS NULL OR price_cents >= 0),
+  currency CHAR(3) NOT NULL DEFAULT 'USD',
+  period_months INT CHECK (period_months IS NULL OR period_months BETWEEN 1 AND 60),
+  benefits JSONB NOT NULL DEFAULT '[]',
+  terms TEXT NOT NULL DEFAULT '',
+  requires_student_check BOOLEAN NOT NULL DEFAULT false,
+  status VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','approved','superseded')),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (plan_id, version)
+);
+-- An approved version is fixed: only its status may move to superseded.
+CREATE OR REPLACE FUNCTION membership_version_locked() RETURNS trigger AS $f$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.status <> 'draft' AND pg_trigger_depth() = 1 THEN RAISE EXCEPTION 'An approved plan version cannot be deleted'; END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.status <> 'draft' AND (NEW.price_cents IS DISTINCT FROM OLD.price_cents OR NEW.period_months IS DISTINCT FROM OLD.period_months
+     OR NEW.benefits IS DISTINCT FROM OLD.benefits OR NEW.terms IS DISTINCT FROM OLD.terms OR NEW.currency IS DISTINCT FROM OLD.currency
+     OR NEW.requires_student_check IS DISTINCT FROM OLD.requires_student_check) THEN
+    RAISE EXCEPTION 'An approved plan version cannot be changed; create a new version';
+  END IF;
+  RETURN NEW;
+END $f$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS membership_version_locked ON membership_plan_versions;
+CREATE TRIGGER membership_version_locked BEFORE UPDATE OR DELETE ON membership_plan_versions FOR EACH ROW EXECUTE FUNCTION membership_version_locked();
+CREATE SEQUENCE IF NOT EXISTS member_number_seq START 1;
+CREATE TABLE IF NOT EXISTS memberships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_version_id UUID NOT NULL REFERENCES membership_plan_versions(id),
+  member_number VARCHAR(16) NOT NULL,
+  source VARCHAR(10) NOT NULL CHECK (source IN ('paid','gift','trial','grant')),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending_payment','active','past_due','expired','suspended','void')),
+  terms JSONB NOT NULL,                      -- plan name, price, period, benefits and terms as shown when the membership was taken
+  price_cents INT NOT NULL DEFAULT 0,
+  invoice_id UUID UNIQUE REFERENCES invoices(id),
+  renewed_from UUID REFERENCES memberships(id),
+  starts_on DATE,
+  ends_on DATE,
+  renewal_declined_at TIMESTAMPTZ,           -- the member said they will not renew; the paid period is unchanged
+  suspended_reason TEXT,
+  is_preview BOOLEAN NOT NULL DEFAULT false,
+  activated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_memberships_user ON memberships(user_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_membership_one_pending ON memberships(user_id) WHERE status = 'pending_payment';
+CREATE TABLE IF NOT EXISTS membership_events (
+  id BIGSERIAL PRIMARY KEY,
+  membership_id UUID NOT NULL REFERENCES memberships(id) ON DELETE CASCADE,
+  event VARCHAR(30) NOT NULL,
+  actor_label VARCHAR(255),
+  note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS card_show_name BOOLEAN NOT NULL DEFAULT false;
 `;

@@ -1,0 +1,16 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow"><%= brand %> for individuals</span>
+  <h1>Your <%= brand %> credentials, in one place</h1>
+  <p>Whichever training provider reported your training, a free <%= brand %> account lets you keep your credentials together, download them and share their verification links.</p>
+  <div class="actions"><% if (individualAccounts) { %><a class="btn gold lg" href="/signup">Create a free account</a><% } %><a class="btn ghost lg" href="/verify">Verify a credential</a><a class="btn ghost lg" href="/membership">Membership and benefits</a></div>
+</div></section>
+<section class="section white"><div class="container" style="max-width:900px">
+  <div class="grid g3">
+    <div class="card"><h2 class="h3">Free account</h2><p class="small muted">Find the credentials recorded under your email address, add them to your account, download them and share their links. No membership is needed for any of this.</p></div>
+    <div class="card"><h2 class="h3">Safe by design</h2><p class="small muted">A credential is added only when its recorded email is one you have confirmed, or after LIV checks your request. A number or a name alone is never enough.</p></div>
+    <div class="card"><h2 class="h3">Optional membership</h2><p class="small muted">Membership adds benefits such as resources and community sessions once they are available. It is not a qualification, and it never affects a credential or an assessment.</p></div>
+  </div>
+  <% if (!individualAccounts) { %><p class="muted mt">Individual accounts open soon. You can already <a href="/verify">verify any <%= brand %> credential</a> without an account.</p><% } %>
+</div></section>
+<%- include('../partials/foot') %>

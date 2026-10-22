@@ -16,7 +16,7 @@ const mainOnly = wrap(async (req, res, next) => {
 
 r.get('/preview', wrap(async (req, res) => {
   res.render('admin/preview', { title: 'Preview accounts', partner: await P.partner(), people: await P.individuals(), history: await P.history(),
-    isMain: await isMainAccount(req.user), lastRun: req.session.previewRun || null, scopeTitle: P.SCOPE_TITLE });
+    isMain: await isMainAccount(req.user), hasData: await P.hasData(), lastRun: req.session.previewRun || null, scopeTitle: P.SCOPE_TITLE });
 }));
 
 r.post('/preview/partner', mainOnly, wrap(async (req, res) => {
@@ -46,6 +46,13 @@ r.post('/preview/individual/:key/open', mainOnly, wrap(async (req, res) => {
   req.session.actAsIndividual = person.account.id; req.session.previewReturn = true;
   await audit({ user: req.user, action: 'preview.individual_open', target: person.account.email });
   res.redirect('/me');
+}));
+
+r.post('/preview/reset', mainOnly, wrap(async (req, res) => {
+  const counts = await P.resetData(req.user, 'manual');
+  const n = Object.values(counts).reduce((a, b) => a + b, 0);
+  flash(req, 'success', n ? 'Preview data cleared. The preview accounts are back to their starting state.' : 'There was no preview data to clear.');
+  res.redirect('/admin/preview');
 }));
 
 r.post('/preview/checks/run', wrap(async (req, res) => {

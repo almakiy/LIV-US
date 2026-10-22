@@ -9,10 +9,10 @@ const { certHmac, randomToken } = require('./crypto');
 const PARTNER_NAME = 'LIV Preview Training Provider';
 const PREVIEW_DOMAIN = 'preview.liv.invalid';
 const SCOPE_TITLE = 'Preview Course (test records only)';
-// Individual previews. 'member' becomes available with the membership batch (M2).
+// Individual previews: one without and one with a (granted, unpaid) preview membership.
 const INDIVIDUALS = {
   basic: { email: `individual.basic@${PREVIEW_DOMAIN}`, name: 'Preview Individual (no membership)', available: true },
-  member: { email: `individual.member@${PREVIEW_DOMAIN}`, name: 'Preview Individual (with membership)', available: false, note: 'Available once memberships are built (M2).' },
+  member: { email: `individual.member@${PREVIEW_DOMAIN}`, name: 'Preview Individual (with membership)', available: true, member: true },
 };
 
 async function partner() {
@@ -53,6 +53,7 @@ async function ensureIndividual(user, key) {
   const { rows: [n] } = await q(`INSERT INTO users (role, full_name, email, password_hash, email_verified_at, is_preview) VALUES ('individual',$1,$2,$3, now(), true) RETURNING id`,
     [d.name, d.email, await bcrypt.hash(randomToken(), 10)]);
   await audit({ user, action: 'preview.individual_create', target: d.email });
+  if (d.member) await require('./memberships').grantPreview(user, n.id);
   return n.id;
 }
 
@@ -106,3 +107,93 @@ async function history() {
 }
 
 module.exports = { PARTNER_NAME, PREVIEW_DOMAIN, SCOPE_TITLE, INDIVIDUALS, partner, ensurePartner, individuals, ensureIndividual, runChecks, recordRun, recordManual, history };
+
+/**
+ * Clears everything entered while using the preview accounts, so test data is never kept: the preview provider's records,
+ * applications, requests, invoices and files, and the preview individuals' links, requests, memberships, invoices and messages.
+ * Kept: the preview accounts themselves (provider, scope, template, individuals, the granted preview membership), the check
+ * log, and the append-only audit log, which records who did what and cannot be edited.
+ */
+async function resetData(user, reason = 'manual') {
+  const fs = require('fs'); const path = require('path');
+  const { validKey } = require('./files');
+  const p = await partner();
+  const { rows: people } = await q(`SELECT id, email FROM users WHERE role = 'individual' AND is_preview`);
+  const ids = people.map((x) => x.id);
+  const counts = {};
+  const files = await tx(async (c) => {
+    await c.query(`SET LOCAL liv.preview_reset = 'on'`);
+    const del = async (label, sql, params) => { const r = await c.query(sql, params); counts[label] = (counts[label] || 0) + r.rowCount; };
+    let keys = [];
+    if (p) {
+      keys = (await c.query(`SELECT pdf_path AS key FROM certificates WHERE platform_id = $1 AND pdf_path IS NOT NULL
+        UNION SELECT logo_path FROM platforms WHERE id = $1 AND logo_path IS NOT NULL`, [p.id])).rows.map((r) => r.key);
+      if (keys.length) await c.query('DELETE FROM stored_files WHERE key = ANY($1::text[])', [keys]);
+      await del('verifications', 'DELETE FROM verification_logs WHERE certificate_id IN (SELECT id FROM certificates WHERE platform_id = $1)', [p.id]);
+      await del('records', 'DELETE FROM certificates WHERE platform_id = $1', [p.id]);
+      await del('payments', 'DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE platform_id = $1)', [p.id]);
+      await del('invoices', 'DELETE FROM invoices WHERE platform_id = $1', [p.id]);
+      await c.query(`DELETE FROM email_outbox WHERE platform_id = $1`, [p.id]);
+      // Every other table that belongs to the provider: delete its rows, repeating until dependencies are cleared.
+      const { rows: tables } = await c.query(`SELECT DISTINCT cl.relname AS t FROM pg_constraint k JOIN pg_class cl ON cl.oid = k.conrelid
+        JOIN pg_attribute a ON a.attrelid = k.conrelid AND a.attnum = ANY(k.conkey)
+        WHERE k.contype = 'f' AND k.confrelid = 'platforms'::regclass AND a.attname = 'platform_id' AND cl.relname NOT IN ('audit_logs','certificate_templates','partner_scopes')`);
+      let left = tables.map((r) => r.t);
+      for (let pass = 0; pass < 6 && left.length; pass++) {
+        const next = [];
+        for (const t of left) {
+          await c.query('SAVEPOINT s');
+          try { const r = await c.query(`DELETE FROM ${t} WHERE platform_id = $1`, [p.id]); counts[t] = (counts[t] || 0) + r.rowCount; await c.query('RELEASE SAVEPOINT s'); }
+          catch (e) { await c.query('ROLLBACK TO SAVEPOINT s'); next.push(t); }
+        }
+        left = next;
+      }
+      if (left.length) throw new Error(`Preview reset could not clear: ${left.join(', ')}`);
+      // Back to the starting setup: one preview scope, one preview template, no profile changes.
+      await c.query(`DELETE FROM partner_scopes WHERE platform_id = $1 AND title <> $2`, [p.id, SCOPE_TITLE]);
+      await c.query(`UPDATE partner_scopes SET status = 'active', ends_on = NULL WHERE platform_id = $1`, [p.id]);
+      await c.query(`DELETE FROM certificate_templates WHERE platform_id = $1 AND name <> 'Preview template'`, [p.id]);
+      const { rows: cols } = await c.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'platforms' AND is_nullable = 'YES'
+        AND column_name = ANY($1::text[])`, [['logo_path', 'website', 'public_city', 'public_domain', 'public_delivery', 'public_about', 'public_social', 'billing_name', 'billing_email', 'billing_address', 'tax_id', 'contact_phone']]);
+      if (cols.length) await c.query(`UPDATE platforms SET ${cols.map((x) => `${x.column_name} = NULL`).join(', ')} WHERE id = $1`, [p.id]);
+      await c.query(`UPDATE platforms SET accreditation_status = 'active', service_hold = false WHERE id = $1`, [p.id]);
+    }
+    if (ids.length) {
+      await del('links', 'DELETE FROM credential_claims WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('link requests', 'DELETE FROM credential_claim_requests WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query('DELETE FROM individual_emails WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query('DELETE FROM individual_tokens WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query(`DELETE FROM memberships WHERE user_id = ANY($1::uuid[]) AND NOT (source = 'grant' AND is_preview AND status = 'active')`, [ids]);
+      await del('payments', 'DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE user_id = ANY($1::uuid[]))', [ids]);
+      await del('invoices', 'DELETE FROM invoices WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('messages', 'DELETE FROM contact_messages WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query(`UPDATE users SET marketing_opt_in = false, marketing_opt_in_at = NULL, card_show_name = false, closure_requested_at = NULL WHERE id = ANY($1::uuid[])`, [ids]);
+      for (const d of Object.values(INDIVIDUALS)) await c.query('UPDATE users SET full_name = $1 WHERE lower(email) = $2', [d.name, d.email]);
+    }
+    await c.query(`DELETE FROM email_outbox WHERE to_email LIKE '%@' || $1`, [PREVIEW_DOMAIN]);
+    await audit({ user, action: 'preview.reset', target: reason, metadata: counts }, c);
+    return keys;
+  });
+  for (const key of files) if (validKey(key)) fs.rmSync(path.join(cfg.storageDir, ...key.split('/')), { force: true });
+  return counts;
+}
+
+/** True when the preview accounts hold any data entered while using them. */
+async function hasData() {
+  const { rows: [r] } = await q(`SELECT
+    (SELECT count(*)::int FROM certificates c JOIN platforms p ON p.id = c.platform_id WHERE p.is_preview)
+    + (SELECT count(*)::int FROM credential_claims cl JOIN users u ON u.id = cl.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM invoices i LEFT JOIN platforms p ON p.id = i.platform_id LEFT JOIN users u ON u.id = i.user_id WHERE p.is_preview OR u.is_preview)
+    + (SELECT count(*)::int FROM credential_claim_requests r JOIN users u ON u.id = r.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM contact_messages m JOIN users u ON u.id = m.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM individual_emails e JOIN users u ON u.id = e.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.is_preview AND NOT (m.source = 'grant' AND m.status = 'active'))
+    + (SELECT count(*)::int FROM api_keys k JOIN platforms p ON p.id = k.platform_id WHERE p.is_preview)
+    + (SELECT count(*)::int FROM partner_applications a JOIN platforms p ON p.id = a.platform_id WHERE p.is_preview)
+    + (SELECT count(*)::int FROM partner_title_requests t JOIN platforms p ON p.id = t.platform_id WHERE p.is_preview)
+    + (SELECT count(*)::int FROM issuance_batches b JOIN platforms p ON p.id = b.platform_id WHERE p.is_preview) AS n`);
+  return r.n > 0;
+}
+
+module.exports.resetData = resetData;
+module.exports.hasData = hasData;

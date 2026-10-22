@@ -21,6 +21,9 @@ start().finally(() => {
   // Approved exceptions past their end date expire; they are never renewed.
   const expire = () => require('./lib/exceptions').expire().catch(() => {});
   setTimeout(expire, 45 * 1000).unref(); setInterval(expire, 24 * 3600 * 1000).unref();
+  // Memberships past their end date expire; members are reminded 30 days before the end.
+  const members = () => require('./lib/memberships').sweep().catch(() => {});
+  setTimeout(members, 50 * 1000).unref(); setInterval(members, 24 * 3600 * 1000).unref();
   // Monitoring indicators (Batch H): count indicators per provider and escalation of cases past 10 working days, hourly.
   const indicators = () => require('./lib/indicators').sweep().then((n) => n && console.log(`[indicators] ${n} case(s) escalated`)).catch((e) => console.warn(`[indicators] ${e.message}`));
   setTimeout(indicators, 60 * 1000).unref(); setInterval(indicators, 3600 * 1000).unref();

@@ -73,11 +73,13 @@ async function createDraft(platform, { items = [], includeUsage = false, notes =
 /** Assigns the next invoice number and opens the invoice. A zero-total invoice is marked paid straight away. */
 async function issueInvoice(id, { dueDays = 14, today = new Date() } = {}) {
   return tx(async (c) => {
-    const { rows: [inv] } = await c.query(`SELECT i.*, p.billing_name, p.billing_email, p.billing_address, p.tax_id, p.company_name, p.country FROM invoices i JOIN platforms p ON p.id = i.platform_id WHERE i.id = $1 FOR UPDATE OF i`, [id]);
+    // A provider's invoice, or an individual's (memberships and purchases).
+    const { rows: [inv] } = await c.query(`SELECT i.*, p.billing_name, p.billing_email, p.billing_address, p.tax_id, COALESCE(p.company_name, u.full_name) AS company_name, p.country, u.email AS user_email
+      FROM invoices i LEFT JOIN platforms p ON p.id = i.platform_id LEFT JOIN users u ON u.id = i.user_id WHERE i.id = $1 FOR UPDATE OF i`, [id]);
     if (!inv || inv.status !== 'draft') throw new Error('Only a draft invoice can be issued.');
     const { rows: [{ seq }] } = await c.query(`SELECT nextval('invoice_number_seq') AS seq`);
     const issue = billing.iso(today); const number = billing.formatInvoiceNumber(issue.slice(0, 4), seq);
-    const snapshot = { name: inv.billing_name || inv.company_name, company: inv.company_name, email: inv.billing_email || null, address: inv.billing_address || null, tax_id: inv.tax_id || null, country: inv.country || null };
+    const snapshot = { name: inv.billing_name || inv.company_name, company: inv.platform_id ? inv.company_name : null, email: inv.billing_email || inv.user_email || null, address: inv.billing_address || null, tax_id: inv.tax_id || null, country: inv.country || null };
     const paid = Number(inv.total_cents) === 0;
     await c.query(`UPDATE invoices SET status = $2, number = $3, issue_date = $4, due_date = $5, billing = $6, issued_at = now(), paid_at = $7 WHERE id = $1`,
       [id, paid ? 'paid' : 'open', number, issue, billing.addDaysISO(issue, dueDays), JSON.stringify(snapshot), paid ? new Date() : null]);
@@ -100,7 +102,11 @@ async function recordPayment(invoiceId, { amount_cents, method, reference = '', 
     const a = billing.afterPayment(Number(inv.total_cents), Number(inv.amount_paid_cents), amt);
     await c.query('UPDATE invoices SET amount_paid_cents = $2, status = $3::varchar, paid_at = CASE WHEN $3::varchar = \'paid\' THEN now() ELSE paid_at END WHERE id = $1', [invoiceId, a.amount_paid_cents, a.status]);
     return { duplicate: false, status: a.status, paid: a.amount_paid_cents };
-  }).then(async (r) => { if (r.status === 'paid') await require('./applications').onInvoicePaid(invoiceId).catch(() => {}); return r; });
+  }).then(async (r) => { if (r.status === 'paid') {
+    await require('./applications').onInvoicePaid(invoiceId).catch(() => {});
+    await require('./memberships').onInvoicePaid(invoiceId).catch((e) => console.error('[membership] activation failed:', e.message));
+  }
+  return r; });
 }
 
 /** Drafts are deleted; an open invoice with no payments is voided (its number stays on record). Discount credits it used are released. */

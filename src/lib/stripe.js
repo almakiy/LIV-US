@@ -44,15 +44,15 @@ function formEncode(obj, prefix = '', out = []) {
  * Creates a Stripe Checkout Session for the open balance of an invoice (card payment, USD). Returns { id, url }.
  * metadata.liv_invoice_id is how the webhook finds the invoice. The idempotency key stops duplicate sessions on double clicks.
  */
-async function createCheckoutSession({ secretKey, invoice, balanceCents, customerEmail, baseUrl, fetchImpl = fetch }) {
+async function createCheckoutSession({ secretKey, invoice, balanceCents, customerEmail, baseUrl, returnPath = `/portal/billing/invoices/${invoice.id}`, fetchImpl = fetch }) {
   if (!secretKey) throw new Error('Stripe is not configured.');
   if (!(balanceCents >= STRIPE_MIN_CENTS)) throw new Error('The balance is below the minimum card payment.');
   const body = formEncode({
     mode: 'payment',
     customer_email: customerEmail,
     client_reference_id: invoice.id,
-    success_url: `${baseUrl}/portal/billing/invoices/${invoice.id}?paid=1`,
-    cancel_url: `${baseUrl}/portal/billing/invoices/${invoice.id}`,
+    success_url: `${baseUrl}${returnPath}?paid=1`,
+    cancel_url: `${baseUrl}${returnPath}`,
     line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: balanceCents, product_data: { name: `LIV invoice ${invoice.number}` } } }],
     metadata: { liv_invoice_id: invoice.id, liv_invoice_number: invoice.number },
     payment_intent_data: { description: `LIV invoice ${invoice.number}`, metadata: { liv_invoice_id: invoice.id } },

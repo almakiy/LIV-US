@@ -79,4 +79,19 @@ r.post('/password/reset', limiter(15, 10), wrap(async (req, res) => {
   res.redirect('/login');
 }));
 
+// ---------- Public pages: individuals, membership, membership verification ----------
+const M = require('../lib/memberships');
+r.get('/individuals', (req, res) => res.render('public/individuals', { title: 'For individuals', description: 'Keep your LIV credentials in one account, verify and share them, and learn about optional membership.' }));
+r.get('/membership', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits', description: 'Optional LIV membership for individuals: what it includes and what it does not.', plans: await M.plans(), preview: false })));
+r.get('/membership/verify', (req, res) => {
+  const n = String(req.query.number || '').trim();
+  if (n) return res.redirect(`/membership/verify/${encodeURIComponent(n.toUpperCase())}`);
+  res.render('public/membership-verify', { title: 'Verify a membership', out: null });
+});
+r.get('/membership/verify/:number', limiter(1, 60), wrap(async (req, res) => {
+  const out = await M.verifyPublic(req.params.number);
+  res.set('Cache-Control', 'no-store');
+  res.status(out.result === 'active' || out.result === 'not_active' ? 200 : 404).render('public/membership-verify', { title: 'Verify a membership', out });
+}));
+
 module.exports = r;

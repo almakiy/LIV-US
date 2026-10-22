@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:640px;margin:40px auto">
+  <h1>Verify a membership</h1>
+  <p class="muted">Checks a <%= brand %> membership card. A membership is not a professional credential: to check a credential, use the <a href="/verify">credential verification portal</a>.</p>
+  <form method="get" action="/membership/verify" class="card" role="search"><div class="field"><label for="m-num">Member number</label><input id="m-num" name="number" placeholder="LIVM-ABCD2345" maxlength="20" required></div><button class="btn">Check</button></form>
+  <% if (out) { %>
+    <% if (out.preview) { %><div class="alert warn mt" role="status">PREVIEW RECORD. This is a test membership from the LIV preview account.</div>
+    <% } else if (out.result === 'active') { %><div class="alert success mt" role="status"><strong>Active membership.</strong> <%= out.name ? out.name + ' — ' : '' %><%= out.plan %>, member <%= out.number %>, valid until <%= usDate(out.ends_on) %>.</div>
+    <% } else if (out.result === 'not_active') { %><div class="alert error mt" role="status"><strong>Not active.</strong> Member number <%= out.number %> has no active membership today.</div>
+    <% } else { %><div class="alert error mt" role="status">No membership matches this number.</div><% } %>
+    <p class="small muted">Membership only. It does not show any professional qualification or accreditation.</p>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

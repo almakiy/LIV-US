@@ -1,0 +1,44 @@
+<%- include('../partials/app-start') %>
+<h1>Memberships</h1>
+<p class="muted">Plans, prices, periods and benefits are entered here; nothing is invented by the system. A plan can be bought only when its terms are approved by the main account, it is on sale, every listed benefit is marked available, and membership sales are open on the server (<code>MEMBERSHIP_SALES</code>: <strong><%= salesOpen ? 'open' : 'closed' %></strong>). Membership never affects credentials, eligibility or assessment.</p>
+<p><a href="/admin/memberships/preview">Preview the public membership page with draft plans</a> · <a href="/membership">Public page</a></p>
+<h2 class="mt">Counts (preview memberships left out)</h2>
+<% if (!stats.length) { %><p class="muted small">No memberships yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Source</th><th>Status</th><th>Count</th><th>Paid amount</th></tr>
+  <% stats.forEach(s => { %><tr><td><%= s.source %></td><td><%= s.status %></td><td><%= s.n %></td><td><%= s.source === 'paid' ? money(Number(s.paid_cents)) : 'not revenue' %></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt">Plans</h2>
+<% plans.forEach(p => { const v = p.latest; const ap = p.approved; %>
+<div class="card mt" id="plan-<%= p.code %>">
+  <h3 class="h3"><%= p.name %> <span class="badge"><%= p.status === 'on_sale' ? 'On sale' : p.status === 'withdrawn' ? 'Withdrawn' : 'Not on sale' %></span> <span class="small muted"><%= p.kind === 'group' ? 'Group plan (seats arrive with M4)' : '' %></span></h3>
+  <p class="small muted"><%= p.audience %></p>
+  <p class="small">Approved terms: <%= ap ? 'version ' + ap.version + ', ' + (ap.price_cents == null ? 'no price' : money(ap.price_cents)) + ' for ' + ap.period_months + ' month(s), approved ' + usDate(ap.approved_at) : 'none yet' %>.
+    <% if (p.blockers.length) { %><br><span class="muted">Cannot be bought now: <%= p.blockers.join(' ') %></span><% } %></p>
+  <details <%= v.status === 'draft' ? 'open' : '' %>><summary class="small"><%= v.status === 'draft' ? 'Draft version ' + v.version : 'Start a new draft from version ' + v.version %></summary>
+    <form method="post" action="/admin/memberships/plans/<%= p.id %>/draft" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="row"><div class="field"><label for="pr-<%= p.code %>">Price (USD)</label><input id="pr-<%= p.code %>" name="price" value="<%= v.price_cents == null ? '' : (v.price_cents / 100).toFixed(2) %>" inputmode="decimal" placeholder="not set"></div>
+        <div class="field"><label for="pe-<%= p.code %>">Period (months)</label><input id="pe-<%= p.code %>" name="period_months" value="<%= v.period_months || '' %>" inputmode="numeric" placeholder="not set"></div></div>
+      <div class="field"><label for="be-<%= p.code %>">Benefits, one per line. Start a line with "+" only when the benefit is available now.</label><textarea id="be-<%= p.code %>" name="benefits" rows="5"><%= benefitsText(v.benefits) %></textarea></div>
+      <div class="field"><label for="te-<%= p.code %>">Terms shown to the buyer (renewal, cancellation, refunds)</label><textarea id="te-<%= p.code %>" name="terms" rows="4"><%= v.terms %></textarea></div>
+      <div class="field"><label class="check"><input type="checkbox" name="requires_student_check" value="yes" <%= v.requires_student_check ? 'checked' : '' %>> Requires a student status check</label></div>
+      <button class="btn sm">Save draft</button></form>
+    <% if (isMain && v.status === 'draft') { %><form method="post" action="/admin/memberships/plans/<%= p.id %>/approve" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Approve these terms (main account)</button></form><% } %>
+  </details>
+  <% if (isMain) { %><form method="post" action="/admin/memberships/plans/<%= p.id %>/sale" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="on" value="<%= p.status === 'on_sale' ? 'no' : 'yes' %>">
+    <button class="btn sm secondary"><%= p.status === 'on_sale' ? 'Withdraw from sale' : 'Put on sale' %></button></form><% } %>
+</div><% }) %>
+
+<h2 class="mt">Members</h2>
+<% if (!members.length) { %><p class="muted">No memberships yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table>
+  <tr><th>Member</th><th>Plan</th><th>Status</th><th>Source</th><th>Period</th><th>Invoice</th><th>Actions</th></tr>
+  <% members.forEach(m => { %><tr><td><%= m.full_name %><br><span class="small muted"><%= m.member_number %><%= m.is_preview ? ' · preview' : '' %></span></td><td><%= m.plan %></td><td><%= m.status %><%= m.renewal_declined_at ? ' (will not renew)' : '' %></td><td><%= m.source %></td>
+    <td class="small"><%= m.starts_on ? usDate(m.starts_on) + ' to ' + usDate(m.ends_on) : '' %></td>
+    <td class="small"><%= m.invoice_number || '' %><% if (m.invoice_id && m.status === 'pending_payment') { %>
+      <form method="post" action="/admin/memberships/invoices/<%= m.invoice_id %>/payment"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="small" for="am-<%= m.id %>">Amount received (USD)</label><input id="am-<%= m.id %>" name="amount" value="<%= ((Number(m.total_cents) - Number(m.amount_paid_cents)) / 100).toFixed(2) %>" required>
+        <label class="small" for="mt-<%= m.id %>">Method</label><select id="mt-<%= m.id %>" name="method"><option value="bank_transfer">Bank transfer</option><option value="card">Card</option><option value="cash">Cash</option><option value="other">Other</option></select>
+        <label class="small" for="rf-<%= m.id %>">Reference</label><input id="rf-<%= m.id %>" name="reference" maxlength="200">
+        <button class="btn sm">Record payment</button></form><% } %></td>
+    <td><% if (m.status === 'active' || m.status === 'suspended') { %><form method="post" action="/admin/memberships/<%= m.id %>/suspend"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="on" value="<%= m.status === 'active' ? 'yes' : 'no' %>">
+      <label class="small" for="sr-<%= m.id %>">Reason</label><input id="sr-<%= m.id %>" name="reason" required minlength="5"><button class="btn sm secondary"><%= m.status === 'active' ? 'Suspend' : 'Reinstate' %></button></form><% } %></td></tr><% }) %>
+</table></div><% } %>
+<%- include('../partials/app-end') %>

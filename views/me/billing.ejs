@@ -1,0 +1,9 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Orders and billing</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <% if (!rows.length) { %><p class="muted">No invoices yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Invoice</th><th>Date</th><th>Total</th><th>Paid</th><th>Status</th></tr>
+    <% rows.forEach(i => { %><tr><td><a href="/me/billing/<%= i.id %>"><%= i.number %></a></td><td><%= i.issue_date ? usDate(i.issue_date) : '' %></td><td><%= money(Number(i.total_cents)) %></td><td><%= money(Number(i.amount_paid_cents)) %></td><td><%= i.status %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

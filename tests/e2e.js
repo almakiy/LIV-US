@@ -1851,7 +1851,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok((await anon.request.get(`${BASE}/verify/${pnum}/pdf?t=${qrToken(ph)}`)).status() === 404, 'a preview record has no public PDF');
     await adm.click('form[action="/admin/preview/individual/basic"] button');
     ok(await see(adm, 'text=The preview individual is ready') && psql(`SELECT is_preview AND email_verified_at IS NOT NULL FROM users WHERE email = 'individual.basic@preview.liv.invalid'`) === 't', 'the main account creates a preview individual (no membership)');
-    ok(await see(adm, 'text=Available once memberships are built'), 'the preview with membership is shown as not available yet, not faked');
+    ok(await see(adm, 'text=Preview Individual (with membership)'), 'a preview individual with membership is offered');
     await adm.click('form[action="/admin/preview/individual/basic/open"] button');
     ok(adm.url().endsWith('/me') && await see(adm, 'text=Preview mode'), 'the main account opens the individuals area as the preview individual');
     await adm.goto(BASE + '/me/credentials');
@@ -1867,6 +1867,151 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(await see(adm, 'text=Check recorded') && psql(`SELECT count(*) FROM preview_checks WHERE NOT automatic`) === '1', 'a manual check is recorded in the log');
     ok(psql(`SELECT count(*) FROM partner_audit_cases a JOIN platforms p ON p.id = a.platform_id WHERE p.is_preview`) === '0', 'preview activity opens no audit case');
     ok((await page.request.get(BASE + '/admin/preview')).url().endsWith('/admin/preview') === false || (await page.request.get(BASE + '/admin/preview')).status() === 403, 'a provider account cannot open the preview page');
+  }
+
+  console.log('Individuals portal (M2): membership plans, payment, card, renewal, expiry');
+  {
+    const PW = 'Member-Pass-2026x'; const memEmail = `member.${stamp}@example.com`;
+    const mc = await browser.newContext(); const mp = await mc.newPage();
+    await mp.goto(BASE + '/signup'); await mp.fill('#s-name', 'Mira Member'); await mp.fill('#s-email', memEmail); await mp.fill('#s-pw', PW); await mp.fill('#s-pw2', PW); await mp.check('input[name=terms]'); await mp.click('button:has-text("Create account")');
+    const vt = (psql(`SELECT text_body FROM email_outbox WHERE to_email = '${memEmail}' ORDER BY created_at DESC LIMIT 1`).match(/t=([a-f0-9]{48})/) || [])[1];
+    await mp.goto(`${BASE}/signup/verify?t=${vt}`);
+    await mp.goto(BASE + '/login'); await mp.fill('input[name=email]', memEmail); await mp.fill('input[name=password]', PW); await mp.click('button:has-text("Log in")'); await mp.waitForLoadState();
+    const uid = psql(`SELECT id FROM users WHERE email = '${memEmail}'`);
+    ok(psql(`SELECT count(*) FROM membership_plans`) === '4' && psql(`SELECT count(*) FROM membership_plan_versions WHERE status = 'draft' AND price_cents IS NULL AND period_months IS NULL`) === '4', 'the four proposed plans exist as drafts with no price or period');
+    ok((await (await anon.request.get(BASE + '/membership')).text()).includes('Plans are being prepared'), 'the public page shows no plan until terms are approved');
+    await mp.goto(BASE + '/me/membership');
+    ok(await see(mp, 'text=Membership plans are not available yet'), 'the member sees that no plan can be bought yet');
+    let r = await mp.request.post(BASE + '/me/membership/join/member', { form: { _csrf: await mp.locator('input[name=_csrf]').first().inputValue() }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}'`) === '0', 'a draft plan cannot be bought, even by posting directly');
+    // The main account sets terms, approves and opens the plan.
+    await adm.goto(BASE + '/admin/memberships');
+    const card = adm.locator('#plan-member');
+    await card.locator('input[name=price]').fill('10.00'); await card.locator('input[name=period_months]').fill('12');
+    await card.locator('textarea[name=benefits]').fill('+ Digital membership card with a verification link\nSelected library resources');
+    await card.locator('textarea[name=terms]').fill('Test terms: no automatic renewal.');
+    await card.locator('button:has-text("Save draft")').click(); await see(adm, 'text=Draft saved');
+    await adm.locator('#plan-member button:has-text("Approve these terms")').click();
+    ok(await see(adm, 'text=Terms approved'), 'the main account approves the terms');
+    await adm.locator('#plan-member button:has-text("Put on sale")').click();
+    ok(await see(adm, 'text=Some promised benefits are not available yet'), 'a plan that promises a benefit not yet available cannot be put on sale');
+    const unfold = (code) => adm.evaluate((c) => { document.querySelector(`#plan-${c} details`).open = true; }, code);
+    await unfold('member');
+    await adm.locator('#plan-member textarea[name=benefits]').fill('+ Digital membership card with a verification link');
+    await adm.locator('#plan-member button:has-text("Save draft")').click(); await see(adm, 'text=Draft saved');
+    await adm.locator('#plan-member button:has-text("Approve these terms")').click(); await see(adm, 'text=Terms approved');
+    ok(psql(`SELECT string_agg(v.status, ',' ORDER BY v.version) FROM membership_plan_versions v JOIN membership_plans p ON p.id = v.plan_id WHERE p.code = 'member'`) === 'superseded,approved', 'a new approval supersedes the previous terms');
+    ok(psqlRefused(`UPDATE membership_plan_versions SET price_cents = 1 WHERE status = 'approved'`), 'approved terms cannot be changed in the database');
+    await adm.locator('#plan-member button:has-text("Put on sale")').click();
+    ok(await see(adm, 'text=The plan is on sale'), 'the plan goes on sale');
+    // Student plan: needs a check that does not exist yet.
+    const st = adm.locator('#plan-student');
+    await st.locator('input[name=price]').fill('5'); await st.locator('input[name=period_months]').fill('12'); await st.locator('textarea[name=benefits]').fill('+ Student price');
+    await st.locator('textarea[name=terms]').fill('Student terms.'); await st.locator('button:has-text("Save draft")').click(); await see(adm, 'text=Draft saved');
+    await adm.locator('#plan-student button:has-text("Approve these terms")').click(); await see(adm, 'text=Terms approved');
+    await adm.locator('#plan-student button:has-text("Put on sale")').click();
+    ok(await see(adm, 'text=The student status check is not available yet'), 'the student plan cannot be sold before the student check exists');
+    // Purchase
+    await mp.goto(BASE + '/me/membership');
+    await mp.locator('form[action="/me/membership/join/member"] button').click();
+    ok(await see(mp, 'text=Your membership is waiting for payment'), 'the member takes the plan: an invoice is issued, nothing is active yet');
+    const invId = psql(`SELECT invoice_id FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`);
+    ok(psql(`SELECT status || ',' || total_cents FROM invoices WHERE id = '${invId}'`) === 'open,1000', 'the invoice is open at the approved price');
+    r = await mp.request.post(BASE + '/me/membership/join/member', { form: { _csrf: await mp.locator('input[name=_csrf]').first().inputValue() }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}'`) === '1', 'a second purchase while one is waiting creates nothing');
+    await adm.goto(BASE + '/admin/memberships');
+    const row = adm.locator('tr', { hasText: 'Mira Member' });
+    await row.locator('input[name=reference]').fill('Bank ref 1'); await row.locator('button:has-text("Record payment")').click();
+    ok(await see(adm, 'text=Payment recorded'), 'LIV records the payment');
+    ok(psql(`SELECT status || ',' || (ends_on = (starts_on + interval '12 months' - interval '1 day')::date) FROM memberships WHERE user_id = '${uid}'`) === 'active,true', 'the paid membership activates for 12 months');
+    const M = require('../src/lib/memberships');
+    ok((await M.onInvoicePaid(invId)) === null && psql(`SELECT count(*) FROM membership_events e JOIN memberships m ON m.id = e.membership_id WHERE m.user_id = '${uid}' AND e.event = 'activated'`) === '1', 'a repeated payment notice activates nothing twice');
+    // Card and verification
+    await mp.goto(BASE + '/me/membership');
+    const num = psql(`SELECT member_number FROM memberships WHERE user_id = '${uid}' AND status = 'active'`);
+    ok(await see(mp, `text=Member ${num}`) && await see(mp, 'text=Membership only. Not a professional qualification'), 'the card shows the member number and says it is membership only');
+    let vh = await (await anon.request.get(`${BASE}/membership/verify/${num}`)).text();
+    ok(vh.includes('Active membership') && !vh.includes('Mira Member') && !vh.includes(memEmail), 'the public check confirms the active membership without name or email by default');
+    await mp.check('input[name=show_name]'); await mp.click('form[action="/me/membership/card"] button');
+    vh = await (await anon.request.get(`${BASE}/membership/verify/${num}`)).text();
+    ok(vh.includes('Mira Member'), 'the member can choose to show their name');
+    // A new price does not change the terms already taken
+    await adm.goto(BASE + '/admin/memberships');
+    await unfold('member');
+    await adm.locator('#plan-member input[name=price]').fill('20.00'); await adm.locator('#plan-member button:has-text("Save draft")').click(); await see(adm, 'text=Draft saved');
+    await adm.locator('#plan-member button:has-text("Approve these terms")').click(); await see(adm, 'text=Terms approved');
+    ok(psql(`SELECT terms->>'price_cents' FROM memberships WHERE user_id = '${uid}' AND status = 'active'`) === '1000', 'a later price change never alters the terms of an earlier purchase');
+    // Renewal paid by card notice, delivered twice
+    await mp.goto(BASE + '/me/membership'); await mp.locator('form[action="/me/membership/join/member"] button').click(); await see(mp, 'text=waiting for payment');
+    const renId = psql(`SELECT invoice_id FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`);
+    ok(psql(`SELECT total_cents FROM invoices WHERE id = '${renId}'`) === '2000', 'a renewal is a new purchase at the current approved price, shown before paying');
+    if (process.env.STRIPE_WEBHOOK_SECRET) {
+      const stripeLib = require('../src/lib/stripe');
+      const ev = JSON.stringify({ id: `evt_m_${stamp}`, type: 'payment_intent.succeeded', data: { object: { id: `pi_m_${stamp}`, amount_received: 2000, metadata: { liv_invoice_id: renId } } } });
+      const post = () => anon.request.post(BASE + '/api/webhooks/stripe', { data: ev, headers: { 'content-type': 'application/json', 'stripe-signature': stripeLib.signHeader(ev, process.env.STRIPE_WEBHOOK_SECRET) } });
+      await post(); await post();
+      ok(psql(`SELECT count(*) FROM payments WHERE invoice_id = '${renId}'`) === '1' && psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'active'`) === '2', 'a repeated card notice records one payment and one renewal');
+      ok(psql(`SELECT (n.starts_on = o.ends_on + 1) FROM memberships n JOIN memberships o ON o.id = n.renewed_from WHERE n.user_id = '${uid}'`) === 't', 'the renewal starts the day after the current period ends');
+    }
+    // Declining renewal keeps the paid period
+    const curId = psql(`SELECT id FROM memberships WHERE user_id = '${uid}' AND status = 'active' ORDER BY starts_on LIMIT 1`);
+    const endBefore = psql(`SELECT ends_on FROM memberships WHERE id = '${curId}'`);
+    await mp.goto(BASE + '/me/membership'); await mp.click('button:has-text("I will not renew")');
+    ok(await see(mp, 'text=stays active until its end date') && psql(`SELECT status || ',' || ends_on FROM memberships WHERE id = '${curId}'`) === `active,${endBefore}`, 'declining renewal keeps the membership active to its paid end date');
+    // Expiry: credentials and account services stay
+    psql(`UPDATE memberships SET ends_on = current_date - 1, starts_on = LEAST(starts_on, current_date - 2) WHERE user_id = '${uid}' AND status = 'active'`);
+    await M.sweep();
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'active'`) === '0', 'past their end date, memberships expire');
+    vh = await (await anon.request.get(`${BASE}/membership/verify/${num}`)).text();
+    ok(vh.includes('Not active') && !vh.includes('Active membership'), 'an expired membership is never confirmed as active');
+    ok((await mp.request.get(BASE + '/me/credentials')).status() === 200 && (await mp.request.get(BASE + '/me/privacy/export.json')).status() === 200, 'basic account and credential services stay after the membership ends');
+    // Withdraw from sale; stats keep sources apart; preview member
+    await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Withdraw from sale")').click(); await see(adm, 'text=withdrawn from sale');
+    r = await mp.request.post(BASE + '/me/membership/join/member', { form: { _csrf: await mp.locator('input[name=_csrf]').first().inputValue() }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`) === '0', 'a withdrawn plan cannot be bought');
+    await adm.goto(BASE + '/admin/preview'); await adm.click('form[action="/admin/preview/individual/member"] button');
+    ok(await see(adm, 'text=The preview individual is ready') && psql(`SELECT m.source || ',' || m.status || ',' || m.is_preview FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.email = 'individual.member@preview.liv.invalid'`) === 'grant,active,true', 'the main account creates a preview individual with a granted preview membership');
+    const pnum2 = psql(`SELECT member_number FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.email = 'individual.member@preview.liv.invalid'`);
+    ok((await (await anon.request.get(`${BASE}/membership/verify/${pnum2}`)).text()).includes('PREVIEW RECORD'), 'a preview membership verifies as a preview record');
+    await adm.goto(BASE + '/admin/memberships');
+    ok(!(await adm.locator('table').first().textContent()).includes('grant'), 'membership counts leave preview memberships out and keep paid ones apart');
+    // Accessibility at phone width
+    const axeSrc = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    await mp.setViewportSize({ width: 390, height: 844 });
+    for (const path of ['/me/membership', '/me/billing', `/me/billing/${invId}`, '/membership', '/membership/verify', '/individuals']) {
+      await mp.goto(BASE + path); await mp.evaluate(axeSrc);
+      const v = await mp.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      const hs = await mp.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      ok(!v.length && !hs, `${path} at phone width: no automated WCAG 2.2 AA violations and no sideways scrolling${v.length ? ': ' + v.join(', ') : ''}`);
+    }
+    await mc.close();
+  }
+
+  console.log('Preview accounts: test data is cleared (manual, at sign-out, at the next sign-in)');
+  {
+    const pid = psql('SELECT id FROM platforms WHERE is_preview');
+    ok(Number(psql(`SELECT count(*) FROM certificates WHERE platform_id = '${pid}'`)) > 0, 'the preview provider holds test records before clearing');
+    await adm.goto(BASE + '/admin/preview');
+    await adm.click('button:has-text("Clear preview data now")');
+    ok(await see(adm, 'text=Preview data cleared'), 'the main account clears the preview data');
+    ok(psql(`SELECT count(*) FROM certificates WHERE platform_id = '${pid}'`) === '0' && psql(`SELECT count(*) FROM api_keys WHERE platform_id = '${pid}'`) === '0'
+      && psql(`SELECT count(*) FROM credential_claims cl JOIN users u ON u.id = cl.user_id WHERE u.is_preview`) === '0', 'test records, keys and links are gone');
+    ok(psql(`SELECT count(*) FROM partner_scopes WHERE platform_id = '${pid}' AND status = 'active'`) === '1' && psql(`SELECT count(*) FROM certificate_templates WHERE platform_id = '${pid}'`) === '1'
+      && psql(`SELECT count(*) FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.is_preview AND m.source = 'grant' AND m.status = 'active'`) === '1', 'the preview accounts stay ready to use: scope, template and granted preview membership');
+    ok(psql(`SELECT count(*) FROM audit_logs WHERE action = 'preview.reset'`) === '1', 'the clearing itself is recorded in the audit log');
+    // Data entered in a training session is cleared when the main account signs out.
+    await adm.click('form[action="/admin/preview/individual/basic/open"] button');
+    await adm.goto(BASE + '/me/support'); await adm.fill('#t-msg', 'Training session question, test only.'); await adm.click('button:has-text("Send")');
+    ok(psql(`SELECT count(*) FROM contact_messages m JOIN users u ON u.id = m.user_id WHERE u.is_preview`) === '1', 'a training session enters test data');
+    const a2c = await browser.newContext(); const a2 = await a2c.newPage();
+    await a2.goto(BASE + '/login'); await a2.fill('input[name=email]', 'admin@liv.local'); await a2.fill('input[name=password]', 'ChangeMe-Admin-2026'); await a2.click('button:has-text("Log in")');
+    ok(await at(a2, /\/admin$/) && psql(`SELECT count(*) FROM contact_messages m JOIN users u ON u.id = m.user_id WHERE u.is_preview`) === '0', 'the next sign-in of the main account clears data left by an unfinished session');
+    await adm.goto(BASE + '/me/support'); await adm.fill('#t-msg', 'Second training question, test only.'); await adm.click('button:has-text("Send")');
+    await a2.click('button:has-text("Log out")');
+    ok(psql(`SELECT count(*) FROM contact_messages m JOIN users u ON u.id = m.user_id WHERE u.is_preview`) === '0', 'signing out of the main account clears the preview data');
+    await a2c.close();
+    await adm.goto(BASE + '/admin');
+    ok(adm.url().endsWith('/admin'), 'the admin session returns to admin mode');
   }
 
   console.log('Security');

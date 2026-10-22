@@ -164,4 +164,74 @@ r.post('/privacy/close', limiter(15, 3), wrap(async (req, res) => {
   res.redirect('/me/privacy');
 }));
 
+// ---------- Membership (M2) ----------
+const M = require('../lib/memberships');
+const cfg = require('../config');
+const mfail = (req, res, e, to = '/me/membership') => { if (!(e instanceof M.MembershipError)) throw e; flash(req, 'error', e.message); return res.redirect(to); };
+
+r.get('/membership', wrap(async (req, res) => {
+  const u = await me(req);
+  const cur = await M.current(u.id);
+  const plans = await M.plans();
+  const verifyUrl = cur.active ? `${cfg.baseUrl}/membership/verify/${cur.active.member_number}` : null;
+  const qr = verifyUrl ? await require('qrcode').toDataURL(verifyUrl, { margin: 1, width: 160 }) : null;
+  const { rows: [{ card_show_name }] } = await q('SELECT card_show_name FROM users WHERE id = $1', [u.id]);
+  res.render('me/membership', { title: 'My membership', u, cur, plans, verifyUrl, qr, cardShowName: card_show_name, salesOpen: cfg.membershipSales });
+}));
+r.post('/membership/join/:code', limiter(15, 10), wrap(async (req, res) => {
+  try { const out = await M.join(req.user, req.params.code); flash(req, 'success', 'Your membership is waiting for payment. It starts once the invoice is paid.'); return res.redirect(`/me/billing/${out.invoiceId}`); }
+  catch (e) { return mfail(req, res, e); }
+}));
+r.post('/membership/:id/cancel-pending', wrap(async (req, res) => {
+  try { await M.cancelPending(req.user, req.params.id); flash(req, 'success', 'Cancelled. No payment is due.'); } catch (e) { return mfail(req, res, e); }
+  res.redirect('/me/membership');
+}));
+r.post('/membership/:id/renewal', wrap(async (req, res) => {
+  const declined = req.body.declined === 'yes';
+  try { await M.setRenewalDeclined(req.user, req.params.id, declined); flash(req, 'success', declined ? 'Noted: you will not renew. Your membership stays active until its end date.' : 'Renewal reminders are back on.'); }
+  catch (e) { return mfail(req, res, e); }
+  res.redirect('/me/membership');
+}));
+r.post('/membership/card', wrap(async (req, res) => {
+  const show = req.body.show_name === 'yes';
+  await q('UPDATE users SET card_show_name = $1 WHERE id = $2', [show, req.user.id]);
+  await audit({ user: req.user, action: 'membership.card_privacy', target: req.user.email, metadata: { show_name: show } });
+  flash(req, 'success', show ? 'Your name now shows on the membership verification page.' : 'Your name is hidden on the membership verification page.');
+  res.redirect('/me/membership#card');
+}));
+
+// ---------- Orders and billing ----------
+const ownInvoice = async (req) => {
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id)) return null;
+  const { rows: [inv] } = await q('SELECT * FROM invoices WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+  if (!inv) return null;
+  const [lines, payments] = await Promise.all([q('SELECT * FROM invoice_lines WHERE invoice_id = $1', [inv.id]), q('SELECT * FROM payments WHERE invoice_id = $1 ORDER BY created_at', [inv.id])]);
+  return { inv, lines: lines.rows, payments: payments.rows };
+};
+r.get('/billing', wrap(async (req, res) => {
+  const { rows } = await q(`SELECT id, number, status, issue_date, total_cents, amount_paid_cents, currency FROM invoices WHERE user_id = $1 AND status <> 'draft' ORDER BY created_at DESC LIMIT 100`, [req.user.id]);
+  res.render('me/billing', { title: 'Orders and billing', rows, money: require('../lib/billing').money });
+}));
+r.get('/billing/:id', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d) return next();
+  res.render('me/invoice', { title: `Invoice ${d.inv.number || ''}`, ...d, money: require('../lib/billing').money, cardPay: Boolean(cfg.stripeSecretKey), paidReturn: req.query.paid === '1' });
+}));
+r.post('/billing/:id/pay', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d) return next();
+  const back = `/me/billing/${d.inv.id}`;
+  const balance = Number(d.inv.total_cents) - Number(d.inv.amount_paid_cents);
+  if (!cfg.stripeSecretKey) { flash(req, 'error', 'Card payment is not available yet. Contact LIV support for payment instructions.'); return res.redirect(back); }
+  if (d.inv.status !== 'open' || balance <= 0) { flash(req, 'error', 'This invoice is not open for payment.'); return res.redirect(back); }
+  try {
+    const s = await require('../lib/stripe').createCheckoutSession({ secretKey: cfg.stripeSecretKey, invoice: d.inv, balanceCents: balance, customerEmail: req.user.email, baseUrl: cfg.baseUrl, returnPath: back });
+    await audit({ user: req.user, action: 'billing.checkout_started', target: d.inv.id, metadata: { session: s.id } });
+    return res.redirect(303, s.url);
+  } catch (e) { console.error('Stripe checkout failed:', e.message); flash(req, 'error', 'Card payment could not be started. Please try again later.'); return res.redirect(back); }
+}));
+r.get('/billing/:id/pdf', wrap(async (req, res, next) => {
+  const d = await ownInvoice(req); if (!d || d.inv.status === 'draft') return next();
+  const pdf = await require('../lib/invoice-pdf').renderInvoice(d.inv, d.lines, d.payments);
+  res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${d.inv.number}.pdf"` }).send(pdf);
+}));
+
 module.exports = r;
