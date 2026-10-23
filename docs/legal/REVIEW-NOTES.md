@@ -15,3 +15,6 @@ October 23, 2026. Targeted review of the 30 drafts and README in this folder. Th
 
 ## Still open (owner or counsel)
 G01-G03 (legal pages, footer and versioned acceptance: after the texts are approved), G06-G07, G09-G10, G12-G15, and all P- and I- decisions listed in the README.
+
+## Admin > Legal documents (added the same day)
+Staff read every draft in the admin area. **Approve and publish** is for the main account only and is refused while any placeholder or draft label is left; it stores the exact approved text, which becomes the public page (/privacy, /terms, /cookies, /accessibility, or /legal/<name>) and a footer link. Later edits to the file do not change the public page until approved again. **Back to draft** (any LIV administrator) removes the page and the link at once; past publications stay on record and in the audit log.

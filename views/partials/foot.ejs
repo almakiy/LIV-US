@@ -10,6 +10,7 @@
     <div><h4><%= brand %></h4><a href="/knowledge">Knowledge</a><a href="/research">Research</a><a href="/guides">Guides</a><a href="/standards">Standards explained</a><a href="/about">About</a><a href="/contact">Contact &amp; support</a></div>
   </div>
   <div class="container footer-legal">
+    <% if (typeof legalLinks !== 'undefined' && legalLinks.length) { %><nav class="footer-links" aria-label="Legal"><% legalLinks.forEach(l => { %><a href="<%= l.href %>"><%= l.title %></a><% }) %></nav><% } %>
     <span>© <%= new Date().getFullYear() %> <%= legalEntity %>. All rights reserved. <%= brand %>, <%= brandLong %> and the <%= brand %> seal are trade names and marks of <%= legalEntity %>.</span>
     <span><%= brand %> is a private organization. It is not a government agency and does not claim government, federal, ISO or other external accreditation or recognition.</span>
   </div>

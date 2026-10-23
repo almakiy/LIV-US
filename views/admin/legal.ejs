@@ -1,0 +1,11 @@
+<%- include('../partials/app-start') %>
+<h1>Legal documents</h1>
+<p class="muted">Drafts are the files in <code>docs/legal</code> on GitHub. Nothing here is public until it is published. Only the main account publishes, and only a text with no placeholder or draft label left. Publishing stores that exact text; later edits to the file need a new approval. <strong>Back to draft</strong> removes the public page at once.</p>
+<div class="table-wrap" tabindex="0"><table><tr><th>Document</th><th>Open points</th><th>Status</th><th>Published</th></tr>
+<% docs.forEach(d => { %><tr>
+  <td><a href="/admin/legal/<%= d.slug %>"><%= d.title %></a><% if (d.internal) { %> <span class="small muted">(working notes, never published)</span><% } %></td>
+  <td><%= d.internal ? '' : d.placeholders %></td>
+  <td><%= d.internal ? '' : d.published ? (d.changed ? 'Published (file changed since)' : 'Published') : 'Draft' %></td>
+  <td><%= d.publishedAt ? usDateTime(d.publishedAt) : '' %></td>
+</tr><% }) %></table></div>
+<%- include('../partials/app-end') %>

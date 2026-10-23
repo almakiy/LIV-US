@@ -131,6 +131,7 @@ tr.err td{background:#FFF8F7}
 .footer h4{font-size:.75rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy);margin:6px 0 10px}
 .footer-grid a{display:block;color:var(--ink);margin-bottom:6px}
 .footer-legal{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:24px;padding-top:16px;font-size:.78rem}
+.footer-links{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px 18px}.footer-links a{color:inherit}
 code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}
 pre{background:#0F1B2D;color:#DDE7F3;padding:16px;border-radius:8px;overflow:auto}
 .keybox{background:#0F1B2D;color:#7FD1A8;padding:14px;border-radius:8px;word-break:break-all;font-family:ui-monospace,monospace}

@@ -2287,6 +2287,36 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(adm.url().endsWith('/admin'), 'the admin session returns to admin mode');
   }
 
+  console.log('Legal documents: drafts readable by staff, published only by the main account, back to draft hides the page');
+  {
+    const fs = require('fs'); const sample = path.join(__dirname, '..', 'docs', 'legal', 'e2e-sample-notice.md');
+    try {
+      await adm.goto(BASE + '/admin/legal');
+      ok(await see(adm, 'a:has-text("Privacy Policy")') && await see(adm, 'text=working notes, never published'), 'Admin > Legal documents lists the drafts and marks the working notes');
+      ok((await anon.request.get(BASE + '/privacy')).status() === 404 && (await anon.request.get(BASE + '/legal/privacy-policy')).status() === 404, 'a draft has no public page');
+      ok((await anon.request.get(BASE + '/admin/legal')).url().includes('/login'), 'the drafts are for LIV staff only');
+      await adm.goto(BASE + '/admin/legal/privacy-policy');
+      ok(await see(adm, 'text=open point(s)') && await adm.locator('button:has-text("Approve and publish")').count() === 0 && await see(adm, 'article.prose h1:has-text("Privacy Policy")'),
+        'a draft with placeholders is readable but cannot be published');
+      fs.writeFileSync(sample, '# Sample Notice\n\nApproved sample text, version one. See the [privacy policy](privacy-policy.md).\n');
+      await adm.goto(BASE + '/admin/legal/e2e-sample-notice');
+      await adm.check('input[name=confirm]'); await adm.click('button:has-text("Approve and publish")');
+      ok(await see(adm, 'text=Sample Notice is published'), 'the main account approves and publishes a completed text');
+      const pubRes = await anon.request.get(BASE + '/legal/e2e-sample-notice'); const pubHtml = await pubRes.text();
+      ok(pubRes.status() === 200 && pubHtml.includes('version one') && pubHtml.includes('href="/legal/privacy-policy"'), 'the public page shows the approved text');
+      ok((await (await anon.request.get(BASE + '/')).text()).includes('>Sample Notice</a>'), 'the published document appears in the site footer');
+      fs.writeFileSync(sample, '# Sample Notice\n\nEdited text, version two.\n');
+      await adm.goto(BASE + '/admin/legal');
+      ok(await see(adm, 'text=Published (file changed since)') && (await (await anon.request.get(BASE + '/legal/e2e-sample-notice')).text()).includes('version one'),
+        'editing the file does not change the public page until it is approved again');
+      await adm.goto(BASE + '/admin/legal/e2e-sample-notice'); await adm.click('button:has-text("Back to draft")');
+      ok(await see(adm, 'text=back to draft and no longer public') && (await anon.request.get(BASE + '/legal/e2e-sample-notice')).status() === 404
+        && !(await (await anon.request.get(BASE + '/')).text()).includes('>Sample Notice</a>'), 'back to draft removes the public page and the footer link at once');
+      ok(psql("SELECT count(*) FROM legal_publications WHERE slug = 'e2e-sample-notice'") === '1' && psql("SELECT count(*) FROM audit_logs WHERE action IN ('legal.publish','legal.withdraw')") === '2',
+        'the published text stays on record and both actions are in the audit log');
+    } finally { fs.rmSync(sample, { force: true }); }
+  }
+
   console.log('Security');
   const noCsrf = await ctx.request.post(BASE + '/portal/settings/keys', { form: { label: 'x' } });
   ok(noCsrf.status() === 403, 'POST without CSRF token rejected');

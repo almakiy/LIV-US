@@ -1549,4 +1549,19 @@ UPDATE membership_plans SET announced = true WHERE status = 'on_sale' AND NOT an
 ALTER TABLE membership_waitlist ALTER COLUMN plan_id DROP NOT NULL;
 DROP INDEX IF EXISTS uq_waitlist_open;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_waitlist_open_any ON membership_waitlist (COALESCE(plan_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(email)) WHERE status <> 'left';
+-- Legal documents (October 23, 2026): drafts live as files in docs/legal. Only the main account publishes one, and only when
+-- no placeholder is left; publishing stores the exact approved text. Withdrawing ("back to draft") hides the public page.
+-- Rows are never deleted, so every published text stays on record.
+CREATE TABLE IF NOT EXISTS legal_publications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug VARCHAR(80) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  body_md TEXT NOT NULL,
+  sha256 CHAR(64) NOT NULL,
+  published_by UUID REFERENCES users(id),
+  published_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  withdrawn_by UUID REFERENCES users(id),
+  withdrawn_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_legal_live ON legal_publications(slug) WHERE withdrawn_at IS NULL;
 `;

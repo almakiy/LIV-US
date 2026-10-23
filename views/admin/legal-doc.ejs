@@ -1,0 +1,21 @@
+<%- include('../partials/app-start') %>
+<p class="small"><a href="/admin/legal">Legal documents</a></p>
+<h1><%= d.title %></h1>
+<% if (d.internal) { %><p class="alert info">Working notes for staff and counsel. This file is never published.</p>
+<% } else { %>
+<div class="card" style="max-width:760px">
+  <p><strong>Status:</strong> <%= pub ? 'Published since ' + usDateTime(pub.published_at) : 'Draft (not public)' %><% if (pub) { %> · <a href="/legal/<%= d.slug %>">Public page</a><% } %></p>
+  <% if (changed) { %><p class="small">The file has changed since publication. The public page still shows the approved text until the new text is published.</p><% } %>
+  <% if (d.blockers.length) { %><p class="small"><strong><%= d.blockers.length %> open point(s)</strong> (placeholders or draft labels) must be completed before this text can be published.</p><% } %>
+  <% if (isMain && !d.blockers.length && (!pub || changed)) { %>
+  <form method="post" action="/admin/legal/<%= d.slug %>/publish"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label class="check"><input type="checkbox" name="confirm" value="yes" required> This text is reviewed and approved for publication.</label>
+    <button class="btn sm mt">Approve and publish</button></form>
+  <% } else if (!isMain && !pub) { %><p class="small muted">Only the main account publishes.</p><% } %>
+  <% if (pub) { %><form method="post" action="/admin/legal/<%= d.slug %>/withdraw" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Back to draft (hide public page)</button></form><% } %>
+  <% if (history.length) { %><details class="mt"><summary class="small">Publication history</summary><ul class="small"><% history.forEach(h => { %><li>Published <%= usDateTime(h.published_at) %> by <%= h.published_by || 'unknown' %><% if (h.withdrawn_at) { %>; withdrawn <%= usDateTime(h.withdrawn_at) %> by <%= h.withdrawn_by || 'unknown' %><% } %></li><% }) %></ul></details><% } %>
+</div>
+<% } %>
+<p class="alert warn mt">Draft text from the file. <%= d.internal ? '' : 'Not legal advice and not in force unless published.' %></p>
+<article class="prose mt"><%- html %></article>
+<%- include('../partials/app-end') %>
