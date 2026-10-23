@@ -46,6 +46,7 @@ r.post('/memberships/waitlist/invite', wrap(async (req, res) => {
 }));
 r.post('/memberships/plans/:id/draft', act(async (req) => { await M.saveDraft(req.user, req.params.id, req.body); return 'Draft saved. It is not shown to anyone until approved.'; }));
 r.post('/memberships/plans/:id/approve', act(async (req) => { await M.approve(req.user, req.params.id); return 'Terms approved. Members keep the terms they took; new purchases use these.'; }));
+r.post('/memberships/plans/:id/visibility', act(async (req) => { await M.setVisibility(req.user, req.params.id, req.body); return 'Site visibility saved.'; }));
 r.post('/memberships/plans/:id/sale', act(async (req) => { const on = req.body.on === 'yes'; await M.setSale(req.user, req.params.id, on); return on ? 'The plan is on sale.' : 'The plan is withdrawn from sale. Current members are not affected.'; }));
 r.post('/memberships/:id/suspend', act(async (req) => { await M.suspend(req.user, req.params.id, req.body.reason, req.body.on !== 'no'); return req.body.on === 'no' ? 'Membership reinstated.' : 'Membership suspended. Credentials are not affected.'; }));
 r.post('/memberships/invoices/:id/payment', act(async (req) => {

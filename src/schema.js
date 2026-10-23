@@ -1538,4 +1538,15 @@ CREATE TABLE IF NOT EXISTS membership_waitlist (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_waitlist_open ON membership_waitlist(plan_id, lower(email)) WHERE status <> 'left';
+
+-- Staged launches (owner decision, October 23, 2026): a plan stays off the site until it is announced; one announced plan at a time
+-- can be featured in the site banner; the waitlist also takes people for any future membership.
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS announced BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS banner_text VARCHAR(160) NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_one_featured_plan ON membership_plans ((true)) WHERE featured;
+UPDATE membership_plans SET announced = true WHERE status = 'on_sale' AND NOT announced;
+ALTER TABLE membership_waitlist ALTER COLUMN plan_id DROP NOT NULL;
+DROP INDEX IF EXISTS uq_waitlist_open;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_waitlist_open_any ON membership_waitlist (COALESCE(plan_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(email)) WHERE status <> 'left';
 `;

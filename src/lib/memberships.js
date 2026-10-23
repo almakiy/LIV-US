@@ -79,13 +79,41 @@ function saleBlockers(plan, version, { salesOpen = cfg.membershipSales, purpose 
   return out;
 }
 
-async function plans({ withDrafts = false } = {}) {
+/** withDrafts: include plans without approved terms (waitlist, admin). publicOnly: only plans announced on the site or on sale. */
+async function plans({ withDrafts = false, publicOnly = false } = {}) {
   const { rows } = await q(`SELECT p.*,
       (SELECT row_to_json(v) FROM membership_plan_versions v WHERE v.plan_id = p.id AND v.status = 'approved' ORDER BY v.version DESC LIMIT 1) AS approved,
       (SELECT row_to_json(v) FROM membership_plan_versions v WHERE v.plan_id = p.id ORDER BY v.version DESC LIMIT 1) AS latest
     FROM membership_plans p ORDER BY p.sort, p.name`);
   return rows.map((p) => ({ ...p, shown: p.approved || (withDrafts ? p.latest : null), blockers: saleBlockers(p, p.approved, { purpose: p.kind }) }))
-    .filter((p) => withDrafts || p.approved);
+    .filter((p) => withDrafts || p.approved).filter((p) => !publicOnly || p.announced || p.status === 'on_sale');
+}
+
+// The site banner shows the featured plan. Cached for a minute; cleared when a plan's visibility changes.
+let bannerCache = { at: 0, value: null };
+async function banner() {
+  if (Date.now() - bannerCache.at < 60000) return bannerCache.value;
+  const { rows: [p] } = await q(`SELECT code, name, status, banner_text FROM membership_plans WHERE featured AND announced AND status <> 'withdrawn' LIMIT 1`);
+  bannerCache = { at: Date.now(), value: p ? { code: p.code, name: p.name, open: p.status === 'on_sale', text: p.banner_text } : null };
+  return bannerCache.value;
+}
+
+/** The main account decides what the site shows: announce a plan (it appears, with its waitlist) and feature one plan in the banner. */
+async function setVisibility(user, planId, { announced, featured, banner_text }) {
+  await requireMain(user, 'decides which memberships the site shows');
+  const text = String(banner_text || '').trim();
+  if ([...text].some((ch) => /\p{L}/u.test(ch) && !/\p{Script=Latin}/u.test(ch))) throw new MembershipError('Write the banner text in English (Latin letters).');
+  if (text.length > 160) throw new MembershipError('Keep the banner text to 160 characters.');
+  const ann = announced === 'yes'; const feat = featured === 'yes' && ann;
+  await tx(async (c) => {
+    const { rows: [p] } = await c.query('SELECT code, status FROM membership_plans WHERE id = $1 FOR UPDATE', [planId]);
+    if (!p) throw new MembershipError('Plan not found.', 404);
+    if (!ann && p.status === 'on_sale') throw new MembershipError('A plan on sale stays visible. Withdraw it from sale first.');
+    if (feat) await c.query('UPDATE membership_plans SET featured = false WHERE featured AND id <> $1', [planId]);
+    await c.query('UPDATE membership_plans SET announced = $2, featured = $3, banner_text = $4 WHERE id = $1', [planId, ann, feat, text]);
+    await audit({ user, action: 'membership.plan_visibility', target: p.code, metadata: { announced: ann, featured: feat } }, c);
+  });
+  bannerCache = { at: 0, value: null };
 }
 
 async function plan(code) { return (await plans({ withDrafts: true })).find((p) => p.code === code) || null; }
@@ -131,7 +159,8 @@ async function setSale(user, planId, on) {
     const blockers = saleBlockers({ ...p, status: 'on_sale' }, p.approved, { salesOpen: true, purpose: p.kind });
     if (blockers.length) throw new MembershipError(`Not ready for sale: ${blockers.join(' ')}`);
   }
-  await q(`UPDATE membership_plans SET status = $1::varchar, first_on_sale_at = CASE WHEN $1::varchar = 'on_sale' THEN COALESCE(first_on_sale_at, now()) ELSE first_on_sale_at END WHERE id = $2`, [on ? 'on_sale' : 'withdrawn', planId]);
+  bannerCache = { at: 0, value: null };
+  await q(`UPDATE membership_plans SET announced = announced OR $1::varchar = 'on_sale', status = $1::varchar, first_on_sale_at = CASE WHEN $1::varchar = 'on_sale' THEN COALESCE(first_on_sale_at, now()) ELSE first_on_sale_at END WHERE id = $2`, [on ? 'on_sale' : 'withdrawn', planId]);
   await audit({ user, action: on ? 'membership.plan_on_sale' : 'membership.plan_withdrawn', target: p.code });
 }
 
@@ -282,4 +311,4 @@ async function stats() {
   return rows;
 }
 
-module.exports = { snapshot, memberNumber, iso, today, MembershipError, PROPOSED, PROPOSED_TERMS, applyProposedPrices, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };
+module.exports = { banner, setVisibility, snapshot, memberNumber, iso, today, MembershipError, PROPOSED, PROPOSED_TERMS, applyProposedPrices, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };

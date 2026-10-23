@@ -18,12 +18,16 @@ async function join({ plan, email, name, country, student, consent, userId }) {
   if (!EMAIL_RE.test(e)) throw new WaitlistError('Enter a valid email address.');
   if (consent !== 'yes') throw new WaitlistError('Confirm that we may email you when the membership opens.');
   if (hasNonLatin(name) || hasNonLatin(country)) throw new WaitlistError('Write your name and country in English (Latin letters).');
-  const { rows: [p] } = await q(`SELECT id, name, status FROM membership_plans WHERE code = $1`, [String(plan || '')]);
-  if (!p) throw new WaitlistError('Choose a plan.');
-  if (p.status === 'on_sale') throw new WaitlistError('This plan is already open. You can join it from your account.', 409);
+  // "any": any future LIV membership. Otherwise an announced plan that is not on sale yet; hidden plans take no entries.
+  let p = { id: null, name: 'future LIV memberships' };
+  if (String(plan || 'any') !== 'any') {
+    ({ rows: [p] } = await q(`SELECT id, name, status, announced FROM membership_plans WHERE code = $1`, [String(plan)]));
+    if (!p || !p.announced) throw new WaitlistError('Choose a membership.');
+    if (p.status === 'on_sale') throw new WaitlistError('This plan is already open. You can join it from your account.', 409);
+  }
   const token = crypto.randomBytes(16).toString('hex');
   const { rows: [row] } = await q(`INSERT INTO membership_waitlist (plan_id, email, name, country, is_student, user_id, consent_text, leave_token)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (plan_id, lower(email)) WHERE status <> 'left' DO NOTHING RETURNING id`,
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (COALESCE(plan_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(email)) WHERE status <> 'left' DO NOTHING RETURNING id`,
   [p.id, e, String(name || '').trim().slice(0, 200), String(country || '').trim().slice(0, 80), student === 'yes' ? true : null, userId || null, CONSENT, token]);
   if (row) {
     await require('./email').queue({ to: e, name: name || null, template: 'waitlist_joined', data: { plan: p.name, token }, dedupeKey: `wl:${row.id}` });
@@ -79,10 +83,13 @@ async function inviteBatch(user, planCode, size) {
 
 async function stats() {
   const [byPlan, byCountry, weekly] = await Promise.all([
-    q(`SELECT p.code, p.name, p.status AS plan_status, count(w.id) FILTER (WHERE w.status = 'waiting')::int AS waiting, count(w.id) FILTER (WHERE w.status = 'invited')::int AS invited,
+    q(`SELECT p.sort, p.code, p.name, p.status AS plan_status, count(w.id) FILTER (WHERE w.status = 'waiting')::int AS waiting, count(w.id) FILTER (WHERE w.status = 'invited')::int AS invited,
          count(w.id) FILTER (WHERE w.status = 'joined')::int AS joined, count(w.id) FILTER (WHERE w.status = 'left')::int AS left_list,
          count(w.id) FILTER (WHERE w.is_student AND w.status <> 'left')::int AS students
-       FROM membership_plans p LEFT JOIN membership_waitlist w ON w.plan_id = p.id GROUP BY p.id ORDER BY p.sort`),
+       FROM membership_plans p LEFT JOIN membership_waitlist w ON w.plan_id = p.id GROUP BY p.id
+     UNION ALL SELECT 999, 'any', 'Any future membership', '', count(*) FILTER (WHERE status = 'waiting')::int, count(*) FILTER (WHERE status = 'invited')::int,
+       count(*) FILTER (WHERE status = 'joined')::int, count(*) FILTER (WHERE status = 'left')::int, count(*) FILTER (WHERE is_student AND status <> 'left')::int
+       FROM membership_waitlist WHERE plan_id IS NULL ORDER BY 1`),
     q(`SELECT COALESCE(NULLIF(country, ''), 'Not given') AS country, count(*)::int AS n FROM membership_waitlist WHERE status <> 'left' GROUP BY 1 ORDER BY n DESC, 1 LIMIT 30`),
     q(`SELECT to_char(date_trunc('week', created_at), 'YYYY-MM-DD') AS week, count(*)::int AS n FROM membership_waitlist GROUP BY 1 ORDER BY 1 DESC LIMIT 12`),
   ]);
@@ -90,8 +97,8 @@ async function stats() {
 }
 
 async function exportRows() {
-  return (await q(`SELECT w.created_at, p.name AS plan, w.email, w.name, w.country, w.is_student, w.status, w.invited_at, w.joined_at FROM membership_waitlist w
-    JOIN membership_plans p ON p.id = w.plan_id ORDER BY w.created_at`)).rows;
+  return (await q(`SELECT w.created_at, COALESCE(p.name, 'Any future membership') AS plan, w.email, w.name, w.country, w.is_student, w.status, w.invited_at, w.joined_at FROM membership_waitlist w
+    LEFT JOIN membership_plans p ON p.id = w.plan_id ORDER BY w.created_at`)).rows;
 }
 
 module.exports = { WaitlistError, CONSENT, join, leave, isFounding, markJoined, inviteBatch, stats, exportRows };

@@ -25,6 +25,14 @@
 </head>
 <body>
 <div class="utility"><div class="container"><span><%= brandDescriptor %></span><a href="/verify">Verify a Credential</a></div></div>
+<% if (typeof announce !== 'undefined' && announce) { const key = announce.code + ':' + (announce.text || '').length; %>
+<div class="announce" role="region" aria-label="Membership announcement" data-announce="<%= key %>"><div class="container">
+  <span class="announce-mark" aria-hidden="true">&#9670;</span>
+  <span class="announce-text"><%= announce.text || (announce.open ? announce.name + ' is now open to new members.' : 'Founding membership now forming: ' + announce.name + '.') %></span>
+  <a class="announce-cta" href="<%= announce.open ? '/membership' : '/membership/waitlist' %>"><%= announce.open ? 'Become a member' : 'Join the waitlist' %> &rarr;</a>
+  <button type="button" class="announce-close" data-announce-close aria-label="Hide this announcement">&times;</button>
+</div></div>
+<% } %>
 <header class="topbar">
   <div class="container">
     <a class="brand" href="/" aria-label="<%= brand %> — <%= brandLong %>, home"><img src="/static/brand/liv-seal-reverse.svg" alt="" width="52" height="52"><span class="wm"><%= brand %><small><%= brandLong %></small></span></a>

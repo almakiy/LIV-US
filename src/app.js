@@ -69,6 +69,9 @@ app.use(async (req, res, next) => {
     res.locals.baseUrl = cfg.baseUrl;
     res.locals.publicApply = cfg.publicApply;
     res.locals.individualAccounts = cfg.individualAccounts;
+    // Site banner for the featured membership (public pages only; never in the admin or provider portal).
+    res.locals.announce = cfg.membershipWaitlist && req.method === 'GET' && !/^\/(admin|portal|api|static|logo|membership\/waitlist)/.test(req.path)
+      ? await require('./lib/memberships').banner().catch(() => null) : null;
     res.locals.path = req.path;
     res.locals.longDate = longDate;
     res.locals.flash = req.session.flash || null;

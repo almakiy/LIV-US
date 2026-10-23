@@ -2171,17 +2171,40 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   {
     const csrfOf = (p) => p.locator('input[name=_csrf]').first().inputValue();
     const pubPage = await (await browser.newContext()).newPage();
-    await pubPage.goto(BASE + '/membership');
-    ok(await see(pubPage, 'text=$345.00') && await see(pubPage, 'text=(expected price)') && await see(pubPage, 'h2:has-text("Join the waitlist")'), 'the membership page shows expected prices and the waitlist form');
     const fEmail = `founder.${stamp}@example.com`; const gEmail = `guest.${stamp}@example.com`; const hEmail = `plus.${stamp}@example.com`;
-    let r = await pubPage.request.post(BASE + '/membership/waitlist', { form: { _csrf: await csrfOf(pubPage), plan: 'member_plus', email: hEmail }, maxRedirects: 0 });
+    await pubPage.goto(BASE + '/membership');
+    ok(!(await pubPage.content()).includes('LIV Member Plus'), 'a plan that is not announced does not appear anywhere public');
+    await pubPage.goto(BASE + '/membership/waitlist');
+    ok(!(await pubPage.content()).includes('LIV Member Plus'), 'nor on the waitlist page');
+    let r = await pubPage.request.post(BASE + '/membership/waitlist', { form: { _csrf: await csrfOf(pubPage), plan: 'member_plus', email: hEmail, consent: 'yes' }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM membership_waitlist WHERE email = '${hEmail}'`) === '0', 'a hidden plan takes no waitlist entries');
+    await adm.goto(BASE + '/admin/memberships');
+    const vis = adm.locator('form[action$="/visibility"]').nth(1);
+    await vis.locator('input[name=announced]').check(); await vis.locator('input[name=featured]').check(); await vis.locator('button:has-text("Save site visibility")').click();
+    ok(await see(adm, 'text=Site visibility saved') && psql(`SELECT announced || ',' || featured FROM membership_plans WHERE code = 'member_plus'`) === 'true,true', 'the main account announces the next plan and features it in the banner');
+    await pubPage.goto(BASE + '/');
+    ok(await see(pubPage, '.announce:has-text("Founding membership now forming: LIV Member Plus")') && await see(pubPage, '.announce a[href="/membership/waitlist"]'), 'a site-wide banner announces it and leads to the waitlist');
+    ok(!(await (await adm.request.get(BASE + '/admin/memberships')).text()).includes('class="announce"'), 'the banner stays off the admin pages');
+    await pubPage.click('[data-announce-close]'); await pubPage.goto(BASE + '/about');
+    ok(await pubPage.locator('.announce').isHidden(), 'a visitor can hide the banner, and it stays hidden on later pages');
+    await adm.goto(BASE + '/admin/memberships');
+    const visM = adm.locator('form[action$="/visibility"]').nth(0);
+    await visM.locator('input[name=featured]').check(); await visM.locator('button:has-text("Save site visibility")').click(); await see(adm, 'text=Site visibility saved');
+    ok(psql(`SELECT string_agg(code, ',') FROM membership_plans WHERE featured`) === 'member', 'only one plan leads the banner at a time');
+    await visM.locator('input[name=featured]').uncheck(); await visM.locator('button:has-text("Save site visibility")').click(); await see(adm, 'text=Site visibility saved');
+    const visP = adm.locator('form[action$="/visibility"]').nth(1);
+    await visP.locator('input[name=featured]').check(); await visP.locator('button:has-text("Save site visibility")').click(); await see(adm, 'text=Site visibility saved');
+    await pubPage.goto(BASE + '/membership/waitlist');
+    ok(await see(pubPage, 'h1:has-text("LIV Member Plus")') && await see(pubPage, 'text=$345') && await see(pubPage, 'text=expected'), 'the waitlist page leads with the featured plan and its expected price');
+    r = await pubPage.request.post(BASE + '/membership/waitlist', { form: { _csrf: await csrfOf(pubPage), plan: 'member_plus', email: hEmail }, maxRedirects: 0 });
     ok(psql(`SELECT count(*) FROM membership_waitlist WHERE email = '${hEmail}'`) === '0', 'joining needs the consent box (checked on the server)');
     const joinList = async (plan, email, extra = {}) => {
-      await pubPage.goto(BASE + '/membership'); await pubPage.selectOption('#w-plan', plan); await pubPage.fill('#w-email', email);
+      await pubPage.goto(BASE + '/membership/waitlist'); await pubPage.selectOption('#w-plan', plan); await pubPage.fill('#w-email', email);
       if (extra.country) await pubPage.fill('#w-country', extra.country); if (extra.student) await pubPage.check('input[name=student]');
       await pubPage.check('input[name=consent]'); await pubPage.click('button:has-text("Join the waitlist")');
       return see(pubPage, 'text=You are on the list');
     };
+    ok(await joinList('any', `anyone.${stamp}@example.com`) && psql(`SELECT count(*) FROM membership_waitlist WHERE email = 'anyone.${stamp}@example.com' AND plan_id IS NULL`) === '1', 'people can also join the list for any future membership');
     ok(await joinList('member_plus', hEmail, { country: 'United States', student: true }), 'a visitor joins the waitlist for a plan');
     ok(await joinList('member_plus', hEmail) && psql(`SELECT count(*) FROM membership_waitlist WHERE email = '${hEmail}'`) === '1', 'joining twice keeps one entry and gives the same answer');
     ok(psql(`SELECT consent_text LIKE 'Email me when this membership opens%' AND is_student AND country = 'United States' FROM membership_waitlist WHERE email = '${hEmail}'`) === 't'
@@ -2228,7 +2251,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Withdraw from sale")').click(); await see(adm, 'text=withdrawn from sale');
     const axeSrc = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
     await pubPage.setViewportSize({ width: 390, height: 844 });
-    for (const path of ['/membership', `/membership/waitlist/leave?t=${tokG}`]) {
+    for (const path of ['/membership', '/membership/waitlist', '/', `/membership/waitlist/leave?t=${tokG}`]) {
       await pubPage.goto(BASE + path); await pubPage.evaluate(axeSrc);
       const v = await pubPage.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
       const hs = await pubPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);

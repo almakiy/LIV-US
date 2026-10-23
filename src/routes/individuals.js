@@ -86,13 +86,21 @@ r.post('/password/reset', limiter(15, 10), wrap(async (req, res) => {
 const M = require('../lib/memberships');
 r.get('/individuals', (req, res) => res.render('public/individuals', { title: 'For individuals', description: 'Keep your LIV credentials in one account, verify and share them, and learn about optional membership.' }));
 r.get('/membership', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits', description: 'Optional LIV membership for individuals: what it includes and what it does not.',
-  plans: await M.plans({ withDrafts: cfg.membershipWaitlist }), preview: false, waitlist: cfg.membershipWaitlist, consentText: require('../lib/waitlist').CONSENT, done: req.query.joined === '1' })));
+  plans: await M.plans({ withDrafts: cfg.membershipWaitlist, publicOnly: true }), preview: false, waitlist: cfg.membershipWaitlist, consentText: '', done: false })));
+// Waitlist landing page: the featured plan first, then the other announced plans and "any future membership".
+r.get('/membership/waitlist', wrap(async (req, res, next) => {
+  if (!cfg.membershipWaitlist) return next();
+  const plans = (await M.plans({ withDrafts: true, publicOnly: true })).filter((p) => p.status !== 'on_sale');
+  const featured = plans.find((p) => p.featured) || plans[0] || null;
+  res.render('public/waitlist', { title: featured ? `${featured.name}: join the waitlist` : 'Membership waitlist', description: 'Join the LIV membership waitlist. Free; not a purchase or a reservation.',
+    plans, featured, consentText: require('../lib/waitlist').CONSENT, done: req.query.joined === '1' });
+}));
 r.post('/membership/waitlist', limiter(15, 10), wrap(async (req, res, next) => {
   if (!cfg.membershipWaitlist) return next();
   const W = require('../lib/waitlist');
   try { await W.join({ ...req.body, userId: req.user && req.user.role === 'individual' ? req.user.id : null }); }
-  catch (e) { if (!(e instanceof W.WaitlistError)) throw e; flash(req, 'error', e.message); return res.redirect('/membership#waitlist'); }
-  res.redirect('/membership?joined=1#waitlist');
+  catch (e) { if (!(e instanceof W.WaitlistError)) throw e; flash(req, 'error', e.message); return res.redirect('/membership/waitlist#join'); }
+  res.redirect('/membership/waitlist?joined=1#join');
 }));
 r.get('/membership/waitlist/leave', (req, res) => res.render('public/waitlist-leave', { title: 'Leave the waitlist', token: String(req.query.t || ''), done: false }));
 r.post('/membership/waitlist/leave', limiter(15, 20), wrap(async (req, res) => {
