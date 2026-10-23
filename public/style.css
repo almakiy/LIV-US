@@ -222,3 +222,4 @@ fieldset.field{border:0;padding:0;margin:0 0 14px}fieldset.field legend{font-wei
 .member-card .mc-plan{color:#E6EAF1}
 .member-card .mc-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:.85rem;color:#D6DCE6;margin-top:auto}
 .member-card .mc-foot{font-size:.75rem;color:#D6DCE6;border-top:1px solid rgba(255,255,255,.2);padding-top:8px}
+.member-card .mc-founding{color:var(--gold-2);font-weight:600}

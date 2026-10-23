@@ -1883,7 +1883,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(BASE + '/admin/memberships');
     await adm.locator('#plan-member_plus button:has-text("Approve these terms")').click();
     ok(await see(adm, 'text=Replace every [TO BE CONFIRMED'), 'proposed terms with the refund line still open cannot be approved');
-    ok((await (await anon.request.get(BASE + '/membership')).text()).includes('Plans are being prepared'), 'the public page shows no plan until terms are approved');
+    ok(!(await (await anon.request.get(BASE + '/membership')).text()).includes('Available from your account'), 'the public page offers no plan for sale until terms are approved');
     await mp.goto(BASE + '/me/membership');
     ok(await see(mp, 'text=Membership plans are not available yet'), 'the member sees that no plan can be bought yet');
     let r = await mp.request.post(BASE + '/me/membership/join/member', { form: { _csrf: await mp.locator('input[name=_csrf]').first().inputValue() }, maxRedirects: 0 });
@@ -2165,6 +2165,76 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
       ok(!v.length && !hs, `${path} at phone width: no automated WCAG 2.2 AA violations and no sideways scrolling${v.length ? ': ' + v.join(', ') : ''}`);
     }
     for (const x of [L.c, O.c, rc]) await x.close();
+  }
+
+  console.log('Membership waitlist: expected prices, consent, founding members, invitations, leaving');
+  {
+    const csrfOf = (p) => p.locator('input[name=_csrf]').first().inputValue();
+    const pubPage = await (await browser.newContext()).newPage();
+    await pubPage.goto(BASE + '/membership');
+    ok(await see(pubPage, 'text=$345.00') && await see(pubPage, 'text=(expected price)') && await see(pubPage, 'h2:has-text("Join the waitlist")'), 'the membership page shows expected prices and the waitlist form');
+    const fEmail = `founder.${stamp}@example.com`; const gEmail = `guest.${stamp}@example.com`; const hEmail = `plus.${stamp}@example.com`;
+    let r = await pubPage.request.post(BASE + '/membership/waitlist', { form: { _csrf: await csrfOf(pubPage), plan: 'member_plus', email: hEmail }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM membership_waitlist WHERE email = '${hEmail}'`) === '0', 'joining needs the consent box (checked on the server)');
+    const joinList = async (plan, email, extra = {}) => {
+      await pubPage.goto(BASE + '/membership'); await pubPage.selectOption('#w-plan', plan); await pubPage.fill('#w-email', email);
+      if (extra.country) await pubPage.fill('#w-country', extra.country); if (extra.student) await pubPage.check('input[name=student]');
+      await pubPage.check('input[name=consent]'); await pubPage.click('button:has-text("Join the waitlist")');
+      return see(pubPage, 'text=You are on the list');
+    };
+    ok(await joinList('member_plus', hEmail, { country: 'United States', student: true }), 'a visitor joins the waitlist for a plan');
+    ok(await joinList('member_plus', hEmail) && psql(`SELECT count(*) FROM membership_waitlist WHERE email = '${hEmail}'`) === '1', 'joining twice keeps one entry and gives the same answer');
+    ok(psql(`SELECT consent_text LIKE 'Email me when this membership opens%' AND is_student AND country = 'United States' FROM membership_waitlist WHERE email = '${hEmail}'`) === 't'
+      && psql(`SELECT count(*) FROM email_outbox WHERE to_email = '${hEmail}' AND template = 'waitlist_joined'`) === '1', 'the entry keeps the exact consent text, and a confirmation with a leave link is queued');
+    // Founding members: on the list before the plan first went on sale.
+    await joinList('member', fEmail); await joinList('member', gEmail);
+    psql(`UPDATE membership_waitlist SET created_at = (SELECT first_on_sale_at - interval '1 day' FROM membership_plans WHERE code = 'member') WHERE email = '${fEmail}'`);
+    await adm.goto(BASE + '/admin/memberships/waitlist');
+    await adm.selectOption('#iv-plan', 'member_plus'); await adm.fill('#iv-size', '10'); await adm.click('button:has-text("Send invitations")');
+    ok(await see(adm, 'text=Invitations wait until the plan can be bought') && psql(`SELECT status FROM membership_waitlist WHERE email = '${hEmail}'`) === 'waiting', 'no invitation goes out for a plan that cannot be bought');
+    await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Put on sale")').click(); await see(adm, 'text=The plan is on sale');
+    r = await pubPage.request.post(BASE + '/membership/waitlist', { form: { _csrf: await csrfOf(pubPage), plan: 'member', email: `late.${stamp}@example.com`, consent: 'yes' }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM membership_waitlist WHERE email = 'late.${stamp}@example.com'`) === '0', 'an open plan takes no waitlist entries: people join it directly');
+    await adm.goto(BASE + '/admin/memberships/waitlist'); await adm.selectOption('#iv-plan', 'member'); await adm.fill('#iv-size', '1'); await adm.click('button:has-text("Send invitations")');
+    ok(await see(adm, 'text=1 person(s) invited') && psql(`SELECT status FROM membership_waitlist WHERE email = '${fEmail}'`) === 'invited' && psql(`SELECT status FROM membership_waitlist WHERE email = '${gEmail}'`) === 'waiting', 'the main account invites a batch, oldest first');
+    ok(psql(`SELECT count(*) FROM email_outbox WHERE to_email = '${fEmail}' AND template = 'waitlist_invite'`) === '1', 'the invitation is queued by email');
+    // The founder signs up and joins.
+    const fc = await browser.newContext(); const fp = await fc.newPage();
+    await fp.goto(BASE + '/signup'); await fp.fill('#s-name', 'Fay Founder'); await fp.fill('#s-email', fEmail); await fp.fill('#s-pw', 'Founder-Pass-2026x'); await fp.fill('#s-pw2', 'Founder-Pass-2026x'); await fp.check('input[name=terms]'); await fp.click('button:has-text("Create account")');
+    const vt = (psql(`SELECT text_body FROM email_outbox WHERE to_email = '${fEmail}' AND template = 'individual_verify' ORDER BY created_at DESC LIMIT 1`).match(/t=([a-f0-9]{48})/) || [])[1];
+    await fp.goto(`${BASE}/signup/verify?t=${vt}`);
+    await fp.goto(BASE + '/login'); await fp.fill('input[name=email]', fEmail); await fp.fill('input[name=password]', 'Founder-Pass-2026x'); await fp.click('button:has-text("Log in")'); await fp.waitForLoadState();
+    await fp.goto(BASE + '/me/membership'); await fp.locator('form[action="/me/membership/join/member"] button').click(); await see(fp, 'text=waiting for payment');
+    const fid = psql(`SELECT id FROM users WHERE email = '${fEmail}'`);
+    const fInv = psql(`SELECT invoice_id FROM memberships WHERE user_id = '${fid}' AND status = 'pending_payment'`);
+    ok(psql(`SELECT terms->>'founding' FROM memberships WHERE user_id = '${fid}'`) === 'true', 'someone on the list before the plan opened is recorded as a Founding Member');
+    if (process.env.STRIPE_WEBHOOK_SECRET) {
+      const stripeLib = require('../src/lib/stripe'); const total = Number(psql(`SELECT total_cents FROM invoices WHERE id = '${fInv}'`));
+      const ev = JSON.stringify({ id: `evt_f_${stamp}`, type: 'payment_intent.succeeded', data: { object: { id: `pi_f_${stamp}`, amount_received: total, metadata: { liv_invoice_id: fInv } } } });
+      await anon.request.post(BASE + '/api/webhooks/stripe', { data: ev, headers: { 'content-type': 'application/json', 'stripe-signature': stripeLib.signHeader(ev, process.env.STRIPE_WEBHOOK_SECRET) } });
+      await fp.goto(BASE + '/me/membership');
+      ok(await see(fp, '.mc-founding:has-text("Founding Member")') && psql(`SELECT status FROM membership_waitlist WHERE email = '${fEmail}'`) === 'joined', 'after payment the card shows the Founding Member badge and the entry is marked joined');
+    }
+    // Leaving the list
+    const tokG = psql(`SELECT leave_token FROM membership_waitlist WHERE email = '${gEmail}'`);
+    await pubPage.goto(`${BASE}/membership/waitlist/leave?t=${tokG}`); await pubPage.click('button:has-text("Leave the waitlist")');
+    ok(await see(pubPage, 'text=You are no longer on the membership waitlist') && psql(`SELECT status FROM membership_waitlist WHERE email = '${gEmail}'`) === 'left', 'the leave link removes the address with one confirmation');
+    // Admin view and export
+    await adm.goto(BASE + '/admin/memberships/waitlist');
+    ok(await see(adm, 'text=United States: 1'), 'the admin sees the list by plan and by country');
+    const csv = await (await adm.request.get(BASE + '/admin/memberships/waitlist.csv')).text();
+    ok(csv.startsWith('joined_list_at,plan,email') && csv.includes(hEmail), 'the list exports as CSV');
+    ok((await anon.request.get(BASE + '/admin/memberships/waitlist.csv')).url().includes('/login'), 'the export is for LIV staff only');
+    await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Withdraw from sale")').click(); await see(adm, 'text=withdrawn from sale');
+    const axeSrc = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    await pubPage.setViewportSize({ width: 390, height: 844 });
+    for (const path of ['/membership', `/membership/waitlist/leave?t=${tokG}`]) {
+      await pubPage.goto(BASE + path); await pubPage.evaluate(axeSrc);
+      const v = await pubPage.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      const hs = await pubPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      ok(!v.length && !hs, `${path.split('?')[0]} at phone width: no automated WCAG 2.2 AA violations and no sideways scrolling${v.length ? ': ' + v.join(', ') : ''}`);
+    }
+    await fc.close();
   }
 
   console.log('Preview accounts: test data is cleared (manual, at sign-out, at the next sign-in)');

@@ -24,6 +24,8 @@ module.exports = {
   // Membership sales: closed until the owner approves plans, prices and terms. A plan also has to be on sale with an approved version.
   membershipSales: process.env.MEMBERSHIP_SALES === 'true',
   // Paid resources and gifts: closed until the owner approves products and prices. Newsletter sending: closed until the sending domain and footer are ready.
+  // Membership waitlist on the public membership page: off until the owner turns it on.
+  membershipWaitlist: process.env.MEMBERSHIP_WAITLIST === 'true',
   productSales: process.env.PRODUCT_SALES === 'true',
   newsletterSending: process.env.NEWSLETTER_SENDING === 'true',
   // Excel (.xlsx) uploads are enabled for testing; set ALLOW_XLSX=false to accept CSV only.

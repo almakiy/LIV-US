@@ -6,12 +6,25 @@
 </div></section>
 <section class="section white"><div class="container">
   <% if (preview) { %><div class="alert warn" role="status">Admin preview: draft plans are shown as they would appear. Nothing here is on sale.</div><% } %>
+  <%- include('../partials/flash') %>
+  <% if (done) { %><div class="alert success" role="status" id="waitlist">Thank you. You are on the list; we will email you when the membership opens. Nothing is charged.</div><% } %>
   <% if (!plans.length) { %><div class="card" style="max-width:720px"><h2 class="h3">Plans are being prepared</h2><p class="small muted">Membership plans, their benefits and prices will be published here once they are approved. A free account already lets you keep and share your credentials.</p></div>
-  <% } else { %><div class="grid g3"><% plans.forEach(p => { const v = p.shown || p.approved; %>
+  <% } else { %><div class="grid g3"><% plans.forEach(p => { const v = p.shown || p.approved; const open = !p.blockers.length; %>
     <div class="card"><h2 class="h3"><%= p.name %></h2><p class="small muted"><%= p.audience %></p>
-      <p><strong><%= v.price_cents == null ? 'Price to be announced' : '$' + (v.price_cents / 100).toFixed(2) %></strong><%= v.period_months ? ' for ' + v.period_months + ' month(s)' : '' %></p>
+      <% if (v.price_cents != null) { %><p><strong>$<%= (v.price_cents / 100).toFixed(2) %></strong><%= p.kind === 'group' ? ' per seat' : '' %><%= v.period_months ? ' for ' + v.period_months + ' month(s)' : '' %><%= open ? '' : ' (expected price)' %></p><% } else { %><p><strong>Price to be announced</strong></p><% } %>
       <ul class="small"><% (v.benefits || []).forEach(b => { %><li><%= b.text %><%= b.available ? '' : ' (planned)' %></li><% }) %></ul>
-      <p class="small muted"><%= p.blockers.length ? 'Not available to buy yet.' : 'Available from your account.' %></p></div><% }) %></div><% } %>
+      <p class="small muted"><%= open ? 'Available from your account.' : (waitlist && p.status !== 'on_sale' ? 'Not open yet: join the waitlist below.' : 'Not available to buy yet.') %></p></div><% }) %></div><% } %>
+  <% const listable = plans.filter(p => p.status !== 'on_sale'); if (waitlist && listable.length && !preview) { %>
+  <form class="card mt" method="post" action="/membership/waitlist" id="waitlist" style="max-width:640px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <h2 class="h3">Join the waitlist</h2>
+    <p class="small muted">Free. Not a purchase or a reservation; the price shown is expected, not guaranteed. People on the list before a plan opens receive the Founding Member badge on their membership card when they join.</p>
+    <div class="field"><label for="w-plan">Plan</label><select id="w-plan" name="plan"><% listable.forEach(p => { %><option value="<%= p.code %>"><%= p.name %></option><% }) %></select></div>
+    <div class="row"><div class="field"><label for="w-email">Email</label><input id="w-email" type="email" name="email" value="<%= user && user.email ? user.email : '' %>" required></div>
+      <div class="field"><label for="w-name">Name (in English, optional)</label><input id="w-name" name="name" maxlength="200"></div></div>
+    <div class="row"><div class="field"><label for="w-country">Country (optional)</label><input id="w-country" name="country" maxlength="80"></div>
+      <div class="field"><label class="check" style="margin-top:28px"><input type="checkbox" name="student" value="yes"> I am a student</label></div></div>
+    <div class="field"><label class="check"><input type="checkbox" name="consent" value="yes" required> <%= consentText %></label></div>
+    <button class="btn">Join the waitlist</button></form><% } %>
   <h2 class="mt">What membership never does</h2>
   <ul><li>It does not certify competence or grant a professional title.</li><li>It does not give an advantage in eligibility, assessment or any certification decision.</li><li>Your credentials stay valid and verifiable when a membership ends.</li></ul>
   <p><a href="/membership/verify">Verify a membership card</a> · <a href="/individuals">For individuals</a></p>

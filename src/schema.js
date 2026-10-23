@@ -1515,4 +1515,27 @@ CREATE TABLE IF NOT EXISTS program_interest (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_program_interest ON program_interest(scheme_id, lower(email));
+
+-- Membership waitlist (owner decision, October 23, 2026): free, no payment, no reservation, no guaranteed price. People on the list
+-- before a plan first goes on sale become Founding Members when they join that plan (a badge on the membership card only).
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS first_on_sale_at TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS membership_waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_id UUID NOT NULL REFERENCES membership_plans(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  name VARCHAR(200) NOT NULL DEFAULT '',
+  country VARCHAR(80) NOT NULL DEFAULT '',
+  is_student BOOLEAN,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  consent_text TEXT NOT NULL,
+  source VARCHAR(40) NOT NULL DEFAULT 'membership page',
+  status VARCHAR(10) NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting','invited','joined','left')),
+  leave_token CHAR(32) NOT NULL UNIQUE,
+  invited_at TIMESTAMPTZ,
+  invite_batch UUID,
+  joined_at TIMESTAMPTZ,
+  left_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_waitlist_open ON membership_waitlist(plan_id, lower(email)) WHERE status <> 'left';
 `;

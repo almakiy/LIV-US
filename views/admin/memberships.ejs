@@ -1,7 +1,7 @@
 <%- include('../partials/app-start') %>
 <h1>Memberships</h1>
 <p class="muted">Plans, prices, periods and benefits are entered here; nothing is invented by the system. A plan can be bought only when its terms are approved by the main account, it is on sale, every listed benefit is marked available, and membership sales are open on the server (<code>MEMBERSHIP_SALES</code>: <strong><%= salesOpen ? 'open' : 'closed' %></strong>). Membership never affects credentials, eligibility or assessment.</p>
-<p><a href="/admin/memberships/preview">Preview the public membership page with draft plans</a> · <a href="/membership">Public page</a></p>
+<p><a href="/admin/memberships/waitlist">Waitlist</a> · <a href="/admin/memberships/preview">Preview the public membership page with draft plans</a> · <a href="/membership">Public page</a></p>
 <h2 class="mt">Counts (preview memberships left out)</h2>
 <% if (!stats.length) { %><p class="muted small">No memberships yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Source</th><th>Status</th><th>Count</th><th>Paid amount</th></tr>
   <% stats.forEach(s => { %><tr><td><%= s.source %></td><td><%= s.status %></td><td><%= s.n %></td><td><%= s.source === 'paid' ? money(Number(s.paid_cents)) : 'not revenue' %></td></tr><% }) %></table></div><% } %>

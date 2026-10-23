@@ -69,6 +69,15 @@ const TEMPLATES = {
     'Your LIV account stays yours: the organization manages the seat and its invoice, and never sees your credentials, results or private records.',
     `Invitation code: ${clip(d.code, 40)}`],
   { label: 'Accept the invitation', url: `${cfg.baseUrl}/me/gifts` }) }),
+  waitlist_joined: (d) => ({ subject: `You are on the waitlist for ${clip(d.plan, 120)}`, ...layout('You are on the list', [
+    `Thank you. We will email you when the ${clip(d.plan, 120)} membership opens.`,
+    'This is not a purchase or a reservation, and the price is not guaranteed. Nothing is charged.',
+    `To leave the list: ${cfg.baseUrl}/membership/waitlist/leave?t=${encodeURIComponent(d.token)}`]) }),
+  waitlist_invite: (d) => ({ subject: `${clip(d.plan, 120)} is open`, ...layout(`${clip(d.plan, 120)} is open`, [
+    `You asked us to tell you when the ${clip(d.plan, 120)} membership opens. It is open now: sign in or create your free account, then choose the plan under My membership.`,
+    'People who joined the waitlist before the plan opened receive the Founding Member badge on their membership card.',
+    `To leave the list: ${cfg.baseUrl}/membership/waitlist/leave?t=${encodeURIComponent(d.token)}`],
+  { label: 'Open the membership page', url: `${cfg.baseUrl}/me/membership` }) }),
   membership_reminder: (d) => ({ subject: 'Your LIV membership ends in 30 days', ...layout('Your membership ends soon', [
     `Your ${clip(d.plan, 120)} membership ends on ${clip(d.ends, 10)}. You can renew from your account; nothing renews automatically.`,
     'Your credentials stay valid and verifiable whether or not you renew.'],

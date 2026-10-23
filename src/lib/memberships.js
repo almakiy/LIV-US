@@ -131,7 +131,7 @@ async function setSale(user, planId, on) {
     const blockers = saleBlockers({ ...p, status: 'on_sale' }, p.approved, { salesOpen: true, purpose: p.kind });
     if (blockers.length) throw new MembershipError(`Not ready for sale: ${blockers.join(' ')}`);
   }
-  await q('UPDATE membership_plans SET status = $1 WHERE id = $2', [on ? 'on_sale' : 'withdrawn', planId]);
+  await q(`UPDATE membership_plans SET status = $1::varchar, first_on_sale_at = CASE WHEN $1::varchar = 'on_sale' THEN COALESCE(first_on_sale_at, now()) ELSE first_on_sale_at END WHERE id = $2`, [on ? 'on_sale' : 'withdrawn', planId]);
   await audit({ user, action: on ? 'membership.plan_on_sale' : 'membership.plan_withdrawn', target: p.code });
 }
 
@@ -174,8 +174,9 @@ async function join(user, code) {
       [u.id, v.price_cents, `${p.name} membership`]);
     await c.query(`INSERT INTO invoice_lines (invoice_id, product_code, description, quantity, unit_amount_cents, amount_cents) VALUES ($1,'MEMBERSHIP',$2,1,$3::int,$3::bigint)`,
       [inv.id, `${p.name} membership, ${v.period_months} month(s), member ${number}`, v.price_cents]);
+    const founding = await require('./waitlist').isFounding(c, u.id, p.id);
     const { rows: [m] } = await c.query(`INSERT INTO memberships (user_id, plan_version_id, member_number, source, status, terms, price_cents, invoice_id, renewed_from)
-      VALUES ($1,$2,$3,'paid','pending_payment',$4,$5,$6,$7) RETURNING id`, [u.id, v.id, number, JSON.stringify(snapshot(p, v)), v.price_cents, inv.id, cur.active?.id || null]);
+      VALUES ($1,$2,$3,'paid','pending_payment',$4,$5,$6,$7) RETURNING id`, [u.id, v.id, number, JSON.stringify({ ...snapshot(p, v), founding }), v.price_cents, inv.id, cur.active?.id || null]);
     await event(c, m.id, cur.active ? 'renewal_started' : 'started', u.email, `${p.name} v${v.version}`);
     await audit({ user: u, action: 'membership.start', target: number, metadata: { plan: p.code, version: v.version, invoice: inv.id } }, c);
     return { membershipId: m.id, invoiceId: inv.id };
@@ -199,6 +200,7 @@ async function onInvoicePaid(invoiceId) {
     const { rows: [a] } = await c.query(`UPDATE memberships SET status = 'active', activated_at = now(), starts_on = $2::date,
       ends_on = ($2::date + make_interval(months => $3) - interval '1 day')::date WHERE id = $1 RETURNING starts_on, ends_on, member_number`, [m.id, start, m.months]);
     await event(c, m.id, 'activated', 'payment', `Paid invoice; ${iso(a.starts_on)} to ${iso(a.ends_on)}`);
+    await require('./waitlist').markJoined(c, m.user_id, m.plan_version_id);
     await audit({ actorLabel: 'payment', action: 'membership.activate', target: a.member_number, metadata: { invoice: invoiceId } }, c);
     return a;
   });

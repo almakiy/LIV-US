@@ -179,6 +179,7 @@ async function resetData(user, reason = 'manual') {
       await c.query(`UPDATE users SET marketing_opt_in = false, marketing_opt_in_at = NULL, newsletter_opt_in = false, newsletter_topics = '{}', card_show_name = false, closure_requested_at = NULL WHERE id = ANY($1::uuid[])`, [ids]);
       for (const d of Object.values(INDIVIDUALS)) await c.query('UPDATE users SET full_name = $1 WHERE lower(email) = $2', [d.name, d.email]);
     }
+    await c.query(`DELETE FROM membership_waitlist WHERE email LIKE '%@' || $1 OR user_id = ANY($2::uuid[])`, [PREVIEW_DOMAIN, ids]);
     await c.query(`DELETE FROM email_outbox WHERE to_email LIKE '%@' || $1`, [PREVIEW_DOMAIN]);
     await audit({ user, action: 'preview.reset', target: reason, metadata: counts }, c);
     return keys;

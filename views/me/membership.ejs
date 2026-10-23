@@ -10,7 +10,7 @@
     <div class="member-card" id="card" aria-label="Membership card">
       <div class="mc-top"><img src="/static/brand/liv-seal-mono-white.svg" alt="" width="40" height="40"><span>LIV Membership</span></div>
       <div class="mc-name"><%= u.full_name %></div>
-      <div class="mc-plan"><%= t.plan_name %></div>
+      <div class="mc-plan"><%= t.plan_name %><% if (t.founding) { %> · <span class="mc-founding">Founding Member</span><% } %></div>
       <div class="mc-meta"><span>Member <%= a.member_number %></span><span><%= usDate(a.starts_on) %> to <%= usDate(a.ends_on) %></span></div>
       <div class="mc-foot">Membership only. Not a professional qualification or an accreditation.</div>
     </div>

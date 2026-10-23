@@ -156,6 +156,7 @@ async function exportData(userId) {
     claim_requests: await one('SELECT cert_number, statement, status, decision_reason, created_at, decided_at FROM credential_claim_requests WHERE user_id = $1 ORDER BY created_at', [userId]),
     memberships: await one(`SELECT member_number, status, source, terms->>'plan_name' AS plan, starts_on, ends_on, renewal_declined_at, created_at FROM memberships WHERE user_id = $1 AND status <> 'void' ORDER BY created_at`, [userId]),
     invoices: await one(`SELECT number, status, issue_date, total_cents, amount_paid_cents, currency FROM invoices WHERE user_id = $1 AND status <> 'draft' ORDER BY created_at`, [userId]),
+    waitlist: await one(`SELECT p.name AS plan, w.status, w.created_at FROM membership_waitlist w JOIN membership_plans p ON p.id = w.plan_id WHERE lower(w.email) = (SELECT lower(email) FROM users WHERE id = $1) ORDER BY w.created_at`, [userId]),
     support_messages: await one('SELECT topic, message, created_at FROM contact_messages WHERE user_id = $1 ORDER BY created_at', [userId]),
   };
 }

@@ -25,7 +25,25 @@ r.get('/memberships', wrap(async (req, res) => {
   res.render('admin/memberships', { title: 'Memberships', plans: await M.plans({ withDrafts: true }), members, stats: await M.stats(), isMain: await isMainAccount(req.user),
     salesOpen: cfg.membershipSales, benefitsText: M.benefitsText, money: require('../lib/billing').money });
 }));
-r.get('/memberships/preview', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits (preview)', plans: await M.plans({ withDrafts: true }), preview: true })));
+r.get('/memberships/preview', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits (preview)', plans: await M.plans({ withDrafts: true }), preview: true, waitlist: cfg.membershipWaitlist, consentText: '', done: false })));
+r.get('/memberships/waitlist', wrap(async (req, res) => {
+  const W = require('../lib/waitlist');
+  res.render('admin/waitlist', { title: 'Membership waitlist', ...(await W.stats()), open: cfg.membershipWaitlist, isMain: await isMainAccount(req.user) });
+}));
+r.get('/memberships/waitlist.csv', wrap(async (req, res) => {
+  const rows = await require('../lib/waitlist').exportRows();
+  const cell = (v) => { const s = v == null ? '' : v instanceof Date ? v.toISOString() : String(v); return /^[=+\-@\t\r]/.test(s) ? `"'${s.replace(/"/g, '""')}"` : /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const head = ['joined_list_at', 'plan', 'email', 'name', 'country', 'student', 'status', 'invited_at', 'joined_at'];
+  const body = rows.map((r) => [r.created_at, r.plan, r.email, r.name, r.country, r.is_student ? 'yes' : '', r.status, r.invited_at, r.joined_at].map(cell).join(','));
+  await require('../lib/audit').audit({ user: req.user, action: 'waitlist.export', target: `${rows.length} rows` });
+  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="membership-waitlist.csv"' }).send([head.join(','), ...body].join('\n'));
+}));
+r.post('/memberships/waitlist/invite', wrap(async (req, res) => {
+  const W = require('../lib/waitlist');
+  try { const n = await W.inviteBatch(req.user, req.body.plan, req.body.size); flash(req, 'success', `${n} person(s) invited.`); }
+  catch (e) { if (!(e instanceof W.WaitlistError)) throw e; flash(req, 'error', e.message); }
+  res.redirect('/admin/memberships/waitlist');
+}));
 r.post('/memberships/plans/:id/draft', act(async (req) => { await M.saveDraft(req.user, req.params.id, req.body); return 'Draft saved. It is not shown to anyone until approved.'; }));
 r.post('/memberships/plans/:id/approve', act(async (req) => { await M.approve(req.user, req.params.id); return 'Terms approved. Members keep the terms they took; new purchases use these.'; }));
 r.post('/memberships/plans/:id/sale', act(async (req) => { const on = req.body.on === 'yes'; await M.setSale(req.user, req.params.id, on); return on ? 'The plan is on sale.' : 'The plan is withdrawn from sale. Current members are not affected.'; }));
