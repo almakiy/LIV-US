@@ -75,6 +75,15 @@ The owner approved the proposals:
 - Paid gifts can be accepted for 90 days. Group managers see each seat's address and status only.
 Still needed before anything is sold: the refund line in the terms (counsel), the student status check, card payment keys, and the main account's approval of each plan's terms in Admin > Memberships. Then the owner turns on `MEMBERSHIP_SALES` (and `PRODUCT_SALES`, `NEWSLETTER_SENDING` when their own conditions are met).
 
+## Parked for later: premium membership card (owner request, October 23, 2026)
+Goal: a card and a public member page refined enough that members share them with pride on LinkedIn and social media.
+Proposed scope when the owner reopens it:
+- Card design in LIV identity (navy, gold, the LIV seal), engraved-style details, member name, plan, member number, Member since, Founding Member mark, QR to the verification page.
+- Downloadable card image (PNG) and PDF; later Apple Wallet and Google Wallet passes.
+- A public member page (only what the member chooses to show) with a share image so LinkedIn and other networks display the card in the link preview.
+- LinkedIn: share post and guidance to list LIV under "Organizations" (membership), not under "Licenses & certifications".
+Limits that stay: the card states membership only; no government-style seals, flags or wording that could pass for an official ID, licence or credential; an expired membership never shows as active.
+
 ## Progress
 - October 22, 2026: M0 mapping written.
 - October 22, 2026: **M1 done.** Individual accounts (role `individual`; sign-up at `/signup` behind `INDIVIDUAL_ACCOUNTS`, off by default; email confirmation; password reset by email for individual accounts only; same answer whether or not an address has an account). Safe credential link (`credential_claims`, one active link per credential enforced by the database; email match on confirmed addresses, extra addresses confirmed by link; otherwise a staff-reviewed request with a recorded reason at Admin > Individuals). Dashboard `/me`, credentials with verification link and PDF, profile with a separate dated marketing choice, support linked to the account, data export (JSON) and closure request. Individuals cannot reach the provider portal or admin; providers cannot reach `/me`.
