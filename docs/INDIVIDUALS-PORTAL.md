@@ -68,6 +68,13 @@ Reference figures come from public web sources gathered on October 22, 2026; sev
 
 Before approval: compare each price with the cost of the benefits actually delivered (support, library, sessions), and confirm the refund and renewal terms with counsel.
 
+## Owner decisions, October 23, 2026
+The owner approved the proposals:
+- Plan names as proposed: LIV Member, LIV Member Plus, Student Membership, Corporate Membership Package.
+- Starting prices as proposed: $195, $345 and $49 a year; $165 per named seat a year, minimum 5 seats.
+- Paid gifts can be accepted for 90 days. Group managers see each seat's address and status only.
+Still needed before anything is sold: the refund line in the terms (counsel), the student status check, card payment keys, and the main account's approval of each plan's terms in Admin > Memberships. Then the owner turns on `MEMBERSHIP_SALES` (and `PRODUCT_SALES`, `NEWSLETTER_SENDING` when their own conditions are met).
+
 ## Progress
 - October 22, 2026: M0 mapping written.
 - October 22, 2026: **M1 done.** Individual accounts (role `individual`; sign-up at `/signup` behind `INDIVIDUAL_ACCOUNTS`, off by default; email confirmation; password reset by email for individual accounts only; same answer whether or not an address has an account). Safe credential link (`credential_claims`, one active link per credential enforced by the database; email match on confirmed addresses, extra addresses confirmed by link; otherwise a staff-reviewed request with a recorded reason at Admin > Individuals). Dashboard `/me`, credentials with verification link and PDF, profile with a separate dated marketing choice, support linked to the account, data export (JSON) and closure request. Individuals cannot reach the provider portal or admin; providers cannot reach `/me`.
