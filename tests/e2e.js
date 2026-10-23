@@ -1991,6 +1991,182 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await mc.close();
   }
 
+  console.log('Individuals portal (M3-M5): resources, consents, newsletter, events, contributions, gifts, group packs, interest');
+  {
+    const stripeLib = require('../src/lib/stripe');
+    const pay = async (invId, cents, tag) => {
+      const ev = JSON.stringify({ id: `evt_${tag}_${stamp}`, type: 'payment_intent.succeeded', data: { object: { id: `pi_${tag}_${stamp}`, amount_received: cents, metadata: { liv_invoice_id: invId } } } });
+      return anon.request.post(BASE + '/api/webhooks/stripe', { data: ev, headers: { 'content-type': 'application/json', 'stripe-signature': stripeLib.signHeader(ev, process.env.STRIPE_WEBHOOK_SECRET) } });
+    };
+    const newPerson = async (label, email) => {
+      const c = await browser.newContext(); const p = await c.newPage();
+      await p.goto(BASE + '/signup'); await p.fill('#s-name', label); await p.fill('#s-email', email); await p.fill('#s-pw', 'People-Pass-2026x'); await p.fill('#s-pw2', 'People-Pass-2026x'); await p.check('input[name=terms]'); await p.click('button:has-text("Create account")');
+      const t = (psql(`SELECT text_body FROM email_outbox WHERE to_email = '${email}' ORDER BY created_at DESC LIMIT 1`).match(/t=([a-f0-9]{48})/) || [])[1];
+      await p.goto(`${BASE}/signup/verify?t=${t}`);
+      await p.goto(BASE + '/login'); await p.fill('input[name=email]', email); await p.fill('input[name=password]', 'People-Pass-2026x'); await p.click('button:has-text("Log in")'); await p.waitForLoadState();
+      return { c, p, id: psql(`SELECT id FROM users WHERE email = '${email}'`) };
+    };
+    const csrfOf = (p) => p.locator('input[name=_csrf]').first().inputValue();
+    const lEmail = `lina.${stamp}@example.com`; const oEmail = `omar.${stamp}@example.com`;
+    const L = await newPerson('Lina Learner', lEmail); const O = await newPerson('Omar Other', oEmail);
+    // A second LIV staff account (no position) reviews what the first one submits.
+    const hashPw = require('bcryptjs').hashSync('Reviewer-Pass-2026x', 10);
+    await require('../src/db').q(`INSERT INTO users (role, full_name, email, password_hash, staff_position) VALUES ('super_admin', 'Rhea Reviewer', $1, $2, 'partner_relations')`, [`reviewer.${stamp}@liv.local`, hashPw]);
+    const rc = await browser.newContext(); const rv = await rc.newPage();
+    await rv.goto(BASE + '/login'); await rv.fill('input[name=email]', `reviewer.${stamp}@liv.local`); await rv.fill('input[name=password]', 'Reviewer-Pass-2026x'); await rv.click('button:has-text("Log in")');
+    ok(await at(rv, /\/admin$/), 'a second LIV staff account signs in');
+    const makeResource = async (title, kind, access, body, extra = {}) => {
+      await adm.goto(BASE + '/admin/community'); await adm.click('summary:has-text("New resource")');
+      await adm.fill('#nr-title', title); await adm.selectOption('#nr-kind', kind); await adm.selectOption('#nr-access', access); await adm.fill('#nr-sum', `${title} summary`);
+      await adm.click('button:has-text("Create draft")'); await adm.waitForURL(/\/admin\/resources\//);
+      await adm.fill('#r-body', body);
+      if (extra.price) await adm.fill('#r-price', extra.price); if (extra.member) await adm.fill('#r-mprice', extra.member); if (extra.months) await adm.fill('#r-months', extra.months);
+      if (extra.scheme) await adm.selectOption('#r-scheme', { label: extra.scheme });
+      await adm.click('button:has-text("Save as draft")'); await adm.click('button:has-text("Send for review")');
+      return adm.url().split('/').pop();
+    };
+    const freeId = await makeResource('Site Safety Walk Checklist', 'checklist', 'free', 'Walk the site and record each hazard.');
+    ok(await see(adm, 'text=Waiting for a review by another person'), 'the person who submitted a resource cannot publish it');
+    await rv.goto(`${BASE}/admin/resources/${freeId}`); await rv.click('button:has-text("Publish")');
+    ok(await see(rv, 'text=Published.') && psql(`SELECT status FROM resources WHERE id = '${freeId}'`) === 'published', 'another staff member reviews and publishes it');
+    const slug = psql(`SELECT slug FROM resources WHERE id = '${freeId}'`);
+    ok((await (await anon.request.get(BASE + '/resources')).text()).includes('Site Safety Walk Checklist') && !(await (await anon.request.get(`${BASE}/resources/${slug}`)).text()).includes('record each hazard'), 'the public list shows it; its content needs an account');
+    await L.p.goto(`${BASE}/resources/${slug}`);
+    ok(await see(L.p, 'text=record each hazard'), 'a free resource opens for any signed-in account');
+    const memId = await makeResource('Members Audit Toolkit', 'tool', 'members', 'Audit toolkit content for members.');
+    await rv.goto(`${BASE}/admin/resources/${memId}`); await rv.click('button:has-text("Publish")');
+    const memSlug = psql(`SELECT slug FROM resources WHERE id = '${memId}'`);
+    await L.p.goto(`${BASE}/resources/${memSlug}`);
+    ok(await see(L.p, 'text=Included with an active membership'), 'a members resource is closed without an active membership');
+    const ver = psql(`SELECT v.id FROM membership_plan_versions v JOIN membership_plans p ON p.id = v.plan_id WHERE p.code = 'member' AND v.status = 'approved'`);
+    psql(`INSERT INTO memberships (user_id, plan_version_id, member_number, source, status, terms, starts_on, ends_on) VALUES ('${L.id}', '${ver}', 'LIVM-TESTLINA', 'grant', 'active', '{"plan_name":"LIV Member","benefits":[]}', current_date, current_date + 30)`);
+    await L.p.goto(`${BASE}/resources/${memSlug}`);
+    ok(await see(L.p, 'text=Audit toolkit content'), 'with an active membership it opens (checked on the server)');
+    const buyId = await makeResource('Incident Investigation Guide', 'guide', 'purchase', 'Paid guide content.', { price: '25.00', member: '20.00', months: '6' });
+    await rv.goto(`${BASE}/admin/resources/${buyId}`); await rv.click('button:has-text("Publish")');
+    const buySlug = psql(`SELECT slug FROM resources WHERE id = '${buyId}'`);
+    await L.p.goto(BASE + '/me/library');
+    ok(await see(L.p, 'text=Price not approved'), 'a resource cannot be bought before its price is approved');
+    await rv.goto(`${BASE}/admin/resources/${buyId}`);
+    ok(!(await rv.locator('button:has-text("Approve price")').count()), 'a staff account that is not the main account cannot approve a price');
+    await adm.goto(`${BASE}/admin/resources/${buyId}`); await adm.click('button:has-text("Approve price")'); await see(adm, 'text=Price approved');
+    await L.p.goto(BASE + '/me/library'); await L.p.locator(`form[action="/me/library/${buySlug}/buy"] button`).click();
+    ok(await see(L.p, 'text=Your order is waiting for payment'), 'the member orders the resource');
+    const rInv = psql(`SELECT invoice_id FROM resource_purchases WHERE user_id = '${L.id}' AND status = 'pending_payment'`);
+    ok(psql(`SELECT total_cents FROM invoices WHERE id = '${rInv}'`) === '2000', 'the member price is applied on the server and fixed on the order');
+    await pay(rInv, 2000, 'res'); await pay(rInv, 2000, 'res');
+    ok(psql(`SELECT count(*) FROM payments WHERE invoice_id = '${rInv}'`) === '1' && psql(`SELECT status || ',' || (access_until = (current_date + interval '6 months' - interval '1 day')::date) FROM resource_purchases WHERE invoice_id = '${rInv}'`) === 'active,true', 'payment opens 6 months of access once, even if the notice repeats');
+    await L.p.goto(`${BASE}/resources/${buySlug}`); ok(await see(L.p, 'text=Paid guide content'), 'the paid resource opens');
+    await O.p.goto(`${BASE}/resources/${buySlug}`); ok(await see(O.p, 'text=Sold separately'), 'it stays closed for someone who did not buy it');
+    await adm.goto(`${BASE}/admin/resources/${buyId}`); await adm.fill('#r-price', '30.00'); await adm.click('button:has-text("Save as draft")');
+    ok(psql(`SELECT (sale_approved_at IS NULL) || ',' || status FROM resources WHERE id = '${buyId}'`) === 'true,draft', 'changing a price withdraws its approval and needs a new review');
+    await L.p.goto(`${BASE}/resources/${buySlug}`);
+    ok((await L.p.content()).includes('Paid guide content') || psql(`SELECT status FROM resource_purchases WHERE invoice_id = '${rInv}'`) === 'active', 'an earlier purchase keeps its access as sold');
+    // Preparation waits for an operating program
+    await makeResource('Exam Prep Pack', 'preparation', 'purchase', 'Prep content.', { price: '40', scheme: 'HSE Governance (in_development)' });
+    ok(psql(`SELECT count(*) FROM resources WHERE kind = 'preparation' AND scheme_id IS NOT NULL`) === '1', 'a preparation product is linked to its program');
+    await adm.click('button:has-text("Approve price")').catch(() => {});
+    ok(await see(adm, 'text=Preparation products open only with an operating assessment program'), 'and cannot be sold while the program is not operating');
+    // Consents
+    await L.p.goto(BASE + '/me/profile'); await L.p.check('input[name=newsletter]'); await L.p.check('input[name=topics][value=safety]'); await L.p.click('button:has-text("Save")');
+    ok(psql(`SELECT newsletter_opt_in || ',' || marketing_opt_in || ',' || array_to_string(newsletter_topics, ',') FROM users WHERE id = '${L.id}'`) === 'true,false,safety'
+      && psql(`SELECT source || ':' || granted FROM communication_consents WHERE user_id = '${L.id}' AND channel = 'newsletter' ORDER BY id DESC LIMIT 1`) === 'profile:true', 'the newsletter is a separate choice, recorded with its source and text; offers stay off');
+    const tok = await (async () => { await require('../src/lib/community').ensureToken(L.id); return psql(`SELECT comm_token FROM users WHERE id = '${L.id}'`); })();
+    const up = await browser.newContext(); const upp = await up.newPage();
+    await upp.goto(`${BASE}/unsubscribe?t=${tok}&c=newsletter`); await upp.click('button:has-text("Stop these emails")');
+    ok(await see(upp, 'text=You will no longer receive the knowledge newsletter') && psql(`SELECT newsletter_opt_in FROM users WHERE id = '${L.id}'`) === 'f'
+      && psql(`SELECT count(*) FROM memberships WHERE user_id = '${L.id}' AND status = 'active'`) === '1', 'the unsubscribe link stops the newsletter only; the membership is untouched');
+    await up.close();
+    await adm.goto(BASE + '/admin/community'); await adm.click('summary:has-text("New issue")');
+    await adm.fill('#ni-sub', 'Safety notes for October'); await adm.fill('#ni-body', 'This month we look at incident investigation basics and site walks.'); await adm.click('form[action="/admin/community/newsletter"] button');
+    await adm.locator('#newsletter ~ div form[action$="/approve"] button, form[action*="/newsletter/"][action$="/approve"] button').first().click(); await see(adm, 'text=Issue approved');
+    await adm.locator('form[action*="/newsletter/"][action$="/send"] button').first().click();
+    ok(await see(adm, 'text=Newsletter sending is not open yet') && psql(`SELECT count(*) FROM email_outbox WHERE template = 'newsletter'`) === '0', 'no newsletter is sent while sending is closed');
+    // Events
+    await adm.goto(BASE + '/admin/community'); await adm.click('summary:has-text("New event")');
+    await adm.fill('#ne-title', 'Members Q and A'); await adm.fill('#ne-sum', 'Questions with the LIV team.');
+    await adm.fill('#ne-start', '2030-01-10T15:00'); await adm.fill('#ne-end', '2030-01-10T16:00'); await adm.selectOption('#ne-aud', 'members'); await adm.fill('#ne-cap', '1'); await adm.fill('#ne-url', 'https://meet.example.com/liv');
+    await adm.click('form[action="/admin/community/events"] button'); await adm.locator('tr', { hasText: 'Members Q and A' }).locator('button:has-text("Publish")').click(); await see(adm, 'text=Event updated');
+    const evId = psql(`SELECT id FROM community_events WHERE title = 'Members Q and A'`);
+    ok(!(await (await anon.request.get(BASE + '/community')).text()).includes('meet.example.com'), 'the public events page never shows the joining link');
+    let rr = await O.p.goto(BASE + '/me/events'); rr = await O.p.request.post(`${BASE}/me/events/${evId}/register`, { form: { _csrf: await csrfOf(O.p) }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM event_registrations WHERE event_id = '${evId}'`) === '0', 'a members event refuses a person without membership (checked on the server)');
+    await L.p.goto(BASE + '/me/events'); await L.p.locator(`form[action="/me/events/${evId}/register"] button`).click();
+    ok(await see(L.p, 'text=You are registered') && await see(L.p, 'text=meet.example.com'), 'a member registers and then sees the joining link');
+    psql(`INSERT INTO memberships (user_id, plan_version_id, member_number, source, status, terms, starts_on, ends_on) VALUES ('${O.id}', '${ver}', 'LIVM-TESTOMAR', 'grant', 'active', '{"plan_name":"LIV Member","benefits":[]}', current_date, current_date + 30)`);
+    await O.p.goto(BASE + '/me/events');
+    rr = await O.p.request.post(`${BASE}/me/events/${evId}/register`, { form: { _csrf: await csrfOf(O.p) }, maxRedirects: 0 });
+    ok(psql(`SELECT count(*) FROM event_registrations WHERE event_id = '${evId}' AND status = 'registered'`) === '1', 'a full event refuses another registration');
+    psql(`DELETE FROM memberships WHERE member_number = 'LIVM-TESTOMAR'`);
+    // Contributions
+    await L.p.goto(BASE + '/me/events'); await L.p.fill('#c-title', 'Toolbox talk template'); await L.p.fill('#c-sum', 'A one-page template for daily toolbox talks on site safety.'); await L.p.click('button:has-text("Send proposal")');
+    ok(await see(L.p, 'text=LIV reviews it before anything is published') && psql(`SELECT show_name FROM contributions WHERE user_id = '${L.id}'`) === 'f', 'a contribution is a proposal; the name is not shown unless chosen');
+    await adm.goto(BASE + '/admin/community'); const crow = adm.locator('tr', { hasText: 'Toolbox talk template' });
+    await crow.locator('input[name=note]').fill('Thank you; we already have one.'); await crow.locator('button:has-text("Decline")').click();
+    ok(psql(`SELECT status FROM contributions WHERE user_id = '${L.id}'`) === 'declined', 'LIV decides with a note to the person');
+    // Gift campaign
+    await adm.goto(BASE + '/admin/gifts'); await adm.click('summary:has-text("New campaign")');
+    await adm.fill('#gc-name', 'Launch 2026'); await adm.fill('#gc-months', '3'); await adm.fill('#gc-max', '2'); await adm.fill('#gc-by', '2030-12-31'); await adm.click('form[action="/admin/gifts/campaigns"] button');
+    await adm.click('button:has-text("Approve (main account)")'); await see(adm, 'text=Campaign approved');
+    const campRow = adm.locator('tr', { hasText: 'Launch 2026' });
+    await campRow.locator('input[name=recipient_email]').fill(oEmail); await campRow.locator('button:has-text("Issue gift")').click();
+    ok(psql(`SELECT count(*) FROM gifts WHERE recipient_email = '${oEmail}'`) === '0', 'issuing a campaign gift needs the conflict-of-interest confirmation');
+    await campRow.locator('input[name=recipient_email]').fill(oEmail); await campRow.locator('input[name=not_assessor]').check(); await campRow.locator('button:has-text("Issue gift")').click();
+    const gcode = ((await adm.locator('.alert.info strong.mono').textContent()) || '').trim();
+    ok(/^GIFT-/.test(gcode), 'staff issue a gift inside the approved campaign and see its code once');
+    await L.p.goto(BASE + '/me/gifts'); await L.p.fill('#g-code', gcode); await L.p.click('button:has-text("Accept")');
+    ok(await see(L.p, 'text=This gift is for another email address'), 'a gift cannot be used by someone else');
+    await O.p.goto(BASE + '/me/gifts'); await O.p.fill('#g-code', gcode); await O.p.click('button:has-text("Accept")');
+    ok(await see(O.p, 'text=Gift accepted') && psql(`SELECT source || ',' || price_cents FROM memberships WHERE user_id = '${O.id}' AND status = 'active'`) === 'gift,0', 'the recipient accepts: a gift membership at no charge, no automatic renewal');
+    await O.p.goto(BASE + '/me/gifts'); await O.p.fill('#g-code', gcode); await O.p.click('button:has-text("Accept")');
+    ok(await see(O.p, 'text=already been used') && psql(`SELECT count(*) FROM memberships WHERE user_id = '${O.id}'`) === '1', 'a gift code works once');
+    // Group pack (corporate plan on sale with test terms)
+    await adm.goto(BASE + '/admin/memberships'); await adm.evaluate(() => { document.querySelector('#plan-corporate details').open = true; });
+    await adm.locator('#plan-corporate textarea[name=benefits]').fill('+ Named member seats\n+ Invitation and seat management\n+ Group invoicing');
+    await adm.locator('#plan-corporate textarea[name=terms]').fill('Test group terms.'); await adm.locator('#plan-corporate button:has-text("Save draft")').click(); await see(adm, 'text=Draft saved');
+    await adm.locator('#plan-corporate button:has-text("Approve these terms")').click(); await see(adm, 'text=Terms approved');
+    await adm.locator('#plan-corporate button:has-text("Put on sale")').click(); ok(await see(adm, 'text=The plan is on sale'), 'the group plan goes on sale once seat management exists');
+    await L.p.goto(BASE + '/me/gifts'); await L.p.fill('#gp-org', 'Acme Safety LLC'); await L.p.fill('#gp-seats', '4'); await L.p.click('button:has-text("Continue to payment") >> nth=-1');
+    ok(await see(L.p, 'text=Choose between 5 and 1000 seats'), 'the minimum number of seats applies');
+    await L.p.goto(BASE + '/me/gifts'); await L.p.fill('#gp-org', 'Acme Safety LLC'); await L.p.fill('#gp-seats', '5'); await L.p.click('button:has-text("Continue to payment") >> nth=-1');
+    const pInv = psql(`SELECT invoice_id FROM group_packs WHERE manager_user_id = '${L.id}'`);
+    ok(psql(`SELECT total_cents FROM invoices WHERE id = '${pInv}'`) === '82500', 'the pack invoice is seats times the approved seat price');
+    await pay(pInv, 82500, 'pack'); await pay(pInv, 82500, 'pack');
+    const packId = psql(`SELECT id FROM group_packs WHERE manager_user_id = '${L.id}'`);
+    ok(psql(`SELECT status FROM group_packs WHERE id = '${packId}'`) === 'active' && psql(`SELECT count(*) FROM payments WHERE invoice_id = '${pInv}'`) === '1', 'payment activates the pack once');
+    await L.p.goto(`${BASE}/me/groups/${packId}`); await L.p.fill('#s-email', oEmail); await L.p.click('button:has-text("Invite")');
+    const scode = ((await L.p.locator('.alert.info strong.mono').textContent()) || '').trim();
+    for (let i = 1; i <= 4; i++) { await L.p.fill('#s-email', `seat${i}.${stamp}@example.com`); await L.p.click('button:has-text("Invite")'); await L.p.waitForLoadState(); }
+    await L.p.fill('#s-email', `seat9.${stamp}@example.com`); await L.p.click('button:has-text("Invite")');
+    ok(await see(L.p, 'text=All seats are assigned') && psql(`SELECT count(*) FROM group_seats WHERE pack_id = '${packId}'`) === '5', 'no more seats than bought can be assigned');
+    await O.p.goto(BASE + '/me/gifts'); await O.p.fill('#g-code', scode); await O.p.click('button:has-text("Accept")');
+    ok(await see(O.p, 'text=Invitation accepted') && psql(`SELECT m.ends_on = g.ends_on FROM memberships m JOIN group_seats s ON s.membership_id = m.id JOIN group_packs g ON g.id = s.pack_id WHERE m.user_id = '${O.id}' AND m.source = 'group'`) === 't', 'the invited person accepts: a group membership that ends with the pack');
+    const mgr = await (await L.p.request.get(`${BASE}/me/groups/${packId}`)).text();
+    ok(mgr.includes(oEmail) && !mgr.includes('LIVM-') && !mgr.includes('LIV-20'), "the manager sees the seat's address and status, never the member's number, credentials or records");
+    ok((await O.p.request.get(`${BASE}/me/groups/${packId}`)).status() === 404, 'a member cannot open the manager page');
+    await L.p.locator(`button[aria-label="Withdraw the seat of ${oEmail}"]`).click();
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${O.id}' AND source = 'group' AND status = 'active'`) === '0' && psql(`SELECT count(*) FROM memberships WHERE user_id = '${O.id}' AND source = 'gift' AND status = 'active'`) === '1', "withdrawing a seat ends only that seat's membership; the person's own records stay");
+    await L.p.fill('#s-email', `seat9.${stamp}@example.com`); await L.p.click('button:has-text("Invite")');
+    ok(await see(L.p, 'text=Invitation sent'), 'the freed seat can be given to someone else');
+    await adm.goto(BASE + '/admin/memberships');
+    const statsTxt = await adm.locator('table').first().textContent();
+    ok(statsTxt.includes('gift') && statsTxt.includes('group') && statsTxt.includes('not revenue'), 'gift and group memberships are counted apart and not as revenue');
+    // Interest list (M5)
+    await anon.goto(BASE + '/credentials/hse-governance'); await anon.fill('#i-email', `interest.${stamp}@example.com`); await anon.click('button:has-text("Register interest")');
+    await anon.goto(BASE + '/credentials/hse-governance'); await anon.fill('#i-email', `interest.${stamp}@example.com`); await anon.click('button:has-text("Register interest")');
+    ok(await see(anon, 'text=Nothing is reserved and nothing is charged') && psql(`SELECT count(*) FROM program_interest WHERE email = 'interest.${stamp}@example.com'`) === '1', 'a free interest list records each address once and reserves nothing');
+    // Phone width and accessibility
+    const axeSrc = require('fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+    await L.p.setViewportSize({ width: 390, height: 844 });
+    for (const path of ['/me/library', '/me/events', '/me/gifts', `/me/groups/${packId}`, '/resources', `/resources/${slug}`, '/community', '/credentials/hse-governance']) {
+      await L.p.goto(BASE + path); await L.p.evaluate(axeSrc);
+      const v = await L.p.evaluate(async () => (await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag22aa'] } })).violations.map((x) => `${x.id} (${x.nodes.length})`));
+      const hs = await L.p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      ok(!v.length && !hs, `${path} at phone width: no automated WCAG 2.2 AA violations and no sideways scrolling${v.length ? ': ' + v.join(', ') : ''}`);
+    }
+    for (const x of [L.c, O.c, rc]) await x.close();
+  }
+
   console.log('Preview accounts: test data is cleared (manual, at sign-out, at the next sign-in)');
   {
     const pid = psql('SELECT id FROM platforms WHERE is_preview');

@@ -152,6 +152,7 @@ app.use('/admin', require('./routes/admin-system'));
 app.use('/admin', require('./routes/admin-individuals'));
 app.use('/admin', require('./routes/admin-preview'));
 app.use('/admin', require('./routes/admin-memberships'));
+app.use('/admin', require('./routes/admin-community'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 

@@ -57,6 +57,18 @@ const TEMPLATES = {
     'Use the link below to choose a new password. It works for one hour and only once.',
     'If you did not ask for this, ignore this message: your password stays the same.'],
   { label: 'Choose a new password', url: `${cfg.baseUrl}/password/reset?t=${encodeURIComponent(d.token)}` }) }),
+  newsletter: (d) => ({ subject: clip(d.subject, 200), ...layout(clip(d.subject, 200), String(d.body || '').split(/\n\s*\n/).map((p) => clip(p, 4000)).slice(0, 60)
+    .concat([`You receive this because you chose the LIV knowledge newsletter. Stop it here: ${cfg.baseUrl}/unsubscribe?t=${encodeURIComponent(d.token)}&c=newsletter`])) }),
+  gift_received: (d) => ({ subject: 'A LIV membership has been given to you', ...layout('A membership for you', [
+    `${clip(d.from || 'Someone', 200)} has given you a ${clip(d.plan, 120)} membership (${Number(d.months) || 12} months).`,
+    'To accept it, create or sign in to your free LIV account and enter the code below. Accepting it never starts a paid subscription.',
+    `Gift code: ${clip(d.code, 40)}`, `Accept by: ${clip(d.acceptBy, 10)}`],
+  { label: 'Accept the gift', url: `${cfg.baseUrl}/me/gifts` }) }),
+  seat_invite: (d) => ({ subject: `${clip(d.org, 120)} has invited you to a LIV membership`, ...layout('An invitation to a LIV membership', [
+    `${clip(d.org, 200)} has a ${clip(d.plan, 120)} membership seat for you.`,
+    'Your LIV account stays yours: the organization manages the seat and its invoice, and never sees your credentials, results or private records.',
+    `Invitation code: ${clip(d.code, 40)}`],
+  { label: 'Accept the invitation', url: `${cfg.baseUrl}/me/gifts` }) }),
   membership_reminder: (d) => ({ subject: 'Your LIV membership ends in 30 days', ...layout('Your membership ends soon', [
     `Your ${clip(d.plan, 120)} membership ends on ${clip(d.ends, 10)}. You can renew from your account; nothing renews automatically.`,
     'Your credentials stay valid and verifiable whether or not you renew.'],

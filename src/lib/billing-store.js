@@ -105,8 +105,19 @@ async function recordPayment(invoiceId, { amount_cents, method, reference = '', 
   }).then(async (r) => { if (r.status === 'paid') {
     await require('./applications').onInvoicePaid(invoiceId).catch(() => {});
     await require('./memberships').onInvoicePaid(invoiceId).catch((e) => console.error('[membership] activation failed:', e.message));
+    await require('./resources').onInvoicePaid(invoiceId).catch((e) => console.error('[resources] activation failed:', e.message));
+    await require('./gifts').onInvoicePaid(invoiceId).catch((e) => console.error('[gifts] activation failed:', e.message));
   }
   return r; });
+}
+
+/** A one-line invoice for an individual (resources, gifts, group seats), created inside the caller's transaction as a draft. */
+async function createIndividualDraft(c, { userId, code, description, cents, notes = '' }) {
+  const { rows: [inv] } = await c.query(`INSERT INTO invoices (user_id, status, subtotal_cents, total_cents, tax_rate_bps, notes, created_by) VALUES ($1,'draft',$2::bigint,$2::bigint,0,$3,$1) RETURNING id`,
+    [userId, cents, String(notes).slice(0, 2000)]);
+  await c.query(`INSERT INTO invoice_lines (invoice_id, product_code, description, quantity, unit_amount_cents, amount_cents) VALUES ($1,$2,$3,1,$4::int,$4::bigint)`,
+    [inv.id, code, String(description).slice(0, 400), cents]);
+  return inv.id;
 }
 
 /** Drafts are deleted; an open invoice with no payments is voided (its number stays on record). Discount credits it used are released. */
@@ -122,4 +133,4 @@ async function discardInvoice(id) {
     throw new Error('Only a draft or an unpaid open invoice can be removed. Record a refund outside the system for paid invoices.');
   });
 }
-module.exports = { seedCatalog, priceRows, usageSummary, createDraft, issueInvoice, recordPayment, discardInvoice };
+module.exports = { createIndividualDraft, seedCatalog, priceRows, usageSummary, createDraft, issueInvoice, recordPayment, discardInvoice };

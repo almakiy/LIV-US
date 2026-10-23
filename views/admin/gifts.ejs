@@ -1,0 +1,28 @@
+<%- include('../partials/app-start') %>
+<h1>Gifts and group packs</h1>
+<p class="muted">Launch campaigns are approved by the main account (plan, months, number of gifts, last acceptance date). Inside an approved campaign, any staff account issues gifts. A gift never turns into a paid subscription, and its nominal value is not revenue.</p>
+<% if (issued) { %><div class="alert info" role="status">Gift code for <%= issued.email %>: <strong class="mono"><%= issued.code %></strong>. It is also emailed and is shown here only once.</div><% } %>
+<h2 class="mt">Campaigns</h2>
+<details class="card"><summary>New campaign</summary>
+  <form method="post" action="/admin/gifts/campaigns" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="row"><div class="field"><label for="gc-name">Name</label><input id="gc-name" name="name" required></div><div class="field"><label for="gc-plan">Plan</label><select id="gc-plan" name="plan"><% plans.forEach(p => { %><option value="<%= p.code %>"><%= p.name %></option><% }) %></select></div></div>
+    <div class="row"><div class="field"><label for="gc-months">Months</label><input id="gc-months" name="months" inputmode="numeric" required></div><div class="field"><label for="gc-max">Number of gifts</label><input id="gc-max" name="max_gifts" inputmode="numeric" required></div><div class="field"><label for="gc-by">Last acceptance date</label><input id="gc-by" type="date" name="accept_by" required></div></div>
+    <div class="field"><label for="gc-purpose">Purpose and audience</label><textarea id="gc-purpose" name="purpose" rows="2"></textarea></div>
+    <button class="btn sm">Save draft</button></form></details>
+<% if (campaigns.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Campaign</th><th>Plan</th><th>Issued</th><th>Accepted</th><th>Status</th><th>Actions</th></tr>
+  <% campaigns.forEach(c => { %><tr><td><%= c.name %><br><span class="small muted"><%= c.months %> month(s), accept by <%= usDate(c.accept_by) %></span></td><td><%= c.plan_name %></td><td><%= c.issued %> / <%= c.max_gifts %></td><td><%= c.accepted %></td><td><%= c.status %></td>
+    <td><% if (c.status === 'draft' && isMain) { %><form method="post" action="/admin/gifts/campaigns/<%= c.id %>/approve" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Approve (main account)</button></form><% } %>
+      <% if (c.status === 'approved') { %><form method="post" action="/admin/gifts/campaigns/<%= c.id %>/issue"><input type="hidden" name="_csrf" value="<%= csrf %>">
+        <label class="small" for="gi-<%= c.id %>">Recipient email</label><input id="gi-<%= c.id %>" type="email" name="recipient_email" required>
+        <label class="small" for="gn-<%= c.id %>">Name</label><input id="gn-<%= c.id %>" name="recipient_name">
+        <label class="check small"><input type="checkbox" name="not_assessor" value="yes" required> The recipient does not assess or decide LIV authorization requests</label>
+        <button class="btn sm">Issue gift</button></form>
+        <form method="post" action="/admin/gifts/campaigns/<%= c.id %>/close" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Close</button></form><% } %></td></tr><% }) %></table></div><% } %>
+<h2 class="mt">Gifts</h2>
+<% if (!gifts.length) { %><p class="muted small">No gifts yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Recipient</th><th>Kind</th><th>Plan</th><th>Status</th><th>Accept by</th><th>Paid</th><th></th></tr>
+  <% gifts.forEach(g => { %><tr><td><%= g.recipient_email %><br><span class="small muted">code …<%= g.code_last4 %></span></td><td><%= g.kind %></td><td><%= g.plan %></td><td><%= g.status %></td><td><%= usDate(g.accept_by) %></td><td><%= g.kind === 'paid' ? '$' + (g.price_cents / 100).toFixed(2) : 'not revenue' %></td>
+    <td><% if (g.status === 'issued') { %><form method="post" action="/admin/gifts/<%= g.id %>/revoke"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="small" for="gr-<%= g.id %>">Reason</label><input id="gr-<%= g.id %>" name="reason" required minlength="5"><button class="btn sm secondary">Withdraw</button></form><% } %></td></tr><% }) %></table></div><% } %>
+<h2 class="mt">Group packs</h2>
+<% if (!packs.length) { %><p class="muted small">No group packs yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Organization</th><th>Manager</th><th>Seats</th><th>Accepted</th><th>Status</th><th>Ends</th></tr>
+  <% packs.forEach(p => { %><tr><td><%= p.org_name %></td><td><%= p.manager %></td><td><%= p.seats %></td><td><%= p.accepted %></td><td><%= p.status %></td><td><%= p.ends_on ? usDate(p.ends_on) : '' %></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

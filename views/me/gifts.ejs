@@ -1,0 +1,32 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Gifts and group memberships</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <div class="card" style="max-width:640px"><h2 class="h3">Accept a gift or an invitation</h2>
+    <p class="small muted">Enter the code you received. A gift or a seat gives a membership for a fixed period; it never starts a paid subscription.</p>
+    <form method="post" action="/me/gifts/redeem"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="field"><label for="g-code">Code</label><input id="g-code" name="code" placeholder="GIFT-XXXX-XXXX-XXXX" autocomplete="off" required></div><button class="btn sm">Accept</button></form></div>
+
+  <% const individual = plans.filter(p => p.kind === 'individual' && !p.blockers.length); const group = plans.filter(p => p.kind === 'group' && !p.blockers.length); %>
+  <h2 class="mt" id="give">Give a membership</h2>
+  <% if (!individual.length) { %><p class="muted small">Gift memberships are not available yet.</p><% } else { %>
+  <form class="card" method="post" action="/me/gifts/buy" style="max-width:640px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="g-plan">Plan</label><select id="g-plan" name="plan"><% individual.forEach(p => { %><option value="<%= p.code %>"><%= p.name %> — $<%= (p.approved.price_cents / 100).toFixed(2) %>, <%= p.approved.period_months %> month(s)</option><% }) %></select></div>
+    <div class="row"><div class="field"><label for="g-to">Recipient's email</label><input id="g-to" type="email" name="recipient_email" required></div><div class="field"><label for="g-name">Recipient's name</label><input id="g-name" name="recipient_name" maxlength="200"></div></div>
+    <p class="small muted">The recipient has 90 days to accept. If they share or promote LIV because of the gift, they should say it was a gift.</p>
+    <button class="btn sm">Continue to payment</button></form><% } %>
+  <% if (bought.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>For</th><th>Plan</th><th>Status</th><th>Accept by</th><th></th></tr>
+    <% bought.forEach(g => { %><tr><td><%= g.recipient_email %></td><td><%= g.plan %></td><td><%= g.status === 'pending_payment' ? 'Waiting for payment' : g.status %></td><td><%= usDate(g.accept_by) %></td>
+      <td><% if (g.status === 'issued') { %><form method="post" action="/me/gifts/<%= g.id %>/resend" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Send again</button></form><% } %></td></tr><% }) %></table></div><% } %>
+
+  <h2 class="mt" id="group">Memberships for your organization</h2>
+  <% if (!group.length) { %><p class="muted small">Group packs are not available yet.</p><% } else { %>
+  <form class="card" method="post" action="/me/groups" style="max-width:640px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="gp-plan">Plan</label><select id="gp-plan" name="plan"><% group.forEach(p => { %><option value="<%= p.code %>"><%= p.name %> — $<%= (p.approved.price_cents / 100).toFixed(2) %> per seat, minimum <%= p.min_seats %></option><% }) %></select></div>
+    <div class="row"><div class="field"><label for="gp-org">Organization (in English)</label><input id="gp-org" name="org_name" maxlength="200" required></div><div class="field"><label for="gp-seats">Seats</label><input id="gp-seats" name="seats" inputmode="numeric" required></div></div>
+    <p class="small muted">You manage seats, invitations and invoices. You never see members' credentials, results or private records, and buying seats gives your organization no LIV authorization.</p>
+    <button class="btn sm">Continue to payment</button></form><% } %>
+  <% if (packs.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Organization</th><th>Seats</th><th>Status</th><th>Ends</th></tr>
+    <% packs.forEach(p => { %><tr><td><a href="/me/groups/<%= p.id %>"><%= p.org_name %></a></td><td><%= p.used %> of <%= p.seats %> assigned, <%= p.accepted %> accepted</td><td><%= p.status === 'pending_payment' ? 'Waiting for payment' : p.status %></td><td><%= p.ends_on ? usDate(p.ends_on) : '' %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

@@ -10,7 +10,8 @@
         <div class="field"><label for="s-pw">Password (10+ characters)</label><input id="s-pw" type="password" name="password" minlength="10" autocomplete="new-password" required></div>
         <div class="field"><label for="s-pw2">Confirm password</label><input id="s-pw2" type="password" name="confirm_password" minlength="10" autocomplete="new-password" required></div>
         <div class="field"><label class="check"><input type="checkbox" name="terms" value="yes" required> I have read the <a href="/contact">privacy notice</a> and agree that <%= brand %> keeps my account data to run this account.</label></div>
-        <div class="field"><label class="check"><input type="checkbox" name="marketing" value="yes" <%= form.marketing ? 'checked' : '' %>> Optional: send me news and offers from <%= brand %>. You can change this at any time. Messages about your account and credentials are sent either way.</label></div>
+        <div class="field"><label class="check"><input type="checkbox" name="newsletter" value="yes" <%= form.newsletter ? 'checked' : '' %>> Optional: send me the <%= brand %> knowledge newsletter. You choose its topics later and can stop it at any time.</label></div>
+        <div class="field"><label class="check"><input type="checkbox" name="marketing" value="yes" <%= form.marketing ? 'checked' : '' %>> Optional: send me offers about <%= brand %> products, services and events. You can change this at any time. Messages about your account and credentials are sent either way.</label></div>
         <button class="btn lg" style="width:100%">Create account</button>
       </form>
       <p class="small muted mt">Already have an account? <a href="/login">Sign in</a>.</p>

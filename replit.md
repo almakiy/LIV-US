@@ -24,6 +24,8 @@ First run only:
 - `PUBLIC_APPLY`, `PUBLIC_FEES`: keep `false` until the owner approves.
 - `INDIVIDUAL_ACCOUNTS`: keep `false` until the individual terms and privacy notice are approved (opens public sign-up for individuals).
 - `MEMBERSHIP_SALES`: keep `false` until membership plans, prices and terms are approved.
+- `PRODUCT_SALES`: keep `false` until resources and their prices are approved (also gifts and group packs use the membership switch).
+- `NEWSLETTER_SENDING`: keep `false` until the sending domain and email footer are ready.
 - `EMAIL_DRIVER`, `EMAIL_FROM`.
 - `AUTH_DOC_TEMPLATE_APPROVED`: `true` only after the authorization document template is approved.
 - `REQUIRE_2FA`: `admin` or `all`.

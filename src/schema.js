@@ -1324,4 +1324,195 @@ CREATE TABLE IF NOT EXISTS membership_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE users ADD COLUMN IF NOT EXISTS card_show_name BOOLEAN NOT NULL DEFAULT false;
+
+-- Individuals portal M3 (October 23, 2026): member resources and purchases, communication consents, newsletter issues,
+-- community events and contributions. Nothing here grants a credential, a qualification or CPD units.
+CREATE TABLE IF NOT EXISTS resources (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug VARCHAR(120) NOT NULL UNIQUE,
+  title VARCHAR(200) NOT NULL,
+  summary VARCHAR(600) NOT NULL DEFAULT '',
+  kind VARCHAR(20) NOT NULL DEFAULT 'guide' CHECK (kind IN ('guide','template','checklist','article','tool','preparation')),
+  access VARCHAR(10) NOT NULL DEFAULT 'free' CHECK (access IN ('free','members','purchase')),
+  body_md TEXT NOT NULL DEFAULT '',
+  file_key TEXT,
+  file_name VARCHAR(200),
+  author_name VARCHAR(200) NOT NULL DEFAULT '',
+  scheme_id UUID REFERENCES credential_schemes(id),
+  price_cents INT CHECK (price_cents IS NULL OR price_cents >= 0),
+  member_price_cents INT CHECK (member_price_cents IS NULL OR member_price_cents >= 0),
+  access_months INT CHECK (access_months IS NULL OR access_months BETWEEN 1 AND 120),
+  status VARCHAR(12) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','in_review','published','retired')),
+  version INT NOT NULL DEFAULT 1,
+  created_by UUID REFERENCES users(id),
+  submitted_by UUID REFERENCES users(id),
+  reviewed_by UUID REFERENCES users(id),
+  reviewed_at TIMESTAMPTZ,
+  sale_approved_by UUID REFERENCES users(id),
+  sale_approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS resource_purchases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  resource_id UUID NOT NULL REFERENCES resources(id),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending_payment','active','void')),
+  price_cents INT NOT NULL,
+  member_price_applied BOOLEAN NOT NULL DEFAULT false,
+  terms JSONB NOT NULL,
+  invoice_id UUID UNIQUE REFERENCES invoices(id),
+  access_until DATE,
+  activated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_resource_purchase_pending ON resource_purchases(user_id, resource_id) WHERE status = 'pending_payment';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS newsletter_opt_in BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS newsletter_topics TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS comm_token CHAR(32);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_comm_token ON users(comm_token) WHERE comm_token IS NOT NULL;
+-- Every consent change, with its source and the exact text shown. Append-only by design of the code.
+CREATE TABLE IF NOT EXISTS communication_consents (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  channel VARCHAR(12) NOT NULL CHECK (channel IN ('newsletter','offers')),
+  granted BOOLEAN NOT NULL,
+  source VARCHAR(40) NOT NULL,
+  text_shown TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS newsletter_issues (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  subject VARCHAR(200) NOT NULL,
+  body_md TEXT NOT NULL,
+  topics TEXT[] NOT NULL DEFAULT '{}',
+  status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','approved','queued')),
+  created_by UUID REFERENCES users(id),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  queued_at TIMESTAMPTZ,
+  recipients INT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS community_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(200) NOT NULL,
+  summary TEXT NOT NULL DEFAULT '',
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+  mode VARCHAR(10) NOT NULL DEFAULT 'online' CHECK (mode IN ('online','in_person')),
+  location VARCHAR(300) NOT NULL DEFAULT '',
+  join_url VARCHAR(500) NOT NULL DEFAULT '',
+  capacity INT CHECK (capacity IS NULL OR capacity > 0),
+  audience VARCHAR(10) NOT NULL DEFAULT 'account' CHECK (audience IN ('public','account','members')),
+  status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','cancelled')),
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (ends_at > starts_at)
+);
+CREATE TABLE IF NOT EXISTS event_registrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES community_events(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status VARCHAR(10) NOT NULL DEFAULT 'registered' CHECK (status IN ('registered','cancelled','attended')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (event_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS contributions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind VARCHAR(12) NOT NULL CHECK (kind IN ('article','tool','case_study','other')),
+  title VARCHAR(200) NOT NULL,
+  summary TEXT NOT NULL,
+  show_name BOOLEAN NOT NULL DEFAULT false,
+  status VARCHAR(10) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','accepted','declined','withdrawn')),
+  decision_note TEXT,
+  decided_by UUID REFERENCES users(id),
+  decided_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Individuals portal M4 (October 23, 2026): gifted memberships (paid gifts and LIV launch campaigns) and group packs with seats.
+-- A gift or a seat gives a membership for a fixed period; it never turns into a paid subscription. Group managers handle seats,
+-- invitations and invoices only, never members' credentials, results or private records.
+ALTER TABLE memberships DROP CONSTRAINT IF EXISTS memberships_source_check;
+ALTER TABLE memberships ADD CONSTRAINT memberships_source_check CHECK (source IN ('paid','gift','trial','grant','group'));
+ALTER TABLE membership_plans ADD COLUMN IF NOT EXISTS min_seats INT NOT NULL DEFAULT 1 CHECK (min_seats >= 1);
+UPDATE membership_plans SET min_seats = 5 WHERE code = 'corporate' AND min_seats = 1;
+CREATE TABLE IF NOT EXISTS gift_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(200) NOT NULL,
+  purpose TEXT NOT NULL DEFAULT '',
+  plan_id UUID NOT NULL REFERENCES membership_plans(id),
+  months INT NOT NULL CHECK (months BETWEEN 1 AND 24),
+  max_gifts INT NOT NULL CHECK (max_gifts BETWEEN 1 AND 10000),
+  accept_by DATE NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','approved','closed')),
+  created_by UUID REFERENCES users(id),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS gifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code_hash CHAR(64) NOT NULL UNIQUE,
+  code_last4 VARCHAR(4) NOT NULL,
+  kind VARCHAR(10) NOT NULL CHECK (kind IN ('paid','campaign')),
+  plan_id UUID NOT NULL REFERENCES membership_plans(id),
+  months INT NOT NULL CHECK (months BETWEEN 1 AND 24),
+  terms JSONB NOT NULL,
+  buyer_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  campaign_id UUID REFERENCES gift_campaigns(id),
+  recipient_email VARCHAR(255) NOT NULL,
+  recipient_name VARCHAR(200) NOT NULL DEFAULT '',
+  price_cents INT NOT NULL DEFAULT 0,
+  invoice_id UUID UNIQUE REFERENCES invoices(id),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending_payment','issued','accepted','expired','revoked','void')),
+  accept_by DATE NOT NULL,
+  accepted_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  membership_id UUID REFERENCES memberships(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES users(id),
+  accepted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS group_packs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  manager_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  org_name VARCHAR(200) NOT NULL,
+  plan_version_id UUID NOT NULL REFERENCES membership_plan_versions(id),
+  seats INT NOT NULL CHECK (seats >= 1),
+  seat_price_cents INT NOT NULL,
+  terms JSONB NOT NULL,
+  invoice_id UUID UNIQUE REFERENCES invoices(id),
+  status VARCHAR(16) NOT NULL CHECK (status IN ('pending_payment','active','expired','void')),
+  starts_on DATE,
+  ends_on DATE,
+  activated_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS group_seats (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  pack_id UUID NOT NULL REFERENCES group_packs(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
+  name VARCHAR(200) NOT NULL DEFAULT '',
+  code_hash CHAR(64) NOT NULL UNIQUE,
+  status VARCHAR(10) NOT NULL DEFAULT 'invited' CHECK (status IN ('invited','accepted','revoked')),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  membership_id UUID REFERENCES memberships(id) ON DELETE SET NULL,
+  invited_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  accepted_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_group_seat_open ON group_seats(pack_id, lower(email)) WHERE status <> 'revoked';
+
+-- Individuals portal M5 (October 23, 2026): a free interest list for assessment programs in development. It reserves nothing,
+-- is not an application, and takes no payment. Preparation products stay closed until a program operates (src/lib/resources.js).
+CREATE TABLE IF NOT EXISTS program_interest (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scheme_id UUID NOT NULL REFERENCES credential_schemes(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  email VARCHAR(255) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_program_interest ON program_interest(scheme_id, lower(email));
 `;

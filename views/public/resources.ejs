@@ -1,0 +1,13 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow"><%= brand %> resources</span>
+  <h1>Resources and products</h1>
+  <p>Guides, templates, checklists and tools, reviewed before publication. Some are free with an account, some are included with membership, and some are sold separately. None of them grants a credential, a qualification or CPD units.</p>
+</div></section>
+<section class="section white"><div class="container">
+  <% if (!items.length) { %><p class="muted">Resources are being prepared and will be listed here once published.</p><% } else { %><div class="grid g3"><% items.forEach(it => { %>
+    <div class="card"><p class="small muted" style="margin:0"><%= KINDS[it.kind] %> · <%= ACCESS[it.access] %></p><h2 class="h3"><a href="/resources/<%= it.slug %>"><%= it.title %></a></h2><p class="small"><%= it.summary %></p>
+      <% if (it.access === 'purchase' && it.price_cents != null) { %><p class="small">$<%= (it.price_cents / 100).toFixed(2) %><% if (it.member_price_cents != null) { %> · members $<%= (it.member_price_cents / 100).toFixed(2) %><% } %></p><% } %></div><% }) %></div><% } %>
+  <p class="mt"><a href="/membership">Membership and benefits</a> · <a href="/community">Community and events</a></p>
+</div></section>
+<%- include('../partials/foot') %>

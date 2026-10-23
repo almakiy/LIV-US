@@ -16,7 +16,7 @@ const fail = (req, res, e, to) => {
   if (e.status === 404 && !to) return res.status(404).render('error', { title: 'Not found', message: e.message });
   flash(req, 'error', e.message); return res.redirect(to || '/me');
 };
-const me = async (req) => (await q(`SELECT id, full_name, email, email_verified_at, marketing_opt_in, marketing_opt_in_at, totp_enabled, closure_requested_at, created_at FROM users WHERE id = $1`, [req.user.id])).rows[0];
+const me = async (req) => (await q(`SELECT id, full_name, email, email_verified_at, marketing_opt_in, marketing_opt_in_at, newsletter_opt_in, newsletter_topics, totp_enabled, closure_requested_at, created_at FROM users WHERE id = $1`, [req.user.id])).rows[0];
 
 r.get('/', wrap(async (req, res) => {
   const u = await me(req);
@@ -111,17 +111,21 @@ r.post('/emails/:id/remove', wrap(async (req, res) => {
 }));
 
 // ---------- Profile and communication preferences ----------
-r.get('/profile', wrap(async (req, res) => res.render('me/profile', { title: 'Profile and preferences', u: await me(req), errors: [] })));
+r.get('/profile', wrap(async (req, res) => res.render('me/profile', { title: 'Profile and preferences', u: await me(req), errors: [], TOPICS: require('../lib/community').TOPICS, history: await require('../lib/community').consentHistory(req.user.id) })));
 r.post('/profile', wrap(async (req, res) => {
   const name = String(req.body.full_name || '').trim();
   const u = await me(req);
   const errors = [];
   if (name.length < 2 || name.length > 200) errors.push('Enter your full name (2 to 200 characters).');
   else if (I.hasNonLatin(name)) errors.push('Write your name in English (Latin letters).');
-  if (errors.length) return res.status(400).render('me/profile', { title: 'Profile and preferences', u, errors });
-  const marketing = req.body.marketing === 'yes';
-  await q(`UPDATE users SET full_name = $1, marketing_opt_in = $2, marketing_opt_in_at = CASE WHEN $2 <> marketing_opt_in THEN now() ELSE marketing_opt_in_at END WHERE id = $3`, [name, marketing, u.id]);
-  await audit({ user: req.user, action: 'individual.profile_update', target: u.email, metadata: { marketing_opt_in: marketing } });
+  if (errors.length) return res.status(400).render('me/profile', { title: 'Profile and preferences', u, errors, TOPICS: require('../lib/community').TOPICS, history: [] });
+  const marketing = req.body.marketing === 'yes'; const newsletter = req.body.newsletter === 'yes';
+  const C = require('../lib/community');
+  await q('UPDATE users SET full_name = $1 WHERE id = $2', [name, u.id]);
+  await C.setConsent(u.id, 'offers', marketing, 'profile');
+  await C.setConsent(u.id, 'newsletter', newsletter, 'profile');
+  await C.setTopics(u.id, req.body.topics);
+  await audit({ user: req.user, action: 'individual.profile_update', target: u.email, metadata: { offers: marketing, newsletter } });
   flash(req, 'success', 'Saved. Service messages about your account and credentials are sent whatever you choose here.');
   res.redirect('/me/profile');
 }));
@@ -232,6 +236,83 @@ r.get('/billing/:id/pdf', wrap(async (req, res, next) => {
   const d = await ownInvoice(req); if (!d || d.inv.status === 'draft') return next();
   const pdf = await require('../lib/invoice-pdf').renderInvoice(d.inv, d.lines, d.payments);
   res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="${d.inv.number}.pdf"` }).send(pdf);
+}));
+
+// ---------- Library and purchases (M3) ----------
+const R = require('../lib/resources');
+const C = require('../lib/community');
+const G = require('../lib/gifts');
+const back = (req, res, to, e, Err) => { if (!(e instanceof Err)) throw e; flash(req, 'error', e.message); return res.redirect(to); };
+
+r.get('/library', wrap(async (req, res) => {
+  const items = await R.listPublished();
+  const access = {}; for (const it of items) access[it.id] = await R.canAccess(req.user, it);
+  res.render('me/library', { title: 'Library and purchases', items, access, purchases: await R.library(req.user.id), member: await R.activeMember(req.user.id), KINDS: R.KINDS, ACCESS: R.ACCESS });
+}));
+r.post('/library/:slug/buy', limiter(15, 10), wrap(async (req, res) => {
+  try { const out = await R.buy(req.user, req.params.slug); flash(req, 'success', 'Your order is waiting for payment. Access starts once the invoice is paid.'); return res.redirect(`/me/billing/${out.invoiceId}`); }
+  catch (e) { return back(req, res, '/me/library', e, R.ResourceError); }
+}));
+
+// ---------- Events and contributions (M3) ----------
+r.get('/events', wrap(async (req, res) => {
+  const mine = await C.myEvents(req.user.id);
+  res.render('me/events', { title: 'Events and contributions', events: await C.events(), mine, mineIds: new Set(mine.map((e) => e.id)), member: await R.activeMember(req.user.id),
+    contributions: (await q('SELECT * FROM contributions WHERE user_id = $1 ORDER BY created_at DESC', [req.user.id])).rows, KINDS: C.KINDS });
+}));
+r.post('/events/:id/register', limiter(15, 20), wrap(async (req, res) => {
+  try { await C.register(req.user, req.params.id); flash(req, 'success', 'You are registered. The joining details are shown on this page.'); } catch (e) { return back(req, res, '/me/events', e, C.CommunityError); }
+  res.redirect('/me/events');
+}));
+r.post('/events/:id/cancel', wrap(async (req, res) => {
+  try { await C.cancelRegistration(req.user, req.params.id); flash(req, 'success', 'Registration cancelled.'); } catch (e) { return back(req, res, '/me/events', e, C.CommunityError); }
+  res.redirect('/me/events');
+}));
+r.post('/contributions', limiter(15, 5), wrap(async (req, res) => {
+  try { await C.contribute(req.user, req.body); flash(req, 'success', 'Your proposal is sent. LIV reviews it before anything is published.'); } catch (e) { return back(req, res, '/me/events#contribute', e, C.CommunityError); }
+  res.redirect('/me/events#contribute');
+}));
+r.post('/contributions/:id/withdraw', wrap(async (req, res) => {
+  await q(`UPDATE contributions SET status = 'withdrawn' WHERE id = $1 AND user_id = $2 AND status = 'submitted'`, [req.params.id, req.user.id]);
+  res.redirect('/me/events#contribute');
+}));
+
+// ---------- Gifts and group packs (M4) ----------
+r.get('/gifts', wrap(async (req, res) => {
+  res.render('me/gifts', { title: 'Gifts and group memberships', plans: await M.plans(), bought: await G.giftsBought(req.user.id), packs: await G.packsManaged(req.user.id) });
+}));
+r.post('/gifts/redeem', limiter(15, 10), wrap(async (req, res) => {
+  try { const out = await G.redeem(req.user, req.body.code); flash(req, 'success', out.kind === 'seat' ? 'Invitation accepted. Your membership is active.' : 'Gift accepted. Your membership is active; it does not renew automatically.'); return res.redirect('/me/membership'); }
+  catch (e) { return back(req, res, '/me/gifts', e, G.GiftError); }
+}));
+r.post('/gifts/buy', limiter(15, 10), wrap(async (req, res) => {
+  try { const out = await G.buyGift(req.user, req.body); flash(req, 'success', 'Your gift is waiting for payment. The recipient gets the code once it is paid.'); return res.redirect(`/me/billing/${out.invoiceId}`); }
+  catch (e) { return back(req, res, '/me/gifts#give', e, G.GiftError); }
+}));
+r.post('/gifts/:id/resend', limiter(15, 5), wrap(async (req, res) => {
+  try { await G.resendGift(req.user, req.params.id); flash(req, 'success', 'Sent again with a new code. The previous code no longer works.'); } catch (e) { return back(req, res, '/me/gifts', e, G.GiftError); }
+  res.redirect('/me/gifts');
+}));
+r.post('/groups', limiter(15, 10), wrap(async (req, res) => {
+  try { const out = await G.buyPack(req.user, req.body); flash(req, 'success', 'Your group pack is waiting for payment. You can invite people once it is paid.'); return res.redirect(`/me/billing/${out.invoiceId}`); }
+  catch (e) { return back(req, res, '/me/gifts#group', e, G.GiftError); }
+}));
+r.get('/groups/:id', wrap(async (req, res, next) => {
+  const pk = await G.ownPack(req.user, req.params.id); if (!pk) return next();
+  res.render('me/group', { title: `Group pack: ${pk.org_name}`, pk, seats: await G.seats(pk.id), newCode: req.session.newSeatCode || null });
+  delete req.session.newSeatCode;
+}));
+r.post('/groups/:id/invite', limiter(15, 60), wrap(async (req, res, next) => {
+  const pk = await G.ownPack(req.user, req.params.id); if (!pk) return next();
+  try { const code = await G.invite(req.user, pk.id, req.body); req.session.newSeatCode = { email: String(req.body.email).trim().toLowerCase(), code }; flash(req, 'success', 'Invitation sent.'); }
+  catch (e) { return back(req, res, `/me/groups/${pk.id}`, e, G.GiftError); }
+  res.redirect(`/me/groups/${pk.id}`);
+}));
+r.post('/groups/:id/seats/:seat/revoke', wrap(async (req, res, next) => {
+  const pk = await G.ownPack(req.user, req.params.id); if (!pk) return next();
+  try { await G.revokeSeat(req.user, pk.id, req.params.seat); flash(req, 'success', 'Seat withdrawn. It can be given to someone else. The person keeps their own account and credentials.'); }
+  catch (e) { return back(req, res, `/me/groups/${pk.id}`, e, G.GiftError); }
+  res.redirect(`/me/groups/${pk.id}`);
 }));
 
 module.exports = r;

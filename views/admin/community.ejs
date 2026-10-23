@@ -1,0 +1,53 @@
+<%- include('../partials/app-start') %>
+<h1>Resources and community</h1>
+<p class="muted">Resources are published after a review by someone other than the person who submitted them. Prices are approved by the main account. Newsletter sending is <strong><%= sendingOpen ? 'open' : 'closed' %></strong> (<code>NEWSLETTER_SENDING</code>) and resource sales are <strong><%= salesOpen ? 'open' : 'closed' %></strong> (<code>PRODUCT_SALES</code>).</p>
+
+<h2 class="mt" id="resources">Resources</h2>
+<details class="card"><summary>New resource</summary>
+  <form method="post" action="/admin/resources" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="row"><div class="field"><label for="nr-title">Title</label><input id="nr-title" name="title" required></div>
+      <div class="field"><label for="nr-kind">Type</label><select id="nr-kind" name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+      <div class="field"><label for="nr-access">Access</label><select id="nr-access" name="access"><% Object.entries(ACCESS).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div></div>
+    <div class="field"><label for="nr-sum">Summary</label><input id="nr-sum" name="summary" maxlength="600"></div>
+    <button class="btn sm">Create draft</button></form></details>
+<% if (resources.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Title</th><th>Type</th><th>Access</th><th>Status</th><th>Price</th></tr>
+  <% resources.forEach(x => { %><tr><td><a href="/admin/resources/<%= x.id %>"><%= x.title %></a></td><td><%= KINDS[x.kind] %></td><td><%= ACCESS[x.access] %></td><td><%= x.status %> (v<%= x.version %>)</td>
+    <td><%= x.price_cents == null ? '' : '$' + (x.price_cents / 100).toFixed(2) + (x.sale_approved_at ? ' approved' : ' not approved') %></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt" id="newsletter">Newsletter</h2>
+<p class="small muted">Subscribers: <%= consent.newsletter %> to the knowledge newsletter, <%= consent.offers %> to offers. Both are separate opt-in choices with their history kept.</p>
+<details class="card"><summary>New issue</summary>
+  <form method="post" action="/admin/community/newsletter" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="ni-sub">Subject</label><input id="ni-sub" name="subject" maxlength="200" required></div>
+    <div class="field"><label for="ni-body">Body (paragraphs separated by a blank line)</label><textarea id="ni-body" name="body_md" rows="6" required></textarea></div>
+    <fieldset class="field"><legend>Topics (none = everyone subscribed)</legend><% Object.entries(TOPICS).forEach(([k, l]) => { %><label class="check" style="display:inline-flex;margin-right:12px"><input type="checkbox" name="topics" value="<%= k %>"> <%= l %></label><% }) %></fieldset>
+    <button class="btn sm">Save draft</button></form></details>
+<% if (issues.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Subject</th><th>Status</th><th>Audience now</th><th>Actions</th></tr>
+  <% issues.forEach(i => { %><tr><td><%= i.subject %><br><span class="small muted">by <%= i.author || '' %></span></td><td><%= i.status %><%= i.recipients != null ? ' (' + i.recipients + ' queued)' : '' %></td><td><%= audience[i.id] %></td>
+    <td><% if (i.status === 'draft') { %><form method="post" action="/admin/community/newsletter/<%= i.id %>/approve" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Approve</button></form><% } %>
+      <% if (i.status === 'approved' && isMain) { %><form method="post" action="/admin/community/newsletter/<%= i.id %>/send" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Send (main account)</button></form><% } %></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt" id="events">Events</h2>
+<details class="card"><summary>New event</summary>
+  <form method="post" action="/admin/community/events" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="ne-title">Title</label><input id="ne-title" name="title" required></div>
+    <div class="field"><label for="ne-sum">Summary</label><textarea id="ne-sum" name="summary" rows="3"></textarea></div>
+    <div class="row"><div class="field"><label for="ne-start">Starts (UTC)</label><input id="ne-start" type="datetime-local" name="starts_at" required></div><div class="field"><label for="ne-end">Ends (UTC)</label><input id="ne-end" type="datetime-local" name="ends_at" required></div></div>
+    <div class="row"><div class="field"><label for="ne-mode">Mode</label><select id="ne-mode" name="mode"><option value="online">Online</option><option value="in_person">In person</option></select></div>
+      <div class="field"><label for="ne-aud">Audience</label><select id="ne-aud" name="audience"><option value="account">Account holders</option><option value="members">Members</option><option value="public">Open to all</option></select></div>
+      <div class="field"><label for="ne-cap">Capacity</label><input id="ne-cap" name="capacity" inputmode="numeric" placeholder="no limit"></div></div>
+    <div class="row"><div class="field"><label for="ne-loc">Location</label><input id="ne-loc" name="location"></div><div class="field"><label for="ne-url">Joining link (shown to registered people only)</label><input id="ne-url" name="join_url" placeholder="https://"></div></div>
+    <button class="btn sm">Save draft</button></form></details>
+<% if (events.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Event</th><th>When</th><th>Audience</th><th>Registered</th><th>Status</th><th></th></tr>
+  <% events.forEach(e => { %><tr><td><%= e.title %></td><td><%= usDateTime(e.starts_at) %></td><td><%= e.audience %></td><td><%= e.taken %><%= e.capacity ? ' / ' + e.capacity : '' %></td><td><%= e.status %></td>
+    <td><form method="post" action="/admin/community/events/<%= e.id %>/status" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if (e.status !== 'published') { %><button class="btn sm" name="status" value="published">Publish</button><% } %><% if (e.status !== 'cancelled') { %> <button class="btn sm secondary" name="status" value="cancelled">Cancel</button><% } %></form></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt" id="contributions">Contributions</h2>
+<% if (!contributions.length) { %><p class="muted small">No proposals yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Proposal</th><th>From</th><th>Status</th><th>Decision</th></tr>
+  <% contributions.forEach(c => { %><tr><td><strong><%= c.title %></strong><br><span class="small"><%= c.summary %></span></td><td class="small"><%= c.full_name %><%= c.show_name ? ' (name may be shown)' : ' (name not shown)' %></td><td><%= c.status %></td>
+    <td><% if (c.status === 'submitted') { %><form method="post" action="/admin/community/contributions/<%= c.id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="small" for="cn-<%= c.id %>">Note to the person</label><input id="cn-<%= c.id %>" name="note" required minlength="5">
+      <button class="btn sm" name="decision" value="accept">Accept</button> <button class="btn sm secondary" name="decision" value="decline">Decline</button></form><% } else { %><span class="small"><%= c.decision_note %></span><% } %></td></tr><% }) %></table></div><% } %>
+
+<h2 class="mt" id="interest">Interest in assessment programs</h2>
+<div class="table-wrap" tabindex="0"><table><tr><th>Program</th><th>Interested</th></tr><% interest.forEach(i => { %><tr><td><a href="/credentials/<%= i.slug %>"><%= i.name %></a></td><td><%= i.n %></td></tr><% }) %></table></div>
+<%- include('../partials/app-end') %>
