@@ -7,9 +7,9 @@
   <p class="small muted">You see each seat's address and status only. Members' accounts, credentials, results and private records stay theirs.</p>
   <% if (newCode) { %><div class="alert info" role="status">Invitation code for <%= newCode.email %>: <strong class="mono"><%= newCode.code %></strong>. It is also emailed; it is shown here only once.</div><% } %>
   <% if (pk.status === 'active') { %><form class="card" method="post" action="/me/groups/<%= pk.id %>/invite" style="max-width:640px"><input type="hidden" name="_csrf" value="<%= csrf %>">
-    <div class="row"><div class="field"><label for="s-email">Email</label><input id="s-email" type="email" name="email" required></div><div class="field"><label for="s-name">Name</label><input id="s-name" name="name" maxlength="200"></div></div>
+    <div class="row"><div class="field"><label for="s-email">Email</label><input id="s-email" type="email" name="email" required></div></div>
     <button class="btn sm">Invite</button></form><% } %>
-  <% if (seats.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Email</th><th>Name</th><th>Status</th><th></th></tr>
-    <% seats.forEach(s => { %><tr><td><%= s.email %></td><td><%= s.name %></td><td><%= s.status %></td><td><% if (s.status !== 'revoked') { %><form method="post" action="/me/groups/<%= pk.id %>/seats/<%= s.id %>/revoke" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn" aria-label="Withdraw the seat of <%= s.email %>">Withdraw</button></form><% } %></td></tr><% }) %></table></div><% } %>
+  <% if (seats.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Email</th><th>Status</th><th></th></tr>
+    <% seats.forEach(s => { %><tr><td><%= s.email %></td><td><%= s.status %></td><td><% if (s.status !== 'revoked') { %><form method="post" action="/me/groups/<%= pk.id %>/seats/<%= s.id %>/revoke" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn" aria-label="Withdraw the seat of <%= s.email %>">Withdraw</button></form><% } %></td></tr><% }) %></table></div><% } %>
 </div>
 <%- include('../partials/foot') %>

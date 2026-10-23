@@ -69,9 +69,11 @@ async function onInvoicePaid(invoiceId) {
   const { rows: [g] } = await q(`SELECT g.*, u.full_name AS buyer FROM gifts g LEFT JOIN users u ON u.id = g.buyer_user_id WHERE g.invoice_id = $1 AND g.status = 'pending_payment'`, [invoiceId]);
   if (g) {
     const code = newCode();
-    const { rowCount } = await q(`UPDATE gifts SET status = 'issued', code_hash = $2, code_last4 = $3 WHERE id = $1 AND status = 'pending_payment'`, [g.id, hash(code), code.slice(-4)]);
-    if (rowCount) {
-      await require('./email').queue({ to: g.recipient_email, name: g.recipient_name || null, template: 'gift_received', data: { from: g.buyer, plan: g.terms.plan_name, months: g.months, code, acceptBy: M.iso(g.accept_by) }, dedupeKey: `gift:${g.id}` });
+    // The acceptance window starts when the gift is paid and issued, so a late payment never shortens it.
+    const { rows: [issued] } = await q(`UPDATE gifts SET status = 'issued', code_hash = $2, code_last4 = $3, accept_by = $4 WHERE id = $1 AND status = 'pending_payment' RETURNING accept_by`,
+      [g.id, hash(code), code.slice(-4), addDays(ACCEPT_DAYS)]);
+    if (issued) {
+      await require('./email').queue({ to: g.recipient_email, name: g.recipient_name || null, template: 'gift_received', data: { from: g.buyer, plan: g.terms.plan_name, months: g.months, code, acceptBy: M.iso(issued.accept_by) }, dedupeKey: `gift:${g.id}` });
       await audit({ actorLabel: 'payment', action: 'gift.issue', target: g.id });
     }
   }
@@ -205,7 +207,7 @@ async function ownPack(user, id) {
 }
 /** What the manager sees: seat status and contact only. Never the member's credentials, membership history or records. */
 async function seats(packId) {
-  return (await q(`SELECT id, email, name, status, invited_at, accepted_at, revoked_at FROM group_seats WHERE pack_id = $1 ORDER BY invited_at`, [packId])).rows;
+  return (await q(`SELECT id, email, status FROM group_seats WHERE pack_id = $1 ORDER BY invited_at`, [packId])).rows;
 }
 
 async function invite(user, packId, { email, name }) {

@@ -136,6 +136,11 @@ async function processQueue({ limit = 10, driver = driverFor() } = {}) {
   for (const m of rows) {
     const { rows: [sup] } = await q('SELECT 1 FROM email_suppressions WHERE email = $1', [m.to_email]);
     if (sup) { await q(`UPDATE email_outbox SET status = 'suppressed' WHERE id = $1`, [m.id]); continue; }
+    // A newsletter queued before the reader unsubscribed is not sent: the choice is checked again at sending time.
+    if (m.template === 'newsletter') {
+      const { rows: [still] } = await q('SELECT 1 FROM users WHERE lower(email) = $1 AND newsletter_opt_in AND disabled_at IS NULL', [m.to_email]);
+      if (!still) { await q(`UPDATE email_outbox SET status = 'suppressed' WHERE id = $1`, [m.id]); continue; }
+    }
     try {
       const id = await driver.send(m);
       await q(`UPDATE email_outbox SET status = 'sent', attempts = attempts + 1, sent_at = now(), provider_message_id = $2, last_error = NULL WHERE id = $1`, [m.id, String(id || '').slice(0, 200)]);
