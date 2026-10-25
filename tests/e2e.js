@@ -140,6 +140,17 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(await see(pub, '.sb-valid'), 'ID + last name (case-insensitive) → VALID');
   const pdfNoToken = await pub.request.get(`${BASE}/verify/${certNum}/pdf`);
   ok(pdfNoToken.status() === 404, 'PDF requires QR token');
+  // Digital badge (Open Badges 3.0)
+  const bTok = psql(`SELECT substr(verification_hash, 1, 16) FROM certificates WHERE cert_number = '${certNum}'`);
+  ok((await pub.request.get(`${BASE}/badges/credentials/${certNum}.json`)).status() === 404, 'a badge needs the QR token, like the PDF');
+  const bj = await (await pub.request.get(`${BASE}/badges/credentials/${certNum}.json?t=${bTok}`)).json();
+  ok(bj.type.includes('OpenBadgeCredential') && bj.credentialSubject.achievement.achievementType === 'CertificateOfCompletion' && !('validUntil' in bj)
+    && !/[a-z0-9.]+@[a-z0-9]/i.test(JSON.stringify(bj)) && /not a professional qualification/.test(bj.credentialSubject.achievement.criteria.narrative), 'the badge is an Open Badges 3.0 completion record with no end date, no email and the completion-only statement');
+  const bjwt = await (await pub.request.get(`${BASE}/badges/credentials/${certNum}.jwt?t=${bTok}`)).text();
+  const bkey = (await (await pub.request.get(`${BASE}/badges/jwks.json`)).json()).keys[0];
+  const [bh, bp, bs] = bjwt.split('.');
+  ok(require('crypto').verify(null, Buffer.from(`${bh}.${bp}`), require('crypto').createPublicKey({ key: bkey, format: 'jwk' }), Buffer.from(bs, 'base64url')), 'the signed badge checks against the published key');
+  ok((await (await pub.request.get(`${BASE}/badges/issuer.json`)).json()).description.includes('not accredited'), 'the issuer profile makes no accreditation claim');
 
   // Tamper with DB record → integrity failure
   psql(`UPDATE certificates SET course_name = 'Advanced Course' WHERE cert_number = '${certNum}'`);
@@ -155,6 +166,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(await see(page, 'text=revoked.'), 'revoked from portal');
   await pub.goto(`${BASE}/verify/${certNum}`);
   ok(await see(pub, '.sb-revoked'), 'verify page shows REVOKED');
+  ok((await pub.request.get(`${BASE}/badges/credentials/${certNum}.json?t=${bTok}`)).status() === 410, 'a revoked credential has no badge');
   await shot(pub, '08-verify-revoked');
   await page.goto(`${BASE}/portal/certificates?status=revoked`);
   ok(await see(page, `text=${certNum}`), 'records filter: revoked');
@@ -1934,6 +1946,10 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await mp.goto(BASE + '/me/membership');
     const num = psql(`SELECT member_number FROM memberships WHERE user_id = '${uid}' AND status = 'active'`);
     ok(await see(mp, `text=Member ${num}`) && await see(mp, 'text=Membership only. Not a professional qualification'), 'the card shows the member number and says it is membership only');
+    const mb = await mp.locator('a:has-text("Digital badge")').getAttribute('href');
+    const mbj = await (await anon.request.get(BASE + mb)).json();
+    ok(mbj.credentialSubject.achievement.achievementType === 'Membership' && mbj.validUntil && !mbj.credentialSubject.name && /not a professional qualification/.test(mbj.credentialSubject.achievement.description), 'the membership badge states membership only, with its end date and no name by default');
+    ok((await anon.request.get(`${BASE}/badges/memberships/${num}.json?t=0000000000000000`)).status() === 404, 'a membership badge needs its token');
     let vh = await (await anon.request.get(`${BASE}/membership/verify/${num}`)).text();
     ok(vh.includes('Active membership') && !vh.includes('Mira Member') && !vh.includes(memEmail), 'the public check confirms the active membership without name or email by default');
     await mp.check('input[name=show_name]'); await mp.click('form[action="/me/membership/card"] button');
@@ -1968,6 +1984,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'active'`) === '0', 'past their end date, memberships expire');
     vh = await (await anon.request.get(`${BASE}/membership/verify/${num}`)).text();
     ok(vh.includes('Not active') && !vh.includes('Active membership'), 'an expired membership is never confirmed as active');
+    ok((await anon.request.get(BASE + mb)).status() === 410, 'the badge stops working when the membership ends');
     ok((await mp.request.get(BASE + '/me/credentials')).status() === 200 && (await mp.request.get(BASE + '/me/privacy/export.json')).status() === 200, 'basic account and credential services stay after the membership ends');
     // Withdraw from sale; stats keep sources apart; preview member
     await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Withdraw from sale")').click(); await see(adm, 'text=withdrawn from sale');

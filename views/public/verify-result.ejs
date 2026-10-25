@@ -52,6 +52,7 @@ const provLabel = (st) => st === 'active' ? 'LIV Authorized Training Provider' :
     </dl>
     <div class="actions">
       <% if (R !== 'revoked' && token) { %><a class="btn" href="/verify/<%= c.cert_number %>/pdf?t=<%= token %>">Download original PDF</a><% } %>
+      <% if (typeof badgeUrl !== 'undefined' && badgeUrl) { %><a class="btn secondary" href="<%= badgeUrl %>">Digital badge (Open Badges 3.0)</a><% } %>
       <% if (linkedin) { %><a class="btn secondary" href="<%= linkedin %>" target="_blank" rel="noopener">Add to LinkedIn profile</a><% } %>
       <button type="button" class="btn secondary" data-copy="<%= shareUrl %>">Copy verification link</button>
     </div>

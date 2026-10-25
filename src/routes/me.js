@@ -180,7 +180,7 @@ r.get('/membership', wrap(async (req, res) => {
   const verifyUrl = cur.active ? `${cfg.baseUrl}/membership/verify/${cur.active.member_number}` : null;
   const qr = verifyUrl ? await require('qrcode').toDataURL(verifyUrl, { margin: 1, width: 160 }) : null;
   const { rows: [{ card_show_name }] } = await q('SELECT card_show_name FROM users WHERE id = $1', [u.id]);
-  res.render('me/membership', { title: 'My membership', u, cur, plans, verifyUrl, qr, cardShowName: card_show_name, salesOpen: cfg.membershipSales });
+  res.render('me/membership', { title: 'My membership', u, cur, plans, verifyUrl, qr, badgeUrl: cur.active && !cur.active.is_preview ? `/badges/memberships/${cur.active.member_number}.json?t=${require('../lib/badges').memberToken(cur.active.member_number)}` : null, cardShowName: card_show_name, salesOpen: cfg.membershipSales });
 }));
 r.post('/membership/join/:code', limiter(15, 10), wrap(async (req, res) => {
   try { const out = await M.join(req.user, req.params.code); flash(req, 'success', 'Your membership is waiting for payment. It starts once the invoice is paid.'); return res.redirect(`/me/billing/${out.invoiceId}`); }

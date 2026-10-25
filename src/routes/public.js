@@ -138,6 +138,7 @@ r.get('/verify/:cert', verifyLimiter, wrap(async (req, res) => {
     // Only echo a token the visitor already holds (from the QR code) and that verified; never derive it here.
     title: 'Credential Verification', recordTypes: require('../lib/schemes').RECORD_TYPES, out, c, linkedin, token: req.query.t && out.result !== 'tampered' ? String(req.query.t) : '',
     shareUrl: c ? `${cfg.baseUrl}/verify/${c.cert_number}` : '',
+    badgeUrl: c && out.result === 'valid' && req.query.t ? `/badges/credentials/${c.cert_number}.json?t=${encodeURIComponent(String(req.query.t))}` : '',
   });
 }));
 
@@ -150,6 +151,20 @@ r.get('/verify/:cert/pdf', verifyLimiter, wrap(async (req, res) => {
   if (!file) return res.status(404).render('error', { title: 'Not found', message: 'Certificate PDF not available.' });
   res.attachment(`${c.cert_number}.pdf`).type(file.type).send(file.content);
 }));
+
+// ---------- Digital badges (Open Badges 3.0, hosted by LIV) ----------
+const B = require('../lib/badges');
+const badgeJson = (res, o) => res.set('Cache-Control', 'no-store').type('application/json').send(JSON.stringify(o, null, 2));
+r.get('/badges/issuer.json', (req, res) => badgeJson(res, B.issuerProfile()));
+r.get('/badges/jwks.json', (req, res) => badgeJson(res, B.jwks()));
+async function sendBadge(res, out, fmt) {
+  if (out.status !== 200) return out.body ? res.status(out.status).set('Cache-Control', 'no-store').json(out.body) : res.status(out.status).json({ status: out.status === 503 ? 'unavailable' : 'not_found' });
+  if (fmt === 'jwt') return res.set('Cache-Control', 'no-store').type('application/vc+jwt').send(B.sign(out.body));
+  return badgeJson(res, out.body);
+}
+const badgeFile = (f) => { const m = /^(.+)\.(json|jwt)$/.exec(String(f)); return m ? { id: m[1], fmt: m[2] } : null; };
+r.get('/badges/credentials/:file', verifyLimiter, wrap(async (req, res, next) => { const f = badgeFile(req.params.file); return f ? sendBadge(res, await B.credentialBadge(f.id, req.query.t), f.fmt) : next(); }));
+r.get('/badges/memberships/:file', verifyLimiter, wrap(async (req, res, next) => { const f = badgeFile(req.params.file); return f ? sendBadge(res, await B.membershipBadge(f.id, req.query.t), f.fmt) : next(); }));
 
 r.get('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), (req, res) => res.render('public/apply', { title: 'Apply to become an Authorized Training Provider', form: {}, error: null }));
 r.post('/apply', (req, res, next) => (cfg.publicApply ? next() : res.status(404).render('error', { title: 'Page not found', message: 'The page you are looking for does not exist.' })), limiter(15, 10), wrap(async (req, res) => {

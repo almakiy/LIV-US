@@ -23,6 +23,7 @@
       <p class="small">Verification link: <a href="<%= verifyUrl %>"><%= verifyUrl %></a></p>
       <img src="<%= qr %>" alt="QR code for the membership verification link" width="120" height="120">
       <p class="small"><a href="https://www.linkedin.com/sharing/share-offsite/?url=<%= encodeURIComponent(verifyUrl) %>" rel="noopener" target="_blank">Share on LinkedIn</a> — suggested text: "I'm a member of the LIV professional community."</p>
+      <% if (badgeUrl) { %><p class="small"><a href="<%= badgeUrl %>">Digital badge (Open Badges 3.0)</a>: a signed record of this membership that badge wallets and other sites can check. It states membership only, not a qualification, and stops working when the membership ends. Add <code>.jwt</code> in place of <code>.json</code> for the signed form.</p><% } %>
       <form method="post" action="/me/membership/card" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>">
         <label class="check"><input type="checkbox" name="show_name" value="yes" <%= cardShowName ? 'checked' : '' %>> Show my name on the verification page (otherwise only the membership status shows)</label>
         <button class="btn sm">Save</button></form>
