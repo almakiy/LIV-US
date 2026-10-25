@@ -140,6 +140,8 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(await see(pub, '.sb-valid'), 'ID + last name (case-insensitive) → VALID');
   const pdfNoToken = await pub.request.get(`${BASE}/verify/${certNum}/pdf`);
   ok(pdfNoToken.status() === 404, 'PDF requires QR token');
+  const vs = await (await pub.request.get(`${BASE}/verify`)).text();
+  ok(vs.includes('href="/partners/verify"') && vs.includes('href="/membership/verify"') && vs.includes('href="/badges/jwks.json"'), 'the verification portal links the provider, membership and badge checks');
   // Digital badge (Open Badges 3.0)
   const bTok = psql(`SELECT substr(verification_hash, 1, 16) FROM certificates WHERE cert_number = '${certNum}'`);
   ok((await pub.request.get(`${BASE}/badges/credentials/${certNum}.json`)).status() === 404, 'a badge needs the QR token, like the PDF');

@@ -8,5 +8,11 @@
     <button class="btn lg">Verify</button>
   </form>
   <p class="small muted mt">For privacy, certificates can't be searched by name alone. Scanning the QR code on the certificate opens its verification page directly.</p>
+  <h2 class="h3 mt" id="other-checks">Other checks</h2>
+  <div class="grid g3 mt">
+    <div class="card"><h3 class="h3">Training provider</h3><p class="small">Confirm that a provider is an Authorized Training Provider, with its status, scope and level.</p><a href="/partners/verify">Check a provider</a></div>
+    <div class="card"><h3 class="h3">Membership</h3><p class="small">Confirm that a membership is active today. A membership is not a credential.</p><a href="/membership/verify">Check a membership</a></div>
+    <div class="card"><h3 class="h3">Digital badge</h3><p class="small">Each valid credential and active membership also has a signed digital badge (Open Badges 3.0) that other sites and badge wallets can check with LIV's <a href="/badges/jwks.json">public key</a>. The holder shares it from the credential's QR link or their account.</p></div>
+  </div>
 </div>
 <%- include('../partials/foot') %>
