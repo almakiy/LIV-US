@@ -42,6 +42,16 @@
   <% events.forEach(e => { %><tr><td><%= e.title %></td><td><%= usDateTime(e.starts_at) %></td><td><%= e.audience %></td><td><%= e.taken %><%= e.capacity ? ' / ' + e.capacity : '' %></td><td><%= e.status %></td>
     <td><form method="post" action="/admin/community/events/<%= e.id %>/status" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if (e.status !== 'published') { %><button class="btn sm" name="status" value="published">Publish</button><% } %><% if (e.status !== 'cancelled') { %> <button class="btn sm secondary" name="status" value="cancelled">Cancel</button><% } %></form></td></tr><% }) %></table></div><% } %>
 
+<h2 class="mt" id="experts">Expert network applications</h2>
+<p class="small muted">Approval records a role only. It never opens an item bank or private records; such access is granted separately and logged. You cannot decide your own application.</p>
+<% if (!experts.length) { %><p class="muted small">No applications yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Applicant</th><th>Track and domains</th><th>Background</th><th>Conflicts</th><th>Decision</th></tr>
+  <% experts.forEach(a => { %><tr><td class="small"><strong><%= a.full_name %></strong><br><%= a.email %><% if (a.linkedin_url) { %><br><a href="<%= a.linkedin_url %>" rel="noopener noreferrer" target="_blank">LinkedIn</a><% } %></td>
+    <td class="small"><%= TRACKS[a.track] %><br><%= a.domains %><% if (a.role_clash.length) { %><br><strong>Impartiality check: also <%= a.role_clash.join(', ') %>.</strong><% } %></td>
+    <td class="small"><%= a.education %><br><%= a.experience %><% if (a.current_roles) { %><br>Current roles: <%= a.current_roles %><% } %></td>
+    <td class="small"><%= a.no_conflicts ? 'None declared' : a.conflicts %></td>
+    <td><% if (a.status === 'submitted') { %><form method="post" action="/admin/community/experts/<%= a.id %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="small" for="xn-<%= a.id %>">Note to the person</label><input id="xn-<%= a.id %>" name="note" required minlength="5">
+      <button class="btn sm" name="decision" value="approve">Approve</button> <button class="btn sm secondary" name="decision" value="decline">Decline</button></form><% } else { %><span class="small"><%= a.status %>: <%= a.decision_note || '' %></span><% } %></td></tr><% }) %></table></div><% } %>
+
 <h2 class="mt" id="contributions">Contributions</h2>
 <% if (!contributions.length) { %><p class="muted small">No proposals yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Proposal</th><th>From</th><th>Status</th><th>Decision</th></tr>
   <% contributions.forEach(c => { %><tr><td><strong><%= c.title %></strong><br><span class="small"><%= c.summary %></span></td><td class="small"><%= c.full_name %><%= c.show_name ? ' (name may be shown)' : ' (name not shown)' %></td><td><%= c.status %></td>

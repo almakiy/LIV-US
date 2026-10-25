@@ -1564,4 +1564,28 @@ CREATE TABLE IF NOT EXISTS legal_publications (
   withdrawn_at TIMESTAMPTZ
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_legal_live ON legal_publications(slug) WHERE withdrawn_at IS NULL;
+-- LIV Expert Network (owner decision, October 25, 2026): applications to contribute as a curriculum expert, item writer,
+-- technical reviewer, committee member or trainer. Built beside contributions. Approval records a role only: it never opens
+-- an item bank or any private record; such access is granted by hand later and logged.
+CREATE TABLE IF NOT EXISTS expert_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track VARCHAR(12) NOT NULL CHECK (track IN ('curriculum','item_writer','reviewer','committee','trainer')),
+  domains TEXT NOT NULL,
+  linkedin_url VARCHAR(300),
+  education TEXT NOT NULL,
+  experience TEXT NOT NULL,
+  current_roles TEXT,
+  conflicts TEXT,
+  no_conflicts BOOLEAN NOT NULL DEFAULT false,
+  confidentiality_ack BOOLEAN NOT NULL,
+  privacy_text TEXT NOT NULL,
+  status VARCHAR(10) NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted','approved','declined','withdrawn')),
+  decision_note TEXT,
+  decided_by UUID REFERENCES users(id),
+  decided_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CHECK (no_conflicts OR length(coalesce(conflicts, '')) > 0)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_expert_open ON expert_applications(user_id, track) WHERE status IN ('submitted','approved');
 `;

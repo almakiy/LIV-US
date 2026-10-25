@@ -172,4 +172,50 @@ async function decideContribution(staff, id, accept, note) {
   await audit({ user: staff, action: accept ? 'contribution.accept' : 'contribution.decline', target: id });
 }
 
-module.exports = { CommunityError, CONSENT_TEXT, TOPICS, KINDS, ensureToken, setConsent, setTopics, unsubscribe, consentHistory, saveIssue, approveIssue, audienceCount, queueIssue, saveEvent, setEventStatus, events, register, cancelRegistration, myEvents, contribute, decideContribution };
+// ---------- LIV Expert Network ----------
+const TRACKS = {
+  curriculum: 'Curriculum expert (learning outcomes and content)',
+  item_writer: 'Item writer (assessment questions, when assessment programs operate)',
+  reviewer: 'Technical reviewer',
+  committee: 'Committee member (schemes, impartiality, appeals)',
+  trainer: 'Trainer',
+};
+const EXPERT_PRIVACY_TEXT = 'LIV uses the details in this application only to assess it and to contact me about it. They are seen by LIV staff only, never published, and kept as stated in the privacy notice.';
+// Roles that may not be held together in the same domain (impartiality): flagged to staff, decided by them.
+const CONFLICTING = { item_writer: ['trainer'], trainer: ['item_writer', 'committee'], committee: ['trainer'] };
+async function applyExpert(user, f) {
+  const track = TRACKS[f.track] ? f.track : null; if (!track) throw new CommunityError('Choose a track.');
+  const t = (k, n) => String(f[k] || '').trim().slice(0, n);
+  const domains = t('domains', 500), education = t('education', 3000), experience = t('experience', 5000), roles = t('current_roles', 2000), conflicts = t('conflicts', 3000);
+  let linkedin = t('linkedin_url', 300);
+  if (domains.length < 3 || education.length < 10 || experience.length < 50) throw new CommunityError('Give your domains, your education and at least 50 characters on your experience.');
+  if (linkedin && !/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/\S+$/i.test(linkedin)) throw new CommunityError('Give a LinkedIn link starting with https://www.linkedin.com/ or leave it empty.');
+  if ([domains, education, experience, roles, conflicts].some(hasNonLatin)) throw new CommunityError('Write the application in English (Latin letters).');
+  const none = f.no_conflicts === 'yes';
+  if (!none && conflicts.length < 5) throw new CommunityError('Declare your conflicts of interest, or confirm that you have none.');
+  if (f.confidentiality !== 'yes') throw new CommunityError('Confirm that you will keep LIV material confidential.');
+  if (f.privacy !== 'yes') throw new CommunityError('Confirm the privacy statement for applicants.');
+  try {
+    const { rows: [r] } = await q(`INSERT INTO expert_applications (user_id, track, domains, linkedin_url, education, experience, current_roles, conflicts, no_conflicts, confidentiality_ack, privacy_text)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true,$10) RETURNING id`, [user.id, track, domains, linkedin || null, education, experience, roles || null, none ? null : conflicts, none, EXPERT_PRIVACY_TEXT]);
+    await audit({ user, action: 'expert.apply', target: r.id, metadata: { track } });
+    return r.id;
+  } catch (e) { if (e.code === '23505') throw new CommunityError('You already have an open or approved application for this track.'); throw e; }
+}
+async function expertApplications() {
+  const { rows } = await q(`SELECT a.*, u.full_name, u.email FROM expert_applications a JOIN users u ON u.id = a.user_id ORDER BY (a.status = 'submitted') DESC, a.created_at DESC LIMIT 200`);
+  for (const a of rows) {
+    const others = rows.filter((b) => b.user_id === a.user_id && b.id !== a.id && ['submitted', 'approved'].includes(b.status) && (CONFLICTING[a.track] || []).includes(b.track));
+    a.role_clash = others.map((b) => TRACKS[b.track].split(' (')[0]);
+  }
+  return rows;
+}
+async function decideExpert(staff, id, approve, note) {
+  const why = String(note || '').trim(); if (why.length < 5) throw new CommunityError('Record a note for the person.');
+  const { rowCount } = await q(`UPDATE expert_applications SET status = $1, decision_note = $2, decided_by = $3, decided_at = now() WHERE id = $4 AND status = 'submitted' AND user_id <> $3`,
+    [approve ? 'approved' : 'declined', why.slice(0, 2000), staff.id, id]);
+  if (!rowCount) throw new CommunityError('Only a submitted application by someone else can be decided.');
+  await audit({ user: staff, action: approve ? 'expert.approve' : 'expert.decline', target: id });
+}
+
+module.exports = { TRACKS, EXPERT_PRIVACY_TEXT, applyExpert, expertApplications, decideExpert, CommunityError, CONSENT_TEXT, TOPICS, KINDS, ensureToken, setConsent, setTopics, unsubscribe, consentHistory, saveIssue, approveIssue, audienceCount, queueIssue, saveEvent, setEventStatus, events, register, cancelRegistration, myEvents, contribute, decideContribution };

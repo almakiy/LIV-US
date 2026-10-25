@@ -1,0 +1,26 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Expert network</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <p>Apply to help LIV develop and review its programs. LIV staff review every application. An approved application records your role in the network; it is not a credential, an employment offer or a professional qualification, and it gives no access to assessment material until LIV grants it separately.</p>
+  <p class="small muted">Impartiality: the same person may not write assessment questions and train candidates in the same domain, and a trainer does not sit on appeals about their own learners.</p>
+  <% if (apps.length) { %><h2>Your applications</h2><div class="table-wrap" tabindex="0"><table><tr><th>Track</th><th>Domains</th><th>Status</th><th>LIV's note</th><th></th></tr>
+    <% apps.forEach(a => { %><tr><td><%= TRACKS[a.track] %></td><td class="small"><%= a.domains %></td><td><%= a.status %></td><td class="small"><%= a.decision_note || '' %></td>
+      <td><% if (['submitted','approved'].includes(a.status)) { %><form method="post" action="/me/expert/<%= a.id %>/withdraw" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Withdraw</button></form><% } %></td></tr><% }) %></table></div><% } %>
+  <h2 class="mt" id="apply">Apply</h2>
+  <form class="card" method="post" action="/me/expert" style="max-width:760px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="field"><label for="x-track">Track</label><select id="x-track" name="track"><% Object.entries(TRACKS).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+    <div class="field"><label for="x-domains">Domains (in English, for example "Occupational safety; Quality management")</label><input id="x-domains" name="domains" maxlength="500" required></div>
+    <div class="field"><label for="x-li">LinkedIn profile (optional)</label><input id="x-li" name="linkedin_url" type="url" maxlength="300" placeholder="https://www.linkedin.com/in/..."></div>
+    <div class="field"><label for="x-edu">Education and qualifications</label><textarea id="x-edu" name="education" rows="3" required></textarea></div>
+    <div class="field"><label for="x-exp">Relevant experience (50+ characters)</label><textarea id="x-exp" name="experience" rows="5" required></textarea></div>
+    <div class="field"><label for="x-roles">Current roles with training providers or other credentialing bodies (optional)</label><textarea id="x-roles" name="current_roles" rows="2"></textarea></div>
+    <div class="field"><label for="x-coi">Conflicts of interest</label><textarea id="x-coi" name="conflicts" rows="2"></textarea></div>
+    <div class="field"><label><input type="checkbox" name="no_conflicts" value="yes"> I have no conflict of interest to declare.</label></div>
+    <div class="field"><label><input type="checkbox" name="confidentiality" value="yes" required> I will keep confidential any LIV material I am given, and I will tell LIV of any new conflict of interest.</label></div>
+    <div class="field"><label><input type="checkbox" name="privacy" value="yes" required> <%= PRIVACY %></label></div>
+    <button class="btn">Send application</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

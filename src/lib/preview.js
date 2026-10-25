@@ -166,6 +166,7 @@ async function resetData(user, reason = 'manual') {
       await del('purchases', 'DELETE FROM resource_purchases WHERE user_id = ANY($1::uuid[])', [ids]);
       await del('registrations', 'DELETE FROM event_registrations WHERE user_id = ANY($1::uuid[])', [ids]);
       await del('contributions', 'DELETE FROM contributions WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('expert_applications', 'DELETE FROM expert_applications WHERE user_id = ANY($1::uuid[])', [ids]);
       await c.query('DELETE FROM communication_consents WHERE user_id = ANY($1::uuid[])', [ids]);
       await c.query('DELETE FROM program_interest WHERE user_id = ANY($1::uuid[])', [ids]);
       await c.query(`UPDATE gifts SET status = 'void' WHERE buyer_user_id = ANY($1::uuid[]) OR accepted_user_id = ANY($1::uuid[])`, [ids]);
@@ -205,6 +206,7 @@ async function hasData() {
     + (SELECT count(*)::int FROM resource_purchases x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
     + (SELECT count(*)::int FROM event_registrations x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
     + (SELECT count(*)::int FROM contributions x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM expert_applications x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
     + (SELECT count(*)::int FROM group_packs x JOIN users u ON u.id = x.manager_user_id WHERE u.is_preview)
     + (SELECT count(*)::int FROM gifts x JOIN users u ON u.id = x.buyer_user_id OR u.id = x.accepted_user_id WHERE u.is_preview) AS n`);
   return r.n > 0;

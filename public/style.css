@@ -211,6 +211,7 @@ p a:not(.btn),li a:not(.btn),dd a:not(.btn),.small a:not(.btn),.muted a:not(.btn
 .me-nav a.on{font-weight:600}
 .me-stat{font-size:1.8rem;font-weight:700;color:var(--navy);margin:4px 0}
 .me-wrap .linkbtn{color:var(--accent);padding:0;text-decoration:underline}
+.me-wrap .alert a{text-decoration:underline}
 form.inline{display:inline}
 .h3{font-family:Inter,sans-serif;font-size:1.05rem;font-weight:600;color:var(--ink)}
 label.check{display:flex;gap:8px;align-items:flex-start;font-weight:400}

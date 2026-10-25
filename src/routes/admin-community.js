@@ -34,7 +34,7 @@ r.get('/community', wrap(async (req, res) => {
     q(`SELECT count(*) FILTER (WHERE newsletter_opt_in)::int AS newsletter, count(*) FILTER (WHERE marketing_opt_in)::int AS offers FROM users WHERE role = 'individual' AND NOT is_preview`),
   ]);
   const audience = {}; for (const i of issues.rows) audience[i.id] = await C.audienceCount(i.topics);
-  res.render('admin/community', { title: 'Resources and community', resources: resources.rows, issues: issues.rows, audience, events, contributions: contributions.rows, interest: interest.rows, consent: consent.rows[0],
+  res.render('admin/community', { title: 'Resources and community', experts: await C.expertApplications(), TRACKS: C.TRACKS, resources: resources.rows, issues: issues.rows, audience, events, contributions: contributions.rows, interest: interest.rows, consent: consent.rows[0],
     KINDS: R.KINDS, ACCESS: R.ACCESS, TOPICS: C.TOPICS, isMain: await isMainAccount(req.user), sendingOpen: cfg.newsletterSending, salesOpen: cfg.productSales });
 }));
 
@@ -65,6 +65,7 @@ r.post('/community/events', act(async (req) => { await C.saveEvent(req.user, nul
 r.post('/community/events/:id/status', act(async (req) => { await C.setEventStatus(req.user, req.params.id, req.body.status); return 'Event updated.'; }, '/admin/community#events'));
 
 // ---------- Contributions ----------
+r.post('/community/experts/:id', act(async (req) => { await C.decideExpert(req.user, req.params.id, req.body.decision === 'approve', req.body.note); return 'Decision recorded.'; }, '/admin/community#experts'));
 r.post('/community/contributions/:id', act(async (req) => { await C.decideContribution(req.user, req.params.id, req.body.decision === 'accept', req.body.note); return 'Decision recorded.'; }, '/admin/community#contributions'));
 
 // ---------- Gifts and group packs ----------

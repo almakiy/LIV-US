@@ -1971,8 +1971,9 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     ok((await mp.request.get(BASE + '/me/credentials')).status() === 200 && (await mp.request.get(BASE + '/me/privacy/export.json')).status() === 200, 'basic account and credential services stay after the membership ends');
     // Withdraw from sale; stats keep sources apart; preview member
     await adm.goto(BASE + '/admin/memberships'); await adm.locator('#plan-member button:has-text("Withdraw from sale")').click(); await see(adm, 'text=withdrawn from sale');
+    const pendingBefore = psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`);
     r = await mp.request.post(BASE + '/me/membership/join/member', { form: { _csrf: await mp.locator('input[name=_csrf]').first().inputValue() }, maxRedirects: 0 });
-    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`) === '0', 'a withdrawn plan cannot be bought');
+    ok(psql(`SELECT count(*) FROM memberships WHERE user_id = '${uid}' AND status = 'pending_payment'`) === pendingBefore, 'a withdrawn plan cannot be bought');
     await adm.goto(BASE + '/admin/preview'); await adm.click('form[action="/admin/preview/individual/member"] button');
     ok(await see(adm, 'text=The preview individual is ready') && psql(`SELECT m.source || ',' || m.status || ',' || m.is_preview FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.email = 'individual.member@preview.liv.invalid'`) === 'grant,active,true', 'the main account creates a preview individual with a granted preview membership');
     const pnum2 = psql(`SELECT member_number FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.email = 'individual.member@preview.liv.invalid'`);
@@ -2104,6 +2105,18 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await adm.goto(BASE + '/admin/community'); const crow = adm.locator('tr', { hasText: 'Toolbox talk template' });
     await crow.locator('input[name=note]').fill('Thank you; we already have one.'); await crow.locator('button:has-text("Decline")').click();
     ok(psql(`SELECT status FROM contributions WHERE user_id = '${L.id}'`) === 'declined', 'LIV decides with a note to the person');
+    // Expert network
+    await L.p.goto(BASE + '/me/expert'); await L.p.selectOption('#x-track', 'item_writer'); await L.p.fill('#x-domains', 'Occupational safety');
+    await L.p.fill('#x-edu', 'BSc Environmental Health'); await L.p.fill('#x-exp', 'Ten years as a safety officer on construction sites, writing site inspection checklists.');
+    await L.p.check('input[name=no_conflicts]'); await L.p.check('input[name=confidentiality]'); await L.p.check('input[name=privacy]'); await L.p.click('button:has-text("Send application")');
+    ok(await see(L.p, 'text=Your application is sent') && psql(`SELECT status || ':' || no_conflicts FROM expert_applications WHERE user_id = '${L.id}'`) === 'submitted:true', 'an expert application is recorded with its conflict declaration');
+    await L.p.selectOption('#x-track', 'trainer'); await L.p.fill('#x-domains', 'Occupational safety'); await L.p.fill('#x-edu', 'BSc Environmental Health');
+    await L.p.fill('#x-exp', 'Ten years as a safety officer on construction sites, writing site inspection checklists.'); await L.p.fill('#x-coi', 'I train for a provider.');
+    await L.p.check('input[name=confidentiality]'); await L.p.check('input[name=privacy]'); await L.p.click('button:has-text("Send application")');
+    await adm.goto(BASE + '/admin/community'); ok(await see(adm, 'text=Impartiality check: also Trainer'), 'staff see an impartiality flag when one person asks to write questions and to train');
+    const xid = psql(`SELECT id FROM expert_applications WHERE user_id = '${L.id}' AND track = 'item_writer'`);
+    const xform = adm.locator(`form[action="/admin/community/experts/${xid}"]`); await xform.locator('input[name=note]').fill('Welcome to the network.'); await xform.locator('button:has-text("Approve")').click();
+    ok(psql(`SELECT status FROM expert_applications WHERE user_id = '${L.id}' AND track = 'item_writer'`) === 'approved', 'staff approve an expert application with a note');
     // Gift campaign
     await adm.goto(BASE + '/admin/gifts'); await adm.click('summary:has-text("New campaign")');
     await adm.fill('#gc-name', 'Launch 2026'); await adm.fill('#gc-months', '3'); await adm.fill('#gc-max', '2'); await adm.fill('#gc-by', '2030-12-31'); await adm.click('form[action="/admin/gifts/campaigns"] button');

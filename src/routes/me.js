@@ -277,6 +277,20 @@ r.post('/contributions/:id/withdraw', wrap(async (req, res) => {
   res.redirect('/me/events#contribute');
 }));
 
+// ---------- LIV Expert Network ----------
+r.get('/expert', wrap(async (req, res) => {
+  res.render('me/expert', { title: 'Expert network', TRACKS: C.TRACKS, PRIVACY: C.EXPERT_PRIVACY_TEXT,
+    apps: (await q('SELECT * FROM expert_applications WHERE user_id = $1 ORDER BY created_at DESC', [req.user.id])).rows });
+}));
+r.post('/expert', limiter(15, 5), wrap(async (req, res) => {
+  try { await C.applyExpert(req.user, req.body); flash(req, 'success', 'Your application is sent. LIV staff review it and reply here.'); } catch (e) { return back(req, res, '/me/expert', e, C.CommunityError); }
+  res.redirect('/me/expert');
+}));
+r.post('/expert/:id/withdraw', wrap(async (req, res) => {
+  await q(`UPDATE expert_applications SET status = 'withdrawn' WHERE id = $1 AND user_id = $2 AND status IN ('submitted','approved')`, [req.params.id, req.user.id]);
+  res.redirect('/me/expert');
+}));
+
 // ---------- Gifts and group packs (M4) ----------
 r.get('/gifts', wrap(async (req, res) => {
   res.render('me/gifts', { title: 'Gifts and group memberships', plans: await M.plans(), bought: await G.giftsBought(req.user.id), packs: await G.packsManaged(req.user.id) });
