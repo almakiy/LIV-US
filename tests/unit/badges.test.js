@@ -27,6 +27,6 @@ test('membership badge tokens are stable per number and differ between numbers',
   assert.strictEqual(B.memberToken('LIVM-AAAA2222'), B.memberToken('LIVM-AAAA2222'));
   assert.notStrictEqual(B.memberToken('LIVM-AAAA2222'), B.memberToken('LIVM-BBBB3333'));
 });
-test('the issuer profile states no accreditation', () => {
-  assert.match(B.issuerProfile().description, /not accredited/);
+test('the issuer profile describes what LIV does and makes no claim either way', () => {
+  assert.ok(!/accredit|ISO/i.test(B.issuerProfile().description));
 });

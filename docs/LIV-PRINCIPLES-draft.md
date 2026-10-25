@@ -20,8 +20,8 @@ LIV records, verifies and recognizes learning. People rely on our records only i
 - Do: "This credential confirms completion of training; it is not a professional certification." Don't: "Internationally accredited."
 - Do: "I will check and come back to you by Thursday." Don't: "Please email support."
 
-## Limits
-LIV is not accredited under ISO/IEC 17024 or any other standard, and these principles make no conformity claim.
+## Wording rule
+Public text states what LIV does. It neither claims an accreditation or conformity LIV does not hold nor volunteers a denial nobody asked for; questions are answered accurately when asked.
 
 ---
 

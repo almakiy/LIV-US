@@ -32,7 +32,7 @@ const issuerId = () => `${cfg.baseUrl}/badges/issuer.json`;
 function issuerProfile() {
   return {
     '@context': CONTEXT, id: issuerId(), type: ['Profile'], name: 'LIV', url: cfg.baseUrl,
-    description: 'LIV issues and verifies training records. LIV is not accredited under ISO/IEC 17024 or any other standard.',
+    description: 'LIV issues and verifies training records and memberships.',
     publicKeys: `${cfg.baseUrl}/badges/jwks.json`,
   };
 }
