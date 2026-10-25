@@ -53,6 +53,7 @@ The current task explicitly keeps P-5, P-6, P-7, P-9, P-11–P-17 and I-1–I-12
 | 28 | [records-retention-schedule.md](records-retention-schedule.md) | LIV record owners, privacy staff and ATPs for their related records | Internal controlled schedule; summarized in privacy and agreement | Internal approval; related obligations incorporated into contracts |
 | 29 | [sanctions-compliance-statement.md](sanctions-compliance-statement.md) | LIV review/finance staff, applicants, providers and relevant purchasers | Application declarations; internal review; agreement | Relevant contractual acknowledgment; screening procedure needs approval |
 | 30 | [anti-bribery-statement.md](anti-bribery-statement.md) | LIV personnel, agents, contractors, ATPs, applicants and campaign participants | Internal conduct onboarding; agreement; public integrity page proposed | Staff/contractor/partner acknowledgment |
+| 31 | [governance-structure.md](governance-structure.md) | Visitors, partners, learners, members, experts and LIV personnel | Proposed /legal/governance-structure; About page | No acceptance; published only when the roles are filled (added October 25, 2026) |
 
 ## 3. Consistency matrix
 Every numbered substantive section is mapped below; document-control, effective-date and open-point clauses across all files are governed by the release procedure in section 7. “Exists” refers to source behavior, not production verification. Human/legal duties cannot be proved merely by code.

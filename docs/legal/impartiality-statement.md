@@ -24,6 +24,13 @@ Distinguish normal procedure, published alternatives, specialist interpretation 
 ## 5. Gifts and oversight
 Launch membership gifts may not target people assessing or deciding LIV's own accreditation application. Commercial campaigns require their approved controls. Report pressure, undisclosed conflicts or inducements through /contact or the approved internal route. See the [Anti-Bribery Statement](anti-bribery-statement.md).
 
+## 5a. Experts, trainers and assessment
+People who join the LIV Expert Network declare their conflicts of interest when they apply and update the declaration when it changes. Staff see a flag when one person asks for roles that should stay apart. When assessment programs operate:
+- A person who writes assessment questions does not train candidates in the same domain for [OWNER DECISION: period, proposed two years].
+- A trainer does not supervise, mark or decide the assessment of their own learners.
+- A member of the appeals panel does not hear an appeal about a decision they took part in, or about their own learners.
+Approval into the network records a role only; access to assessment material is granted separately, by name, and logged.
+
 ## 6. Limitations and review
 Current QMS configuration can permit documented self-approval of some controlled documents/corrective actions. This draft does not falsely promise universal two-person approval. IM01 must settle that configuration and actual oversight appointments. A records system is not proof that a committee has met or an external standard is satisfied.
 

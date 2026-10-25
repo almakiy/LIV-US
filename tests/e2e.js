@@ -2328,6 +2328,9 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
       await adm.goto(BASE + '/admin/legal/privacy-policy');
       ok(await see(adm, 'text=open point(s)') && await adm.locator('button:has-text("Approve and publish")').count() === 0 && await see(adm, 'article.prose h1:has-text("Privacy Policy")'),
         'a draft with placeholders is readable but cannot be published');
+      await adm.goto(BASE + '/admin/legal/governance-structure');
+      ok(await see(adm, 'article.prose h1:has-text("Governance Structure")') && await adm.locator('button:has-text("Approve and publish")').count() === 0
+        && (await anon.request.get(BASE + '/legal/governance-structure')).status() === 404, 'the governance structure is a staff-only draft until its roles are filled');
       fs.writeFileSync(sample, '# Sample Notice\n\nApproved sample text, version one. See the [privacy policy](privacy-policy.md).\n');
       await adm.goto(BASE + '/admin/legal/e2e-sample-notice');
       await adm.check('input[name=confirm]'); await adm.click('button:has-text("Approve and publish")');
