@@ -57,6 +57,27 @@ const TEMPLATES = {
     'Use the link below to choose a new password. It works for one hour and only once.',
     'If you did not ask for this, ignore this message: your password stays the same.'],
   { label: 'Choose a new password', url: `${cfg.baseUrl}/password/reset?t=${encodeURIComponent(d.token)}` }) }),
+  newsletter: (d) => ({ subject: clip(d.subject, 200), ...layout(clip(d.subject, 200), String(d.body || '').split(/\n\s*\n/).map((p) => clip(p, 4000)).slice(0, 60)
+    .concat([`You receive this because you chose the LIV knowledge newsletter. Stop it here: ${cfg.baseUrl}/unsubscribe?t=${encodeURIComponent(d.token)}&c=newsletter`])) }),
+  gift_received: (d) => ({ subject: 'A LIV membership has been given to you', ...layout('A membership for you', [
+    `${clip(d.from || 'Someone', 200)} has given you a ${clip(d.plan, 120)} membership (${Number(d.months) || 12} months).`,
+    'To accept it, create or sign in to your free LIV account and enter the code below. Accepting it never starts a paid subscription.',
+    `Gift code: ${clip(d.code, 40)}`, `Accept by: ${clip(d.acceptBy, 10)}`],
+  { label: 'Accept the gift', url: `${cfg.baseUrl}/me/gifts` }) }),
+  seat_invite: (d) => ({ subject: `${clip(d.org, 120)} has invited you to a LIV membership`, ...layout('An invitation to a LIV membership', [
+    `${clip(d.org, 200)} has a ${clip(d.plan, 120)} membership seat for you.`,
+    'Your LIV account stays yours: the organization manages the seat and its invoice, and never sees your credentials, results or private records.',
+    `Invitation code: ${clip(d.code, 40)}`],
+  { label: 'Accept the invitation', url: `${cfg.baseUrl}/me/gifts` }) }),
+  waitlist_joined: (d) => ({ subject: `You are on the waitlist for ${clip(d.plan, 120)}`, ...layout('You are on the list', [
+    `Thank you. We will email you when the ${clip(d.plan, 120)} membership opens.`,
+    'This is not a purchase or a reservation, and the price is not guaranteed. Nothing is charged.',
+    `To leave the list: ${cfg.baseUrl}/membership/waitlist/leave?t=${encodeURIComponent(d.token)}`]) }),
+  waitlist_invite: (d) => ({ subject: `${clip(d.plan, 120)} is open`, ...layout(`${clip(d.plan, 120)} is open`, [
+    `You asked us to tell you when the ${clip(d.plan, 120)} membership opens. It is open now: sign in or create your free account, then choose the plan under My membership.`,
+    'People who joined the waitlist before the plan opened receive the Founding Member badge on their membership card.',
+    `To leave the list: ${cfg.baseUrl}/membership/waitlist/leave?t=${encodeURIComponent(d.token)}`],
+  { label: 'Open the membership page', url: `${cfg.baseUrl}/me/membership` }) }),
   membership_reminder: (d) => ({ subject: 'Your LIV membership ends in 30 days', ...layout('Your membership ends soon', [
     `Your ${clip(d.plan, 120)} membership ends on ${clip(d.ends, 10)}. You can renew from your account; nothing renews automatically.`,
     'Your credentials stay valid and verifiable whether or not you renew.'],
@@ -115,6 +136,11 @@ async function processQueue({ limit = 10, driver = driverFor() } = {}) {
   for (const m of rows) {
     const { rows: [sup] } = await q('SELECT 1 FROM email_suppressions WHERE email = $1', [m.to_email]);
     if (sup) { await q(`UPDATE email_outbox SET status = 'suppressed' WHERE id = $1`, [m.id]); continue; }
+    // A newsletter queued before the reader unsubscribed is not sent: the choice is checked again at sending time.
+    if (m.template === 'newsletter') {
+      const { rows: [still] } = await q('SELECT 1 FROM users WHERE lower(email) = $1 AND newsletter_opt_in AND disabled_at IS NULL', [m.to_email]);
+      if (!still) { await q(`UPDATE email_outbox SET status = 'suppressed' WHERE id = $1`, [m.id]); continue; }
+    }
     try {
       const id = await driver.send(m);
       await q(`UPDATE email_outbox SET status = 'sent', attempts = attempts + 1, sent_at = now(), provider_message_id = $2, last_error = NULL WHERE id = $1`, [m.id, String(id || '').slice(0, 200)]);

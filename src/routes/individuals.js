@@ -21,7 +21,7 @@ r.get('/signup', (req, res) => {
 
 r.post('/signup', limiter(15, 10), wrap(async (req, res) => {
   if (!cfg.individualAccounts) return closed(res);
-  const form = { full_name: String(req.body.full_name || '').trim(), email: I.normEmail(req.body.email), marketing: req.body.marketing === 'yes' };
+  const form = { full_name: String(req.body.full_name || '').trim(), email: I.normEmail(req.body.email), marketing: req.body.marketing === 'yes', newsletter: req.body.newsletter === 'yes' };
   const errors = I.validateSignup({ ...form, password: String(req.body.password || ''), confirm: String(req.body.confirm_password || ''), terms: req.body.terms === 'yes' });
   if (!errors.length && refusedPassword(String(req.body.password))) errors.push('That is a published development password; choose another one.');
   if (errors.length) return res.status(400).render('public/signup', { title: 'Create an account', errors, form });
@@ -29,12 +29,15 @@ r.post('/signup', limiter(15, 10), wrap(async (req, res) => {
   if (existing) {
     await email.queue({ to: form.email, template: 'individual_exists', dedupeKey: `exists:${form.email}:${new Date().toISOString().slice(0, 10)}` });
   } else {
-    const { rows: [u] } = await q(`INSERT INTO users (role, full_name, email, password_hash, marketing_opt_in, marketing_opt_in_at)
-      VALUES ('individual',$1,$2,$3,$4,$5) RETURNING id, email, role`,
-    [form.full_name.slice(0, 200), form.email, await bcrypt.hash(String(req.body.password), 12), form.marketing, form.marketing ? new Date() : null]);
+    const { rows: [u] } = await q(`INSERT INTO users (role, full_name, email, password_hash) VALUES ('individual',$1,$2,$3) RETURNING id, email, role`,
+    [form.full_name.slice(0, 200), form.email, await bcrypt.hash(String(req.body.password), 12)]);
+    // Each optional choice is recorded with its source and the exact text shown (src/lib/community.js).
+    const C = require('../lib/community');
+    if (form.newsletter) await C.setConsent(u.id, 'newsletter', true, 'sign-up');
+    if (form.marketing) await C.setConsent(u.id, 'offers', true, 'sign-up');
     const token = await I.newToken(u.id, 'verify_email', u.email);
     await email.queue({ to: u.email, name: form.full_name, template: 'individual_verify', data: { name: form.full_name, token } });
-    await audit({ user: u, action: 'individual.signup', target: u.email, metadata: { marketing_opt_in: form.marketing } });
+    await audit({ user: u, action: 'individual.signup', target: u.email, metadata: { offers: form.marketing, newsletter: form.newsletter } });
   }
   res.render('public/signup-done', { title: 'Check your email', email: form.email });
 }));
@@ -82,7 +85,28 @@ r.post('/password/reset', limiter(15, 10), wrap(async (req, res) => {
 // ---------- Public pages: individuals, membership, membership verification ----------
 const M = require('../lib/memberships');
 r.get('/individuals', (req, res) => res.render('public/individuals', { title: 'For individuals', description: 'Keep your LIV credentials in one account, verify and share them, and learn about optional membership.' }));
-r.get('/membership', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits', description: 'Optional LIV membership for individuals: what it includes and what it does not.', plans: await M.plans(), preview: false })));
+r.get('/membership', wrap(async (req, res) => res.render('public/membership', { title: 'Membership and benefits', description: 'Optional LIV membership for individuals: what it includes and what it does not.',
+  plans: await M.plans({ withDrafts: cfg.membershipWaitlist, publicOnly: true }), preview: false, waitlist: cfg.membershipWaitlist, consentText: '', done: false })));
+// Waitlist landing page: the featured plan first, then the other announced plans and "any future membership".
+r.get('/membership/waitlist', wrap(async (req, res, next) => {
+  if (!cfg.membershipWaitlist) return next();
+  const plans = (await M.plans({ withDrafts: true, publicOnly: true })).filter((p) => p.status !== 'on_sale');
+  const featured = plans.find((p) => p.featured) || plans[0] || null;
+  res.render('public/waitlist', { title: featured ? `${featured.name}: join the waitlist` : 'Membership waitlist', description: 'Join the LIV membership waitlist. Free; not a purchase or a reservation.',
+    plans, featured, consentText: require('../lib/waitlist').CONSENT, done: req.query.joined === '1' });
+}));
+r.post('/membership/waitlist', limiter(15, 10), wrap(async (req, res, next) => {
+  if (!cfg.membershipWaitlist) return next();
+  const W = require('../lib/waitlist');
+  try { await W.join({ ...req.body, userId: req.user && req.user.role === 'individual' ? req.user.id : null }); }
+  catch (e) { if (!(e instanceof W.WaitlistError)) throw e; flash(req, 'error', e.message); return res.redirect('/membership/waitlist#join'); }
+  res.redirect('/membership/waitlist?joined=1#join');
+}));
+r.get('/membership/waitlist/leave', (req, res) => res.render('public/waitlist-leave', { title: 'Leave the waitlist', token: String(req.query.t || ''), done: false }));
+r.post('/membership/waitlist/leave', limiter(15, 20), wrap(async (req, res) => {
+  const out = await require('../lib/waitlist').leave(req.body.t);
+  res.status(out ? 200 : 400).render('public/waitlist-leave', { title: 'Leave the waitlist', token: '', done: Boolean(out) });
+}));
 r.get('/membership/verify', (req, res) => {
   const n = String(req.query.number || '').trim();
   if (n) return res.redirect(`/membership/verify/${encodeURIComponent(n.toUpperCase())}`);
@@ -92,6 +116,46 @@ r.get('/membership/verify/:number', limiter(1, 60), wrap(async (req, res) => {
   const out = await M.verifyPublic(req.params.number);
   res.set('Cache-Control', 'no-store');
   res.status(out.result === 'active' || out.result === 'not_active' ? 200 : 404).render('public/membership-verify', { title: 'Verify a membership', out });
+}));
+
+// ---------- Resources, community, unsubscribe, program interest (M3, M5) ----------
+const R = require('../lib/resources');
+const C = require('../lib/community');
+const { renderMarkdown } = require('../lib/content');
+const staffOrAccess = async (user, it) => (user && user.realRole === 'super_admin' ? { ok: true } : R.canAccess(user, it));
+r.get('/resources', wrap(async (req, res) => res.render('public/resources', { title: 'Resources and products', description: 'Reviewed guides, templates and tools from LIV: free, included with membership, or sold separately.', items: await R.listPublished(), KINDS: R.KINDS, ACCESS: R.ACCESS })));
+r.get('/resources/:slug', wrap(async (req, res, next) => {
+  const it = await R.bySlug(req.params.slug);
+  const staff = req.user && req.user.realRole === 'super_admin';
+  if (!it || (it.status !== 'published' && !staff)) return next();
+  const a = await staffOrAccess(req.user, it);
+  res.render('public/resource', { title: it.title, description: it.summary, it, a, html: a.ok ? renderMarkdown(it.body_md || '') : '', KINDS: R.KINDS, ACCESS: R.ACCESS, preview: it.status !== 'published' });
+}));
+r.get('/resources/:slug/file', wrap(async (req, res, next) => {
+  const it = await R.bySlug(req.params.slug);
+  if (!it || !it.file_key) return next();
+  const staff = req.user && req.user.realRole === 'super_admin';
+  if (it.status !== 'published' && !staff) return next();
+  if (!(await staffOrAccess(req.user, it)).ok) return res.status(403).render('error', { title: 'Not available', message: 'Sign in with an account that has access to this resource.' });
+  const f = await require('../lib/files').getFile(it.file_key);
+  if (!f) return next();
+  res.attachment(it.file_name || 'resource').type(f.type).send(f.content);
+}));
+r.get('/community', wrap(async (req, res) => res.render('public/community', { title: 'Community and events', description: 'LIV community sessions and events.', events: await C.events() })));
+r.get('/unsubscribe', (req, res) => res.render('public/unsubscribe', { title: 'Stop emails', token: String(req.query.t || ''), channel: ['newsletter', 'offers'].includes(req.query.c) ? req.query.c : 'newsletter', done: false }));
+r.post('/unsubscribe', limiter(15, 20), wrap(async (req, res) => {
+  const channel = ['newsletter', 'offers'].includes(req.body.c) ? req.body.c : 'newsletter';
+  const u = await C.unsubscribe(req.body.t, channel);
+  res.status(u ? 200 : 400).render('public/unsubscribe', { title: 'Stop emails', token: '', channel, done: Boolean(u) });
+}));
+r.post('/credentials/:slug/interest', limiter(15, 10), wrap(async (req, res, next) => {
+  const s = await require('../lib/scheme-store').schemeBySlug(req.params.slug);
+  if (!s || s.status === 'retired') return next();
+  const email = I.normEmail(req.body.email);
+  if (!I.EMAIL_RE.test(email)) { flash(req, 'error', 'Enter a valid email address.'); return res.redirect(`/credentials/${s.slug}`); }
+  await q(`INSERT INTO program_interest (scheme_id, user_id, email) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [s.id, req.user && req.user.role === 'individual' ? req.user.id : null, email]);
+  flash(req, 'success', 'Thank you. We will email you when this program opens. Nothing is reserved and nothing is charged.');
+  res.redirect(`/credentials/${s.slug}`);
 }));
 
 module.exports = r;

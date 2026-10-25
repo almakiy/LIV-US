@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<section class="hero" style="padding:56px 0 48px"><div class="container">
+  <span class="eyebrow"><%= brand %> community</span>
+  <h1>Community and events</h1>
+  <p>Specialist sessions and question-and-answer meetings with available experts. Registration is from your account.</p>
+</div></section>
+<section class="section white"><div class="container">
+  <% if (!events.length) { %><p class="muted">No events are scheduled yet.</p><% } else { %><div class="grid g2"><% events.forEach(e => { %>
+    <div class="card"><p class="small muted" style="margin:0"><%= usDateTime(e.starts_at) %> · <%= e.mode === 'online' ? 'Online' : 'In person' %> · <%= { public: 'Open to all', account: 'With a free account', members: 'For members' }[e.audience] %></p>
+      <h2 class="h3"><%= e.title %></h2><p class="small"><%= e.summary %></p>
+      <a class="btn sm secondary" href="/me/events">Register from your account</a></div><% }) %></div><% } %>
+  <p class="mt small muted">Have something to share? Members of the community can propose articles, tools and case studies from their account.</p>
+</div></section>
+<%- include('../partials/foot') %>

@@ -1,7 +1,7 @@
 <%- include('../partials/app-start') %>
 <h1>Memberships</h1>
 <p class="muted">Plans, prices, periods and benefits are entered here; nothing is invented by the system. A plan can be bought only when its terms are approved by the main account, it is on sale, every listed benefit is marked available, and membership sales are open on the server (<code>MEMBERSHIP_SALES</code>: <strong><%= salesOpen ? 'open' : 'closed' %></strong>). Membership never affects credentials, eligibility or assessment.</p>
-<p><a href="/admin/memberships/preview">Preview the public membership page with draft plans</a> · <a href="/membership">Public page</a></p>
+<p><a href="/admin/memberships/waitlist">Waitlist</a> · <a href="/admin/memberships/preview">Preview the public membership page with draft plans</a> · <a href="/membership">Public page</a></p>
 <h2 class="mt">Counts (preview memberships left out)</h2>
 <% if (!stats.length) { %><p class="muted small">No memberships yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Source</th><th>Status</th><th>Count</th><th>Paid amount</th></tr>
   <% stats.forEach(s => { %><tr><td><%= s.source %></td><td><%= s.status %></td><td><%= s.n %></td><td><%= s.source === 'paid' ? money(Number(s.paid_cents)) : 'not revenue' %></td></tr><% }) %></table></div><% } %>
@@ -9,7 +9,7 @@
 <h2 class="mt">Plans</h2>
 <% plans.forEach(p => { const v = p.latest; const ap = p.approved; %>
 <div class="card mt" id="plan-<%= p.code %>">
-  <h3 class="h3"><%= p.name %> <span class="badge"><%= p.status === 'on_sale' ? 'On sale' : p.status === 'withdrawn' ? 'Withdrawn' : 'Not on sale' %></span> <span class="small muted"><%= p.kind === 'group' ? 'Group plan (seats arrive with M4)' : '' %></span></h3>
+  <h3 class="h3"><%= p.name %> <span class="badge"><%= p.status === 'on_sale' ? 'On sale' : p.status === 'withdrawn' ? 'Withdrawn' : 'Not on sale' %></span> <span class="badge"><%= p.announced ? 'Shown on the site' : 'Hidden from the site' %></span><% if (p.featured) { %> <span class="badge b-active">In the site banner</span><% } %> <span class="small muted"><%= p.kind === 'group' ? 'Group plan (seats arrive with M4)' : '' %></span></h3>
   <p class="small muted"><%= p.audience %></p>
   <p class="small">Approved terms: <%= ap ? 'version ' + ap.version + ', ' + (ap.price_cents == null ? 'no price' : money(ap.price_cents)) + ' for ' + ap.period_months + ' month(s), approved ' + usDate(ap.approved_at) : 'none yet' %>.
     <% if (p.blockers.length) { %><br><span class="muted">Cannot be bought now: <%= p.blockers.join(' ') %></span><% } %></p>
@@ -23,6 +23,12 @@
       <button class="btn sm">Save draft</button></form>
     <% if (isMain && v.status === 'draft') { %><form method="post" action="/admin/memberships/plans/<%= p.id %>/approve" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Approve these terms (main account)</button></form><% } %>
   </details>
+  <% if (isMain) { %><form method="post" action="/admin/memberships/plans/<%= p.id %>/visibility" class="mt card" style="background:#FAFAF7"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <p class="small" style="margin:0 0 6px"><strong>On the site</strong> (main account). A hidden plan does not appear anywhere public. An announced plan appears with its waitlist; one plan at a time can lead the site banner.</p>
+    <label class="check small"><input type="checkbox" name="announced" value="yes" <%= p.announced ? 'checked' : '' %>> Announce this plan on the site</label>
+    <label class="check small"><input type="checkbox" name="featured" value="yes" <%= p.featured ? 'checked' : '' %>> Feature it in the site banner (replaces the current one)</label>
+    <div class="field" style="margin-top:6px"><label for="bt-<%= p.code %>">Banner text (optional, English, 160 characters)</label><input id="bt-<%= p.code %>" name="banner_text" maxlength="160" value="<%= p.banner_text %>" placeholder="Founding membership now forming: <%= p.name %>."></div>
+    <button class="btn sm secondary">Save site visibility</button></form><% } %>
   <% if (isMain) { %><form method="post" action="/admin/memberships/plans/<%= p.id %>/sale" class="mt"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="on" value="<%= p.status === 'on_sale' ? 'no' : 'yes' %>">
     <button class="btn sm secondary"><%= p.status === 'on_sale' ? 'Withdraw from sale' : 'Put on sale' %></button></form><% } %>
 </div><% }) %>

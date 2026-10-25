@@ -69,6 +69,11 @@ app.use(async (req, res, next) => {
     res.locals.baseUrl = cfg.baseUrl;
     res.locals.publicApply = cfg.publicApply;
     res.locals.individualAccounts = cfg.individualAccounts;
+    // Site banner for the featured membership (public pages only; never in the admin or provider portal).
+    res.locals.announce = cfg.membershipWaitlist && req.method === 'GET' && !/^\/(admin|portal|api|static|logo|membership\/waitlist)/.test(req.path)
+      ? await require('./lib/memberships').banner().catch(() => null) : null;
+    // Published legal documents for the footer (src/lib/legal.js); drafts never appear.
+    res.locals.legalLinks = await require('./lib/legal').links().catch(() => []);
     res.locals.path = req.path;
     res.locals.longDate = longDate;
     res.locals.flash = req.session.flash || null;
@@ -124,6 +129,7 @@ app.use(require('./routes/knowledge'));
 app.use(require('./routes/auth'));
 app.use('/account', require('./routes/account'));
 app.use(require('./routes/individuals'));
+app.use(require('./routes/legal'));
 app.use('/me', require('./routes/me'));
 app.use('/portal', require('./lib/partner-roles').gate);
 app.use('/portal', require('./routes/portal'));
@@ -152,6 +158,8 @@ app.use('/admin', require('./routes/admin-system'));
 app.use('/admin', require('./routes/admin-individuals'));
 app.use('/admin', require('./routes/admin-preview'));
 app.use('/admin', require('./routes/admin-memberships'));
+app.use('/admin', require('./routes/admin-community'));
+app.use('/admin', require('./routes/admin-legal'));
 app.use('/api/v1/content', require('./routes/content-api'));
 app.use('/api/v1', require('./routes/api'));
 

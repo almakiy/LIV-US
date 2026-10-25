@@ -10,8 +10,13 @@
       <p class="small muted" style="margin:4px 0 0">Changing your account name does not change any issued credential.</p></div>
     <div class="field"><span class="label">Email address</span><p style="margin:0"><%= u.email %> <%= u.email_verified_at ? '(confirmed)' : '(not confirmed yet)' %></p></div>
     <fieldset class="field"><legend>Communication</legend>
-      <label class="check"><input type="checkbox" name="marketing" value="yes" <%= u.marketing_opt_in ? 'checked' : '' %>> Send me news and offers from <%= brand %></label>
-      <p class="small muted" style="margin:4px 0 0">Optional. Messages about your account, security and credentials are always sent and are not affected by this choice.<% if (u.marketing_opt_in_at) { %> Last changed <%= usDate(u.marketing_opt_in_at) %>.<% } %></p></fieldset>
+      <p class="small muted" style="margin:0 0 6px">Both are optional and separate. Messages about your account, security, credentials, invoices and membership are always sent and are not affected by these choices.</p>
+      <label class="check"><input type="checkbox" name="newsletter" value="yes" <%= u.newsletter_opt_in ? 'checked' : '' %>> Knowledge newsletter</label>
+      <div class="small" style="margin:4px 0 8px 26px">Topics (none chosen means all):
+        <% Object.entries(TOPICS).forEach(([k, l]) => { %><label class="check" style="display:inline-flex;margin-right:12px"><input type="checkbox" name="topics" value="<%= k %>" <%= (u.newsletter_topics || []).includes(k) ? 'checked' : '' %>> <%= l %></label><% }) %></div>
+      <label class="check"><input type="checkbox" name="marketing" value="yes" <%= u.marketing_opt_in ? 'checked' : '' %>> Offers about <%= brand %> products, services and events</label>
+      <% if (history.length) { %><details class="mt"><summary class="small">History of your choices</summary><ul class="small"><% history.forEach(h => { %><li><%= usDateTime(h.created_at) %>: <%= h.channel %> <%= h.granted ? 'on' : 'off' %> (<%= h.source %>)</li><% }) %></ul></details><% } %>
+    </fieldset>
     <button class="btn">Save</button>
   </form>
 </div>

@@ -43,7 +43,7 @@ r.get('/sitemap.xml', wrap(async (req, res) => {
   const { rows } = await q(`SELECT slug, updated_at FROM articles WHERE status='published' AND published_at <= now() ORDER BY published_at DESC`);
   const SCHEMES = await require('../lib/scheme-store').listSchemes({ publicOnly: true });
   const { rows: partners } = await q(`SELECT public_slug FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND NOT is_preview`);
-  const fixed = ['/', '/verify', '/credentials', ...SCHEMES.map((s) => `/credentials/${s.slug}`), '/partners', '/partners/guide', '/partners/levels', '/individuals', '/membership', ...partners.map((p) => `/partners/${esc(p.public_slug)}`), '/knowledge', '/research', '/guides', '/standards', '/about', '/contact'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);
+  const fixed = ['/', '/verify', '/credentials', ...SCHEMES.map((s) => `/credentials/${s.slug}`), '/partners', '/partners/guide', '/partners/levels', '/individuals', '/membership', '/resources', '/community', ...partners.map((p) => `/partners/${esc(p.public_slug)}`), '/knowledge', '/research', '/guides', '/standards', '/about', '/contact'].map((p) => `<url><loc>${cfg.baseUrl}${p}</loc></url>`);
   const arts = rows.map((a) => `<url><loc>${cfg.baseUrl}/knowledge/${esc(a.slug)}</loc><lastmod>${new Date(a.updated_at).toISOString().slice(0, 10)}</lastmod></url>`);
   res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...fixed, ...arts].join('')}</urlset>`);
 }));

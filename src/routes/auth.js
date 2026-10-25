@@ -28,7 +28,9 @@ async function startSession(req, res, u, next) {
   });
 }
 
-r.post('/login', limiter(15, 20), wrap(async (req, res) => {
+// Sign-in attempts per 15 minutes per address: 20 by default. Raised only for automated test runs (LOGIN_RATE_LIMIT), never needed in production.
+const LOGIN_LIMIT = Math.max(20, parseInt(process.env.LOGIN_RATE_LIMIT || '20', 10) || 20);
+r.post('/login', limiter(15, LOGIN_LIMIT), wrap(async (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const { rows: [u] } = await q('SELECT id, email, role, platform_id, password_hash, totp_enabled, vacant, disabled_at FROM users WHERE email = $1', [email]);

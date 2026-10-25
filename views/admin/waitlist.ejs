@@ -1,0 +1,18 @@
+<%- include('../partials/app-start') %>
+<p class="small"><a href="/admin/memberships">Memberships</a></p>
+<h1>Membership waitlist</h1>
+<p class="muted">Free sign-up on the public membership page (<code>MEMBERSHIP_WAITLIST</code>: <strong><%= open ? 'on' : 'off' %></strong>). No payment, no reservation, no guaranteed price. People on a plan's list before it first goes on sale become Founding Members when they join it (badge only).</p>
+<div class="table-wrap" tabindex="0"><table><tr><th>Plan</th><th>Waiting</th><th>Invited</th><th>Joined</th><th>Left</th><th>Students</th><th>Plan status</th></tr>
+  <% byPlan.forEach(p => { %><tr><td><%= p.name %></td><td><%= p.waiting %></td><td><%= p.invited %></td><td><%= p.joined %></td><td><%= p.left_list %></td><td><%= p.students %></td><td><%= p.plan_status %></td></tr><% }) %></table></div>
+<div class="grid g2 mt">
+  <div class="card"><h2 class="h3">By country</h2><% if (!byCountry.length) { %><p class="small muted">No entries yet.</p><% } else { %><ul class="small"><% byCountry.forEach(c => { %><li><%= c.country %>: <%= c.n %></li><% }) %></ul><% } %></div>
+  <div class="card"><h2 class="h3">New entries per week</h2><% if (!weekly.length) { %><p class="small muted">No entries yet.</p><% } else { %><ul class="small"><% weekly.forEach(w => { %><li>Week of <%= usDate(w.week) %>: <%= w.n %></li><% }) %></ul><% } %></div>
+</div>
+<p class="mt"><a class="btn sm secondary" href="/admin/memberships/waitlist.csv">Export CSV</a></p>
+<% if (isMain) { %><form class="card mt" method="post" action="/admin/memberships/waitlist/invite" style="max-width:560px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <h2 class="h3">Invite a batch (main account)</h2>
+  <p class="small muted">Invites the oldest waiting people on one plan. Only for a plan that can be bought now; the email is sent once the email provider is connected.</p>
+  <div class="row"><div class="field"><label for="iv-plan">Plan</label><select id="iv-plan" name="plan"><% byPlan.forEach(p => { %><option value="<%= p.code %>"><%= p.name %></option><% }) %></select></div>
+    <div class="field"><label for="iv-size">Batch size</label><input id="iv-size" name="size" inputmode="numeric" value="100" required></div></div>
+  <button class="btn sm">Send invitations</button></form><% } %>
+<%- include('../partials/app-end') %>

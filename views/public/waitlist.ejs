@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<% const v = featured ? (featured.shown || featured.approved) : null; %>
+<section class="wl-hero"><div class="container">
+  <img src="/static/brand/liv-seal-reverse.svg" alt="" width="84" height="84">
+  <span class="eyebrow"><%= featured ? 'Founding membership' : brand + ' membership' %></span>
+  <h1><%= featured ? featured.name : 'The next LIV membership' %></h1>
+  <p><%= featured ? featured.audience : 'Memberships open one at a time. Join the list and we will tell you when the next one opens.' %></p>
+  <% if (v && v.price_cents != null) { %><div class="wl-price">$<%= (v.price_cents / 100).toFixed(0) %><span style="font-size:1rem;color:#DCE3EE"> <%= featured.kind === 'group' ? 'per seat ' : '' %>per year &middot; expected</span></div><% } %>
+</div></section>
+<section class="section white"><div class="container">
+  <%- include('../partials/flash') %>
+  <% if (done) { %><div class="alert success" role="status">Thank you. You are on the list; we will email you when it opens. Nothing is charged.</div><% } %>
+  <div class="wl-grid">
+    <div>
+      <% if (v) { %><h2>What it is planned to include</h2>
+        <ul class="wl-benefits"><% (v.benefits || []).forEach(b => { %><li><%= b.text %><%= b.available ? '' : ' (planned)' %></li><% }) %></ul><% } %>
+      <h2 class="mt">Founding Members</h2>
+      <p class="muted">Everyone on the list before a membership opens receives the Founding Member mark on their membership card when they join it.</p>
+      <h2 class="mt">What membership never does</h2>
+      <p class="muted small">Membership is optional. It is not a professional credential, gives no advantage in eligibility, assessment or any certification decision, and your credentials stay valid with or without it.</p>
+    </div>
+    <form class="card" method="post" action="/membership/waitlist" id="join"><input type="hidden" name="_csrf" value="<%= csrf %>">
+      <h2 class="h3">Join the waitlist</h2>
+      <p class="small muted">Free. Not a purchase or a reservation; the price shown is expected, not guaranteed.</p>
+      <div class="field"><label for="w-plan">Membership</label><select id="w-plan" name="plan">
+        <% plans.forEach(p => { %><option value="<%= p.code %>" <%= featured && p.code === featured.code ? 'selected' : '' %>><%= p.name %></option><% }) %>
+        <option value="any" <%= featured ? '' : 'selected' %>>Any future LIV membership</option></select></div>
+      <div class="field"><label for="w-email">Email</label><input id="w-email" type="email" name="email" value="<%= user && user.email ? user.email : '' %>" autocomplete="email" required></div>
+      <div class="field"><label for="w-name">Name (in English, optional)</label><input id="w-name" type="text" name="name" maxlength="200" autocomplete="name"></div>
+      <div class="field"><label for="w-country">Country (optional)</label><input id="w-country" type="text" name="country" maxlength="80" autocomplete="country-name"></div>
+      <div class="field"><label class="check"><input type="checkbox" name="student" value="yes"> I am a student</label></div>
+      <div class="field"><label class="check"><input type="checkbox" name="consent" value="yes" required> <%= consentText %></label></div>
+      <button class="btn lg" style="width:100%">Join the waitlist</button>
+    </form>
+  </div>
+</div></section>
+<%- include('../partials/foot') %>

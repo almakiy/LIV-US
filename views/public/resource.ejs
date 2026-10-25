@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:820px;margin:40px auto">
+  <% if (preview) { %><div class="alert warn" role="status">Staff preview: this resource is not published.</div><% } %>
+  <p class="small muted"><%= KINDS[it.kind] %> · <%= ACCESS[it.access] %> · Version <%= it.version %><%= it.author_name ? ' · ' + it.author_name : '' %><%= it.reviewed_at ? ' · Reviewed ' + usDate(it.reviewed_at) : '' %></p>
+  <h1><%= it.title %></h1>
+  <p class="muted"><%= it.summary %></p>
+  <% if (a.ok) { %><div class="card prose"><%- html %></div>
+    <% if (it.file_key) { %><p class="mt"><a class="btn sm" href="/resources/<%= it.slug %>/file">Download <%= it.file_name || 'file' %></a></p><% } %>
+  <% } else { %><div class="alert info" role="status"><%= a.reason %> <% if (!user) { %><a href="/login?next=/resources/<%= it.slug %>">Sign in</a><% } else { %><a href="/me/library">Open your library</a><% } %></div><% } %>
+  <p class="small muted mt">This resource supports your work. It does not grant a credential, a qualification or CPD units.</p>
+</div>
+<%- include('../partials/foot') %>

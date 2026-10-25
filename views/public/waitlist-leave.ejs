@@ -1,0 +1,9 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:560px;margin:40px auto">
+  <h1>Leave the waitlist</h1>
+  <% if (done) { %><div class="alert success" role="status">Done. You are no longer on the membership waitlist. No other account or message is affected.</div>
+  <% } else if (!token) { %><div class="alert error" role="alert">This link is not valid or you have already left the list.</div>
+  <% } else { %><p>Remove your address from the membership waitlist?</p>
+    <form method="post" action="/membership/waitlist/leave"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="t" value="<%= token %>"><button class="btn">Leave the waitlist</button></form><% } %>
+</div>
+<%- include('../partials/foot') %>

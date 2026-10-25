@@ -1,0 +1,9 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:560px;margin:40px auto">
+  <h1>Stop emails</h1>
+  <% if (done) { %><div class="alert success" role="status">Done. You will no longer receive the <%= channel === 'newsletter' ? 'knowledge newsletter' : 'offers' %>. Messages about your account and credentials continue.</div>
+  <% } else if (!token) { %><div class="alert error" role="alert">This link is not valid. You can change your choices from your account under Profile and preferences.</div>
+  <% } else { %><p>Stop the <%= channel === 'newsletter' ? 'LIV knowledge newsletter' : 'LIV offers' %>? Your account, membership and service messages are not affected.</p>
+    <form method="post" action="/unsubscribe"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="t" value="<%= token %>"><input type="hidden" name="c" value="<%= channel %>"><button class="btn">Stop these emails</button></form><% } %>
+</div>
+<%- include('../partials/foot') %>

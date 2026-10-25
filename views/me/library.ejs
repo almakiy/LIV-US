@@ -1,0 +1,18 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Library and purchases</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <p class="muted small">Resources are reviewed before publication. They support your work; they do not grant a credential, a qualification or CPD units.</p>
+  <% if (!items.length) { %><p class="muted">No resources are published yet.</p><% } else { %><div class="grid g3"><% items.forEach(it => { const a = access[it.id]; %>
+    <div class="card"><p class="small muted" style="margin:0"><%= KINDS[it.kind] %> · <%= ACCESS[it.access] %></p><h2 class="h3"><%= it.title %></h2><p class="small"><%= it.summary %></p>
+      <% if (a.ok) { %><a class="btn sm" href="/resources/<%= it.slug %>">Open</a>
+      <% } else if (it.access === 'purchase') { %>
+        <p class="small"><%= it.price_cents == null ? 'Price not set' : '$' + (it.price_cents / 100).toFixed(2) %><% if (it.member_price_cents != null) { %> · members $<%= (it.member_price_cents / 100).toFixed(2) %><% } %> · <%= it.access_months ? it.access_months + ' month(s) access' : 'permanent access' %></p>
+        <% if (it.blockers.length) { %><p class="small muted">Not available to buy: <%= it.blockers.join(' ') %></p><% } else { %>
+        <form method="post" action="/me/library/<%= it.slug %>/buy"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Buy<%= member && it.member_price_cents != null ? ' at the member price' : '' %></button></form><% } %>
+      <% } else { %><p class="small muted"><%= a.reason %> <a href="/me/membership">Membership</a></p><% } %></div><% }) %></div><% } %>
+  <% if (purchases.length) { %><h2 class="mt">Your purchases</h2><div class="table-wrap" tabindex="0"><table><tr><th>Resource</th><th>Status</th><th>Price</th><th>Access until</th></tr>
+    <% purchases.forEach(p => { %><tr><td><a href="/resources/<%= p.slug %>"><%= p.title %></a></td><td><%= p.status === 'pending_payment' ? 'Waiting for payment' : p.status %></td><td>$<%= (p.price_cents / 100).toFixed(2) %><%= p.member_price_applied ? ' (member price)' : '' %></td><td><%= p.status === 'active' ? (p.access_until ? usDate(p.access_until) : 'Permanent') : '' %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

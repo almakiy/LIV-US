@@ -163,13 +163,23 @@ async function resetData(user, reason = 'manual') {
       await del('link requests', 'DELETE FROM credential_claim_requests WHERE user_id = ANY($1::uuid[])', [ids]);
       await c.query('DELETE FROM individual_emails WHERE user_id = ANY($1::uuid[])', [ids]);
       await c.query('DELETE FROM individual_tokens WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('purchases', 'DELETE FROM resource_purchases WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('registrations', 'DELETE FROM event_registrations WHERE user_id = ANY($1::uuid[])', [ids]);
+      await del('contributions', 'DELETE FROM contributions WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query('DELETE FROM communication_consents WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query('DELETE FROM program_interest WHERE user_id = ANY($1::uuid[])', [ids]);
+      await c.query(`UPDATE gifts SET status = 'void' WHERE buyer_user_id = ANY($1::uuid[]) OR accepted_user_id = ANY($1::uuid[])`, [ids]);
+      await del('gifts', `DELETE FROM gifts WHERE buyer_user_id = ANY($1::uuid[]) OR accepted_user_id = ANY($1::uuid[]) OR recipient_email LIKE '%@' || $2`, [ids, PREVIEW_DOMAIN]);
+      await del('group packs', 'DELETE FROM group_packs WHERE manager_user_id = ANY($1::uuid[])', [ids]);
+      await c.query(`UPDATE group_seats SET user_id = NULL, membership_id = NULL WHERE user_id = ANY($1::uuid[])`, [ids]);
       await c.query(`DELETE FROM memberships WHERE user_id = ANY($1::uuid[]) AND NOT (source = 'grant' AND is_preview AND status = 'active')`, [ids]);
       await del('payments', 'DELETE FROM payments WHERE invoice_id IN (SELECT id FROM invoices WHERE user_id = ANY($1::uuid[]))', [ids]);
       await del('invoices', 'DELETE FROM invoices WHERE user_id = ANY($1::uuid[])', [ids]);
       await del('messages', 'DELETE FROM contact_messages WHERE user_id = ANY($1::uuid[])', [ids]);
-      await c.query(`UPDATE users SET marketing_opt_in = false, marketing_opt_in_at = NULL, card_show_name = false, closure_requested_at = NULL WHERE id = ANY($1::uuid[])`, [ids]);
+      await c.query(`UPDATE users SET marketing_opt_in = false, marketing_opt_in_at = NULL, newsletter_opt_in = false, newsletter_topics = '{}', card_show_name = false, closure_requested_at = NULL WHERE id = ANY($1::uuid[])`, [ids]);
       for (const d of Object.values(INDIVIDUALS)) await c.query('UPDATE users SET full_name = $1 WHERE lower(email) = $2', [d.name, d.email]);
     }
+    await c.query(`DELETE FROM membership_waitlist WHERE email LIKE '%@' || $1 OR user_id = ANY($2::uuid[])`, [PREVIEW_DOMAIN, ids]);
     await c.query(`DELETE FROM email_outbox WHERE to_email LIKE '%@' || $1`, [PREVIEW_DOMAIN]);
     await audit({ user, action: 'preview.reset', target: reason, metadata: counts }, c);
     return keys;
@@ -191,7 +201,12 @@ async function hasData() {
     + (SELECT count(*)::int FROM api_keys k JOIN platforms p ON p.id = k.platform_id WHERE p.is_preview)
     + (SELECT count(*)::int FROM partner_applications a JOIN platforms p ON p.id = a.platform_id WHERE p.is_preview)
     + (SELECT count(*)::int FROM partner_title_requests t JOIN platforms p ON p.id = t.platform_id WHERE p.is_preview)
-    + (SELECT count(*)::int FROM issuance_batches b JOIN platforms p ON p.id = b.platform_id WHERE p.is_preview) AS n`);
+    + (SELECT count(*)::int FROM issuance_batches b JOIN platforms p ON p.id = b.platform_id WHERE p.is_preview)
+    + (SELECT count(*)::int FROM resource_purchases x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM event_registrations x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM contributions x JOIN users u ON u.id = x.user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM group_packs x JOIN users u ON u.id = x.manager_user_id WHERE u.is_preview)
+    + (SELECT count(*)::int FROM gifts x JOIN users u ON u.id = x.buyer_user_id OR u.id = x.accepted_user_id WHERE u.is_preview) AS n`);
   return r.n > 0;
 }
 

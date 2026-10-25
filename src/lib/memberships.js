@@ -21,7 +21,7 @@ const PROPOSED = [
     benefits: ['Everything in LIV Member', 'Wider library and tools', 'Additional defined services'] },
   { code: 'student', name: 'Student Membership', audience: 'For students, after their student status is checked.', kind: 'individual', sort: 3, student: true, price_cents: 4900, period_months: 12,
     benefits: ['Membership at a student price after a student status check'] },
-  { code: 'corporate', name: 'Corporate Membership Package', audience: 'Named memberships bought by an organization for its people. Price per named seat; minimum 5 seats.', kind: 'group', sort: 4, price_cents: 16500, period_months: 12,
+  { code: 'corporate', name: 'Corporate Membership Package', audience: 'Named memberships bought by an organization for its people. Price per named seat; minimum 5 seats.', kind: 'group', sort: 4, price_cents: 16500, period_months: 12, min_seats: 5,
     benefits: ['Named member seats', 'Invitation and seat management', 'Group invoicing'] },
 ];
 
@@ -34,7 +34,7 @@ async function seedProposed() {
   const { rows: [{ n }] } = await q('SELECT count(*)::int AS n FROM membership_plans');
   if (n) return 0;
   for (const p of PROPOSED) {
-    const { rows: [plan] } = await q(`INSERT INTO membership_plans (code, name, audience, kind, sort) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (code) DO NOTHING RETURNING id`, [p.code, p.name, p.audience, p.kind, p.sort]);
+    const { rows: [plan] } = await q(`INSERT INTO membership_plans (code, name, audience, kind, sort, min_seats) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (code) DO NOTHING RETURNING id`, [p.code, p.name, p.audience, p.kind, p.sort, p.min_seats || 1]);
     if (plan) await q(`INSERT INTO membership_plan_versions (plan_id, version, benefits, requires_student_check) VALUES ($1, 1, $2, $3)`,
       [plan.id, JSON.stringify(p.benefits.map((t) => ({ text: t, available: false }))), Boolean(p.student)]);
   }
@@ -63,11 +63,12 @@ const PROPOSED_TERMS = [
 ].join('\n');
 
 /** Why a plan cannot be bought right now. An empty list means it can. */
-function saleBlockers(plan, version, { salesOpen = cfg.membershipSales } = {}) {
+function saleBlockers(plan, version, { salesOpen = cfg.membershipSales, purpose = 'individual' } = {}) {
   const out = [];
   if (!salesOpen) out.push('Membership sales are not open yet.');
   if (!plan || plan.status !== 'on_sale') out.push('This plan is not on sale.');
-  if (plan && plan.kind !== 'individual') out.push('Group purchase is not available yet.');
+  if (plan && purpose === 'individual' && plan.kind !== 'individual') out.push('This plan is bought as a group pack.');
+  if (plan && purpose === 'group' && plan.kind !== 'group') out.push('This plan is not sold as a group pack.');
   if (!version || version.status !== 'approved') out.push('No approved terms for this plan.');
   else {
     if (version.price_cents == null || !version.period_months) out.push('Price or period not approved.');
@@ -78,13 +79,41 @@ function saleBlockers(plan, version, { salesOpen = cfg.membershipSales } = {}) {
   return out;
 }
 
-async function plans({ withDrafts = false } = {}) {
+/** withDrafts: include plans without approved terms (waitlist, admin). publicOnly: only plans announced on the site or on sale. */
+async function plans({ withDrafts = false, publicOnly = false } = {}) {
   const { rows } = await q(`SELECT p.*,
       (SELECT row_to_json(v) FROM membership_plan_versions v WHERE v.plan_id = p.id AND v.status = 'approved' ORDER BY v.version DESC LIMIT 1) AS approved,
       (SELECT row_to_json(v) FROM membership_plan_versions v WHERE v.plan_id = p.id ORDER BY v.version DESC LIMIT 1) AS latest
     FROM membership_plans p ORDER BY p.sort, p.name`);
-  return rows.map((p) => ({ ...p, shown: p.approved || (withDrafts ? p.latest : null), blockers: saleBlockers(p, p.approved) }))
-    .filter((p) => withDrafts || p.approved);
+  return rows.map((p) => ({ ...p, shown: p.approved || (withDrafts ? p.latest : null), blockers: saleBlockers(p, p.approved, { purpose: p.kind }) }))
+    .filter((p) => withDrafts || p.approved).filter((p) => !publicOnly || p.announced || p.status === 'on_sale');
+}
+
+// The site banner shows the featured plan. Cached for a minute; cleared when a plan's visibility changes.
+let bannerCache = { at: 0, value: null };
+async function banner() {
+  if (Date.now() - bannerCache.at < 60000) return bannerCache.value;
+  const { rows: [p] } = await q(`SELECT code, name, status, banner_text FROM membership_plans WHERE featured AND announced AND status <> 'withdrawn' LIMIT 1`);
+  bannerCache = { at: Date.now(), value: p ? { code: p.code, name: p.name, open: p.status === 'on_sale', text: p.banner_text } : null };
+  return bannerCache.value;
+}
+
+/** The main account decides what the site shows: announce a plan (it appears, with its waitlist) and feature one plan in the banner. */
+async function setVisibility(user, planId, { announced, featured, banner_text }) {
+  await requireMain(user, 'decides which memberships the site shows');
+  const text = String(banner_text || '').trim();
+  if ([...text].some((ch) => /\p{L}/u.test(ch) && !/\p{Script=Latin}/u.test(ch))) throw new MembershipError('Write the banner text in English (Latin letters).');
+  if (text.length > 160) throw new MembershipError('Keep the banner text to 160 characters.');
+  const ann = announced === 'yes'; const feat = featured === 'yes' && ann;
+  await tx(async (c) => {
+    const { rows: [p] } = await c.query('SELECT code, status FROM membership_plans WHERE id = $1 FOR UPDATE', [planId]);
+    if (!p) throw new MembershipError('Plan not found.', 404);
+    if (!ann && p.status === 'on_sale') throw new MembershipError('A plan on sale stays visible. Withdraw it from sale first.');
+    if (feat) await c.query('UPDATE membership_plans SET featured = false WHERE featured AND id <> $1', [planId]);
+    await c.query('UPDATE membership_plans SET announced = $2, featured = $3, banner_text = $4 WHERE id = $1', [planId, ann, feat, text]);
+    await audit({ user, action: 'membership.plan_visibility', target: p.code, metadata: { announced: ann, featured: feat } }, c);
+  });
+  bannerCache = { at: 0, value: null };
 }
 
 async function plan(code) { return (await plans({ withDrafts: true })).find((p) => p.code === code) || null; }
@@ -127,10 +156,11 @@ async function setSale(user, planId, on) {
   const p = (await plans({ withDrafts: true })).find((x) => x.id === planId);
   if (!p) throw new MembershipError('Plan not found.', 404);
   if (on) {
-    const blockers = saleBlockers({ ...p, status: 'on_sale' }, p.approved, { salesOpen: true });
+    const blockers = saleBlockers({ ...p, status: 'on_sale' }, p.approved, { salesOpen: true, purpose: p.kind });
     if (blockers.length) throw new MembershipError(`Not ready for sale: ${blockers.join(' ')}`);
   }
-  await q('UPDATE membership_plans SET status = $1 WHERE id = $2', [on ? 'on_sale' : 'withdrawn', planId]);
+  bannerCache = { at: 0, value: null };
+  await q(`UPDATE membership_plans SET announced = announced OR $1::varchar = 'on_sale', status = $1::varchar, first_on_sale_at = CASE WHEN $1::varchar = 'on_sale' THEN COALESCE(first_on_sale_at, now()) ELSE first_on_sale_at END WHERE id = $2`, [on ? 'on_sale' : 'withdrawn', planId]);
   await audit({ user, action: on ? 'membership.plan_on_sale' : 'membership.plan_withdrawn', target: p.code });
 }
 
@@ -160,7 +190,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 /** The person takes (or renews) a plan: a pending membership and an invoice at the approved price. Nothing is active until paid. */
 async function join(user, code) {
   const p = await plan(code);
-  const blockers = saleBlockers(p, p?.approved);
+  const blockers = saleBlockers(p, p?.approved, { purpose: 'individual' });
   if (blockers.length) throw new MembershipError(blockers.join(' '), 409);
   const v = p.approved;
   const { rows: [u] } = await q(`SELECT id, full_name, email, email_verified_at FROM users WHERE id = $1 AND role = 'individual'`, [user.id]);
@@ -173,8 +203,9 @@ async function join(user, code) {
       [u.id, v.price_cents, `${p.name} membership`]);
     await c.query(`INSERT INTO invoice_lines (invoice_id, product_code, description, quantity, unit_amount_cents, amount_cents) VALUES ($1,'MEMBERSHIP',$2,1,$3::int,$3::bigint)`,
       [inv.id, `${p.name} membership, ${v.period_months} month(s), member ${number}`, v.price_cents]);
+    const founding = await require('./waitlist').isFounding(c, u.id, p.id);
     const { rows: [m] } = await c.query(`INSERT INTO memberships (user_id, plan_version_id, member_number, source, status, terms, price_cents, invoice_id, renewed_from)
-      VALUES ($1,$2,$3,'paid','pending_payment',$4,$5,$6,$7) RETURNING id`, [u.id, v.id, number, JSON.stringify(snapshot(p, v)), v.price_cents, inv.id, cur.active?.id || null]);
+      VALUES ($1,$2,$3,'paid','pending_payment',$4,$5,$6,$7) RETURNING id`, [u.id, v.id, number, JSON.stringify({ ...snapshot(p, v), founding }), v.price_cents, inv.id, cur.active?.id || null]);
     await event(c, m.id, cur.active ? 'renewal_started' : 'started', u.email, `${p.name} v${v.version}`);
     await audit({ user: u, action: 'membership.start', target: number, metadata: { plan: p.code, version: v.version, invoice: inv.id } }, c);
     return { membershipId: m.id, invoiceId: inv.id };
@@ -198,6 +229,7 @@ async function onInvoicePaid(invoiceId) {
     const { rows: [a] } = await c.query(`UPDATE memberships SET status = 'active', activated_at = now(), starts_on = $2::date,
       ends_on = ($2::date + make_interval(months => $3) - interval '1 day')::date WHERE id = $1 RETURNING starts_on, ends_on, member_number`, [m.id, start, m.months]);
     await event(c, m.id, 'activated', 'payment', `Paid invoice; ${iso(a.starts_on)} to ${iso(a.ends_on)}`);
+    await require('./waitlist').markJoined(c, m.user_id, m.plan_version_id);
     await audit({ actorLabel: 'payment', action: 'membership.activate', target: a.member_number, metadata: { invoice: invoiceId } }, c);
     return a;
   });
@@ -279,4 +311,4 @@ async function stats() {
   return rows;
 }
 
-module.exports = { MembershipError, PROPOSED, PROPOSED_TERMS, applyProposedPrices, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };
+module.exports = { banner, setVisibility, snapshot, memberNumber, iso, today, MembershipError, PROPOSED, PROPOSED_TERMS, applyProposedPrices, parseBenefits, benefitsText, seedProposed, saleBlockers, plans, plan, saveDraft, approve, setSale, current, join, onInvoicePaid, cancelPending, setRenewalDeclined, suspend, sweep, grantPreview, verifyPublic, stats };

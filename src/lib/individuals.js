@@ -156,7 +156,18 @@ async function exportData(userId) {
     claim_requests: await one('SELECT cert_number, statement, status, decision_reason, created_at, decided_at FROM credential_claim_requests WHERE user_id = $1 ORDER BY created_at', [userId]),
     memberships: await one(`SELECT member_number, status, source, terms->>'plan_name' AS plan, starts_on, ends_on, renewal_declined_at, created_at FROM memberships WHERE user_id = $1 AND status <> 'void' ORDER BY created_at`, [userId]),
     invoices: await one(`SELECT number, status, issue_date, total_cents, amount_paid_cents, currency FROM invoices WHERE user_id = $1 AND status <> 'draft' ORDER BY created_at`, [userId]),
+    waitlist: await one(`SELECT COALESCE(p.name, 'Any future membership') AS plan, w.status, w.created_at FROM membership_waitlist w LEFT JOIN membership_plans p ON p.id = w.plan_id WHERE lower(w.email) = (SELECT lower(email) FROM users WHERE id = $1) ORDER BY w.created_at`, [userId]),
     support_messages: await one('SELECT topic, message, created_at FROM contact_messages WHERE user_id = $1 ORDER BY created_at', [userId]),
+    communication_choices: await one('SELECT newsletter_opt_in, newsletter_topics, marketing_opt_in FROM users WHERE id = $1', [userId]),
+    consent_history: await one('SELECT channel, granted, source, text_shown, created_at FROM communication_consents WHERE user_id = $1 ORDER BY created_at', [userId]),
+    resources: await one(`SELECT r.title, rp.status, rp.price_cents, rp.access_until, rp.activated_at, rp.created_at FROM resource_purchases rp JOIN resources r ON r.id = rp.resource_id WHERE rp.user_id = $1 AND rp.status <> 'void' ORDER BY rp.created_at`, [userId]),
+    events: await one(`SELECT e.title, e.starts_at, er.status, er.created_at FROM event_registrations er JOIN community_events e ON e.id = er.event_id WHERE er.user_id = $1 ORDER BY er.created_at`, [userId]),
+    contributions: await one('SELECT kind, title, summary, show_name, status, decision_note, created_at, decided_at FROM contributions WHERE user_id = $1 ORDER BY created_at', [userId]),
+    gifts_bought: await one(`SELECT recipient_email, status, accept_by, terms->>'plan_name' AS plan, created_at FROM gifts WHERE buyer_user_id = $1 AND status <> 'void' ORDER BY created_at`, [userId]),
+    gifts_received: await one(`SELECT status, accept_by, terms->>'plan_name' AS plan, created_at FROM gifts WHERE lower(recipient_email) IN (SELECT lower(email) FROM users WHERE id = $1 UNION SELECT lower(email) FROM individual_emails WHERE user_id = $1 AND verified_at IS NOT NULL) ORDER BY created_at`, [userId]),
+    group_packs_managed: await one(`SELECT org_name, seats, status, starts_on, ends_on, created_at FROM group_packs WHERE manager_user_id = $1 AND status <> 'void' ORDER BY created_at`, [userId]),
+    group_seats_held: await one(`SELECT gp.org_name, s.status, s.invited_at, s.accepted_at, s.revoked_at FROM group_seats s JOIN group_packs gp ON gp.id = s.pack_id WHERE s.user_id = $1 ORDER BY s.invited_at`, [userId]),
+    program_interest: await one(`SELECT cs.name AS program, pi.created_at FROM program_interest pi JOIN credential_schemes cs ON cs.id = pi.scheme_id WHERE pi.user_id = $1 ORDER BY pi.created_at`, [userId]),
   };
 }
 

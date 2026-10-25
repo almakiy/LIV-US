@@ -1,0 +1,28 @@
+<%- include('../partials/head') %>
+<div class="container me-wrap">
+  <h1>Events and contributions</h1>
+  <%- include('_nav') %>
+  <%- include('../partials/flash') %>
+  <h2>Upcoming events</h2>
+  <% if (!events.length) { %><p class="muted">No events are scheduled.</p><% } else { %><div class="grid g2"><% events.forEach(e => { const reg = mineIds.has(e.id); const full = e.capacity && e.taken >= e.capacity; %>
+    <div class="card"><p class="small muted" style="margin:0"><%= usDateTime(e.starts_at) %> · <%= e.mode === 'online' ? 'Online' : 'In person' %><%= e.audience === 'members' ? ' · Members' : '' %></p>
+      <h3 class="h3"><%= e.title %></h3><p class="small"><%= e.summary %></p>
+      <% if (e.capacity) { %><p class="small muted"><%= Math.max(0, e.capacity - e.taken) %> place(s) left</p><% } %>
+      <% if (reg) { %><p class="small"><strong>You are registered.</strong> <%= e.mode === 'online' && e.join_url ? '' : (e.location || '') %><% if (e.mode === 'online' && e.join_url) { %> Join: <a href="<%= e.join_url %>" rel="noopener"><%= e.join_url %></a><% } %></p>
+        <form method="post" action="/me/events/<%= e.id %>/cancel"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Cancel my registration</button></form>
+      <% } else if (e.audience === 'members' && !member) { %><p class="small muted">For members with an active membership.</p>
+      <% } else if (full) { %><p class="small muted">This event is full.</p>
+      <% } else { %><form method="post" action="/me/events/<%= e.id %>/register"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Register</button></form><% } %></div><% }) %></div><% } %>
+
+  <h2 class="mt" id="contribute">Propose a contribution</h2>
+  <p class="small muted">Suggest an article, a tool or a case study. LIV reviews every proposal before anything is published. Contributing does not make you a LIV expert or reviewer.</p>
+  <form class="card" method="post" action="/me/contributions" style="max-width:720px"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="row"><div class="field"><label for="c-kind">Type</label><select id="c-kind" name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>"><%= l %></option><% }) %></select></div>
+      <div class="field"><label for="c-title">Title (in English)</label><input id="c-title" name="title" maxlength="200" required></div></div>
+    <div class="field"><label for="c-sum">Summary (in English, 30+ characters)</label><textarea id="c-sum" name="summary" rows="4" required></textarea></div>
+    <div class="field"><label class="check"><input type="checkbox" name="show_name" value="yes"> If published, show my name as the contributor</label></div>
+    <button class="btn sm">Send proposal</button></form>
+  <% if (contributions.length) { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Proposal</th><th>Status</th><th>LIV's note</th><th></th></tr>
+    <% contributions.forEach(c => { %><tr><td><%= c.title %></td><td><%= c.status %></td><td class="small"><%= c.decision_note || '' %></td><td><% if (c.status === 'submitted') { %><form method="post" action="/me/contributions/<%= c.id %>/withdraw" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="linkbtn">Withdraw</button></form><% } %></td></tr><% }) %></table></div><% } %>
+</div>
+<%- include('../partials/foot') %>

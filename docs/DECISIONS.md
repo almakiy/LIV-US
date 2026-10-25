@@ -42,3 +42,8 @@ Proposed and not built: the seal and template families (parked); a full manual a
 
 ## 8. Decisions waiting for the owner (collected at the end, as asked)
 See the final list in `docs/HANDOFF.md`.
+
+## Owner decisions, October 23, 2026: name and domains
+- The partner program keeps its name: **LIV Authorized Training Provider (ATP)**. "Accredited" is reconsidered only after LIV itself holds an external accreditation.
+- Main domain: **livcredentials.org** (with livcredentials.com redirecting to it). **livaccreditation.org** is registered for the training-provider program and redirects to `/partners`. Social handles: `livcredentials` everywhere available.
+- Domain and handle availability was checked on October 23, 2026; it is confirmed only at registration.

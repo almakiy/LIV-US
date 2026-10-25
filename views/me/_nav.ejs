@@ -1,7 +1,7 @@
 <% if (user.actingAs) { %><div class="alert warn" role="status">Preview mode: you are viewing the preview individual account "<%= user.full_name %>". Actions are recorded on this preview account.
   <form method="post" action="/admin-exit" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Return to admin</button></form></div><% } %>
 <nav class="me-nav" aria-label="My account">
-  <% [['/me','Overview'],['/me/credentials','Credentials'],['/me/membership','Membership'],['/me/billing','Orders and billing'],['/me/profile','Profile and preferences'],['/account/security','Security'],['/me/support','Support'],['/me/privacy','Privacy']].forEach(([href, label]) => { %>
+  <% [['/me','Overview'],['/me/credentials','Credentials'],['/me/membership','Membership'],['/me/library','Library'],['/me/events','Events'],['/me/gifts','Gifts and groups'],['/me/billing','Orders and billing'],['/me/profile','Profile and preferences'],['/account/security','Security'],['/me/support','Support'],['/me/privacy','Privacy']].forEach(([href, label]) => { %>
     <a href="<%= href %>" <%- (href === '/me' ? path === '/me' || path === '/me/' : path.startsWith(href)) ? 'aria-current="page" class="on"' : '' %>><%= label %></a>
   <% }) %>
 </nav>

@@ -1,0 +1,28 @@
+<%- include('../partials/app-start') %>
+<p class="small"><a href="/admin/community#resources">Resources</a></p>
+<h1><%= it.title %></h1>
+<p class="small">Status: <strong><%= it.status %></strong> · version <%= it.version %><%= it.reviewed_at ? ' · reviewed ' + usDate(it.reviewed_at) : '' %> · <a href="/resources/<%= it.slug %>">Open the page</a></p>
+<% if (it.access === 'purchase') { %><p class="small"><%= blockers.length ? 'Cannot be bought now: ' + blockers.join(' ') : 'Can be bought now.' %></p><% } %>
+<form class="card" method="post" action="/admin/resources/<%= it.id %>"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="row"><div class="field"><label for="r-title">Title</label><input id="r-title" name="title" value="<%= it.title %>" required></div>
+    <div class="field"><label for="r-kind">Type</label><select id="r-kind" name="kind"><% Object.entries(KINDS).forEach(([k, l]) => { %><option value="<%= k %>" <%= k === it.kind ? 'selected' : '' %>><%= l %></option><% }) %></select></div>
+    <div class="field"><label for="r-access">Access</label><select id="r-access" name="access"><% Object.entries(ACCESS).forEach(([k, l]) => { %><option value="<%= k %>" <%= k === it.access ? 'selected' : '' %>><%= l %></option><% }) %></select></div></div>
+  <div class="field"><label for="r-sum">Summary</label><input id="r-sum" name="summary" value="<%= it.summary %>" maxlength="600"></div>
+  <div class="field"><label for="r-author">Author or reviewer named on the page</label><input id="r-author" name="author_name" value="<%= it.author_name %>" maxlength="200"></div>
+  <div class="field"><label for="r-body">Content (Markdown)</label><textarea id="r-body" name="body_md" rows="10"><%= it.body_md %></textarea></div>
+  <div class="row"><div class="field"><label for="r-price">General price (USD)</label><input id="r-price" name="price" value="<%= it.price_cents == null ? '' : (it.price_cents / 100).toFixed(2) %>" placeholder="not sold"></div>
+    <div class="field"><label for="r-mprice">Member price (USD)</label><input id="r-mprice" name="member_price" value="<%= it.member_price_cents == null ? '' : (it.member_price_cents / 100).toFixed(2) %>" placeholder="none"></div>
+    <div class="field"><label for="r-months">Access period (months)</label><input id="r-months" name="access_months" value="<%= it.access_months || '' %>" placeholder="permanent"></div></div>
+  <div class="field"><label for="r-scheme">Linked assessment program (preparation products only)</label><select id="r-scheme" name="scheme_id"><option value="">None</option><% schemes.forEach(s => { %><option value="<%= s.id %>" <%= s.id === it.scheme_id ? 'selected' : '' %>><%= s.name %> (<%= s.status %>)</option><% }) %></select></div>
+  <button class="btn sm">Save as draft</button></form>
+<form class="card mt" method="post" action="/admin/resources/<%= it.id %>/file" enctype="multipart/form-data"><input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="field"><label for="r-file">File (PDF, PNG or JPEG, up to 10 MB)<%= it.file_name ? ' — current: ' + it.file_name : '' %></label><input id="r-file" type="file" name="file" accept="application/pdf,image/png,image/jpeg"></div><button class="btn sm secondary">Upload</button></form>
+<div class="card mt">
+  <% if (it.status === 'draft') { %><form method="post" action="/admin/resources/<%= it.id %>/submit" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Send for review</button></form><% } %>
+  <% if (it.status === 'in_review') { %><% if (it.submitted_by === me) { %><p class="small muted">Waiting for a review by another person.</p><% } else { %>
+    <form method="post" action="/admin/resources/<%= it.id %>/review"><input type="hidden" name="_csrf" value="<%= csrf %>"><label class="small" for="rv-note">Review note</label><input id="rv-note" name="note">
+      <button class="btn sm" name="decision" value="publish">Publish</button> <button class="btn sm secondary" name="decision" value="return">Return to draft</button></form><% } %><% } %>
+  <% if (isMain && it.access === 'purchase' && it.price_cents != null && !it.sale_approved_at) { %><form method="post" action="/admin/resources/<%= it.id %>/price" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">Approve price (main account)</button></form><% } %>
+  <% if (it.status !== 'retired') { %><form method="post" action="/admin/resources/<%= it.id %>/retire" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm secondary">Retire</button></form><% } %>
+</div>
+<%- include('../partials/app-end') %>
