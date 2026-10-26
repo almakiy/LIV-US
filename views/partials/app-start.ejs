@@ -19,6 +19,7 @@
     <a href="/admin/partner-records" class="<%= path.startsWith('/admin/partner-records') ? 'on' : '' %>">Partner records</a>
     <a href="/admin/standards" class="<%= path.startsWith('/admin/standards') ? 'on' : '' %>">Standards and retention</a>
     <a href="/admin/directory" class="<%= path.startsWith('/admin/directory') ? 'on' : '' %>">Directory changes</a>
+    <a href="/admin/quote-requests" class="<%= path.startsWith('/admin/quote-requests') ? 'on' : '' %>">Training requests</a>
     <a href="/admin/email" class="<%= path.startsWith('/admin/email') ? 'on' : '' %>">Email</a>
     <a href="/admin/staff" class="<%= path.startsWith('/admin/staff') ? 'on' : '' %>">Staff positions</a>
     <a href="/admin/schemes" class="<%= path.startsWith('/admin/schemes') ? 'on' : '' %>">Schemes</a>
@@ -45,6 +46,7 @@
     <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs || user.partner_role === 'academic_lead') { %><a href="/portal/level" class="<%= path.startsWith('/portal/level') ? 'on' : '' %>">Level</a><% } %>
     <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs || user.partner_role === 'finance') { %><a href="/portal/billing" class="<%= path.startsWith('/portal/billing') ? 'on' : '' %>">Billing</a><% } %>
     <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs) { %><a href="/portal/settings" class="<%= path.startsWith('/portal/settings') ? 'on' : '' %>">Settings &amp; API keys</a><% } %>
+    <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs) { %><a href="/portal/requests" class="<%= path.startsWith('/portal/requests') ? 'on' : '' %>">Training requests</a><% } %>
     <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs) { %><a href="/portal/directory" class="<%= path.startsWith('/portal/directory') ? 'on' : '' %>">Public directory</a><% } %>
     <% if (!user.partner_role || user.partner_role === 'account_manager' || user.actingAs) { %><a href="/portal/oversight" class="<%= path.startsWith('/portal/oversight') ? 'on' : '' %>">Notices and changes</a><% } %>
     <a href="/portal/api-docs" class="<%= path.startsWith('/portal/api-docs') ? 'on' : '' %>">API docs</a>

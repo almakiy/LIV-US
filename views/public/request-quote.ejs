@@ -1,0 +1,27 @@
+<%- include('../partials/head') %>
+<div class="container" style="max-width:820px;padding:40px 16px">
+  <h1>Request a training quote</h1>
+  <p>Describe the training your organization needs. LIV sends your request at the same time to up to five Authorized Training Providers that hold this scope, in your city when any is there. The partner level gives no priority: requests are shared out evenly. Each provider replies to you directly; LIV takes no part in the price or the contract.</p>
+  <% if (done) { %>
+    <div class="alert success" role="status">Your request was sent to: <strong><%= done.providers.map(p => p.company_name).join(', ') %></strong>.<% if (f.city && !done.cityMatched) { %> No provider with this scope lists <%= f.city %>, so it went to providers with the scope elsewhere.<% } %> A confirmation is on its way to your email.</div>
+    <p><a href="/partners">See the public register</a></p>
+  <% } else if (!scopes.length) { %>
+    <p class="muted">No Authorized Training Provider is listed yet. Please <a href="/contact">contact LIV</a>.</p>
+  <% } else { %>
+  <% if (error) { %><div class="alert error" role="alert"><%= error %></div><% } %>
+  <form class="card" method="post" action="/partners/request-quote"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="row"><div class="field"><label for="q-org">Organization</label><input id="q-org" name="org_name" maxlength="200" required value="<%= f.org_name || '' %>"></div>
+      <div class="field"><label for="q-name">Your name</label><input id="q-name" name="contact_name" maxlength="150" required value="<%= f.contact_name || '' %>"></div></div>
+    <div class="row"><div class="field"><label for="q-email">Work email</label><input id="q-email" name="email" type="email" maxlength="255" required value="<%= f.email || '' %>"></div>
+      <div class="field"><label for="q-phone">Phone (optional)</label><input id="q-phone" name="phone" maxlength="40" value="<%= f.phone || '' %>"></div></div>
+    <div class="field"><label for="q-scope">Training scope</label><select id="q-scope" name="scope" required><% scopes.forEach(s => { %><option <%= f.scope === s ? 'selected' : '' %>><%= s %></option><% }) %></select></div>
+    <div class="row"><div class="field"><label for="q-city">City (optional)</label><input id="q-city" name="city" maxlength="120" value="<%= f.city || '' %>"></div>
+      <div class="field"><label for="q-learners">Number of learners (optional)</label><input id="q-learners" name="learners" type="number" min="1" max="100000" value="<%= f.learners || '' %>"></div>
+      <div class="field"><label for="q-delivery">Delivery</label><select id="q-delivery" name="delivery"><% Object.entries(DELIVERY).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.delivery === k ? 'selected' : '' %>><%= l %></option><% }) %></select></div></div>
+    <div class="field"><label for="q-msg">What you need (in English, optional)</label><textarea id="q-msg" name="message" rows="4" maxlength="3000"><%= f.message || '' %></textarea></div>
+    <div class="field"><label><input type="checkbox" name="consent" value="yes" required> <%= CONSENT %></label></div>
+    <button class="btn lg">Send request</button>
+  </form>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

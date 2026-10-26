@@ -1,0 +1,6 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Training requests</h1></div>
+<p class="small muted">Each request goes at once to up to five Authorized Training Providers with the scope (the requested city first when any match), those with the fewest requests in the last 90 days first. Level gives no priority.</p>
+<% if (!rows.length) { %><p class="muted">No requests yet.</p><% } else { %><div class="table-wrap" tabindex="0"><table><tr><th>Date</th><th>Organization</th><th>Scope</th><th>City</th><th>Sent to</th></tr>
+<% rows.forEach(x => { %><tr><td class="small"><%= usDate(x.created_at) %></td><td><%= x.org_name %></td><td class="small"><%= x.scope_title %></td><td class="small"><%= x.city || '' %><%= x.city ? (x.city_matched ? ' (matched)' : ' (no provider there; sent by scope)') : '' %></td><td class="small"><%= x.sent_to %></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

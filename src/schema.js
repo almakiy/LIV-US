@@ -1588,4 +1588,30 @@ CREATE TABLE IF NOT EXISTS expert_applications (
   CHECK (no_conflicts OR length(coalesce(conflicts, '')) > 0)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_expert_open ON expert_applications(user_id, track) WHERE status IN ('submitted','approved');
+-- Requests for a training quote (owner decision, October 26, 2026). An organization describes its need; LIV sends it at the same
+-- time to up to five Authorized Training Providers with that scope (and city when one matches), choosing those that received the
+-- fewest requests in the last 90 days. Level never gives priority. LIV takes no part in the price or the contract.
+CREATE TABLE IF NOT EXISTS quote_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_name VARCHAR(200) NOT NULL,
+  contact_name VARCHAR(150) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(40),
+  scope_title VARCHAR(200) NOT NULL,
+  city VARCHAR(120),
+  learners INT CHECK (learners IS NULL OR learners BETWEEN 1 AND 100000),
+  delivery VARCHAR(20) CHECK (delivery IN ('in_person','online','blended','any')),
+  message TEXT NOT NULL DEFAULT '',
+  consent_text TEXT NOT NULL,
+  city_matched BOOLEAN NOT NULL DEFAULT false,
+  ip_hash CHAR(64),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS quote_request_recipients (
+  request_id UUID NOT NULL REFERENCES quote_requests(id) ON DELETE CASCADE,
+  platform_id UUID NOT NULL REFERENCES platforms(id) ON DELETE CASCADE,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (request_id, platform_id)
+);
+CREATE INDEX IF NOT EXISTS idx_quote_recipients_platform ON quote_request_recipients(platform_id, sent_at DESC);
 `;

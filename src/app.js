@@ -139,6 +139,7 @@ app.use('/portal/trainers', require('./routes/portal-trainers'));
 app.use('/portal/level', require('./routes/portal-level'));
 app.use('/portal/oversight', require('./routes/portal-oversight'));
 app.use('/portal/directory', require('./routes/portal-directory'));
+app.use('/portal/requests', require('./routes/portal-requests'));
 app.use('/admin/qms', require('./routes/qms'));
 app.use('/admin/billing', require('./routes/billing-admin'));
 app.use('/admin', require('./routes/admin'));

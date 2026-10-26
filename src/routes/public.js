@@ -53,6 +53,14 @@ r.get('/partners/guide', (req, res) => {
   const F = require('../lib/application-form'); const T = require('../lib/title-form');
   res.render('public/partner-guide', { title: 'Application guide', description: 'What LIV asks of a training provider, stage by stage, before you apply.', STAGES: F.STAGES, FIELDS: F.FIELDS, CRITERIA_TITLES: F.CRITERIA_TITLES, REQUIRED_EVIDENCE: F.REQUIRED_EVIDENCE, TITLE_FIELDS: T.FIELDS, MIN_OBJECTIVES: T.MIN_OBJECTIVES });
 });
+// Request a training quote: sent at once to up to five Authorized Training Providers with the scope (no priority by level).
+const QT = require('../lib/quotes');
+r.get('/partners/request-quote', wrap(async (req, res) => res.render('public/request-quote', { title: 'Request a training quote', description: 'Describe your training need; LIV sends it to Authorized Training Providers with that scope.', scopes: await QT.scopeOptions(), DELIVERY: QT.DELIVERY, CONSENT: QT.CONSENT_TEXT, f: { scope: String(req.query.scope || '') }, error: null, done: null })));
+r.post('/partners/request-quote', limiter(15, 5), wrap(async (req, res) => {
+  const view = { title: 'Request a training quote', scopes: await QT.scopeOptions(), DELIVERY: QT.DELIVERY, CONSENT: QT.CONSENT_TEXT, f: req.body, error: null, done: null };
+  try { view.done = await QT.submit(req.body, req.ip); } catch (e) { if (!(e instanceof QT.QuoteError)) throw e; view.error = e.message; res.status(e.status); }
+  res.render('public/request-quote', view);
+}));
 r.get('/partners/:slug', wrap(async (req, res, next) => {
   const { rows: [p] } = await q(`SELECT id, company_name, country, website, level, level_since, public_number, public_slug AS slug, logo_path IS NOT NULL AS has_logo, public_city, public_domain, public_delivery, public_about, public_social, accreditation_status FROM platforms WHERE public_slug = $1 AND accreditation_status = 'active' AND NOT is_preview`, [String(req.params.slug).slice(0, 120)]);
   if (!p) return next();

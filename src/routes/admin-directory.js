@@ -16,6 +16,7 @@ const go = (fn, back) => wrap(async (req, res, next) => {
   res.redirect(back);
 });
 
+r.get('/quote-requests', wrap(async (req, res) => res.render('admin/quote-requests', { title: 'Training requests', rows: await require('../lib/quotes').adminList() })));
 r.get('/directory', wrap(async (req, res) => {
   res.render('admin/directory', { title: 'Directory changes', d: await D.staffQueue(), can: await P.can(req.user), PROFILE: D.PROFILE, SCOPE_FIELDS: D.SCOPE_FIELDS });
 }));

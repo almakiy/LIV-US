@@ -49,9 +49,22 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|levels"|fees-and-timelines")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|levels"|fees-and-timelines"|request-quote")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
+  // Training quote requests: sent to providers with the scope, no priority by level
+  { const qp = await repo.newPage(); await qp.goto(BASE + '/partners/request-quote');
+    await qp.fill('#q-org', 'Acme Builders'); await qp.fill('#q-name', 'Sam Buyer'); await qp.fill('#q-email', `buyer.${stamp}@example.com`);
+    const qScope = await qp.locator('#q-scope option').first().textContent(); await qp.selectOption('#q-scope', qScope); await qp.fill('#q-city', `Nowhere-${stamp}`); await qp.fill('#q-learners', '12');
+    await qp.check('input[name=consent]'); await qp.click('button:has-text("Send request")');
+    ok(await see(qp, 'text=Your request was sent to') && await see(qp, 'text=so it went to providers with the scope elsewhere'), 'a training request goes to providers with the scope, and says when no provider is in the city');
+    const qid = psql(`SELECT id FROM quote_requests WHERE email = 'buyer.${stamp}@example.com'`);
+    ok(Number(psql(`SELECT count(*) FROM quote_request_recipients WHERE request_id = '${qid}'`)) >= 1 && psql(`SELECT count(*) FROM email_outbox WHERE template = 'quote_request' AND dedupe_key LIKE 'quote:${qid}:%'`) !== '0'
+      && psql(`SELECT count(*) FROM email_outbox WHERE template = 'quote_request_sent' AND to_email = 'buyer.${stamp}@example.com'`) === '1', 'the request is recorded once per provider, the provider is notified and the requester gets a confirmation');
+    await qp.goto(BASE + '/partners/request-quote'); await qp.fill('#q-org', 'Acme'); await qp.fill('#q-name', 'Sam'); await qp.fill('#q-email', `b2.${stamp}@example.com`); await qp.check('input[name=consent]');
+    await qp.fill('#q-msg', 'تدريب'); await qp.click('button:has-text("Send request")');
+    ok(await see(qp, 'text=Write the request in English'), 'a request must be in English');
+    await qp.close(); }
   const credHtml = await (await pr.get(BASE + '/credentials')).text();
   ok(credHtml.includes('Training Completion Credential') && credHtml.includes('Professional Qualification') && credHtml.includes('HSE Governance'), 'credentials page explains record types and the HSE Governance family');
   const hse = await (await pr.get(BASE + '/credentials/hse-governance')).text();
@@ -1538,6 +1551,8 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
     await PR.reviewLapsed(rn, decider);
     ok(!(await PR.openForQueue()).some((i) => i.kind === 'Lapsed renewal' && i.who === `Monitor Test ${stamp}`) && psql(`SELECT accreditation_status FROM platforms WHERE id = '${mp}'`) === providerStatus, 'the review clears the queue item and does not change the provider status');
     ok(await fails(PR.reviewLapsed(rn, decider), 409), 'a lapsed renewal is reviewed once');
+    await page.goto(BASE + '/portal/requests');
+    ok(await see(page, 'text=Your level gives no priority') && (psql(`SELECT count(*) FROM quote_request_recipients x JOIN platforms p ON p.id = x.platform_id WHERE p.company_name = 'Demo Safety Training Co.'`) === '0' || await see(page, 'text=Acme Builders')), 'the provider sees the training requests sent to it');
     await page.goto(BASE + '/portal/oversight');
     await page.selectOption('select[name=change_kind]', 'contact_or_address');
     await page.fill('textarea[name=description]', 'The training office moved to a new address.');

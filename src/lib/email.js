@@ -25,6 +25,12 @@ function layout(title, paragraphs, action) {
 }
 
 const TEMPLATES = {
+  quote_request: (d) => ({ subject: `Training request: ${clip(d.scope, 150)}`, ...layout('A new training request', [
+    `${clip(d.org, 200)} asks for a quote for "${clip(d.scope, 200)}"${d.city ? ` in ${clip(d.city, 120)}` : ''}.`, 'LIV sent the same request to up to five Authorized Training Providers at the same time. Reply to the organization directly; LIV takes no part in the price or the contract.'],
+  { label: 'Open the request', url: `${cfg.baseUrl}/portal/requests` }) }),
+  quote_request_sent: (d) => ({ subject: 'Your training request was sent', ...layout('Your request was sent', [
+    `LIV sent your request for "${clip(d.scope, 200)}" to: ${clip(d.providers, 1500)}.`, 'Each provider replies to you directly. Check any provider on the public register before you agree terms.'],
+  { label: 'See the register', url: `${cfg.baseUrl}/partners` }) }),
   account_created: (d) => ({ subject: 'We received your LIV Authorized Training Provider account', ...layout(`Welcome, ${clip(d.name, 100)}`, [
     `Your account for ${clip(d.company, 200)} is ready. Nothing has been submitted yet.`, 'What happens next:',
     ['Complete the application in short stages (about 25 minutes in all). Each stage saves on its own, so you can stop and return at any time.', 'At the end you submit and pay the application fee. Paying it does not authorize you; authorization depends on the review.', ...TARGETS]],
