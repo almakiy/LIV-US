@@ -75,3 +75,6 @@ Date: October 26, 2026. The owner generates these images with an image tool, the
 
 ## After the images are ready
 Send the files with the names above. Each one is placed in its position, checked at phone width, compressed, and given its alt text. Image 14 is decorative and gets empty alt text.
+
+## Placed (October 26, 2026)
+All 16 images were received and placed. The home, partners, journey, individuals, membership, community, resources and credentials pages use their image behind the hero on a navy overlay, so the text keeps its contrast. The home hero no longer shows the large seal, which stays in the site header. Banner images appear on the home lifecycle section, the verification portal, the quote request, the expert network and the About page. Card images appear on the home employer and provider cards. The social sharing image is the new background with the LIV logo added. All images are AI-generated illustrations; none is captioned as LIV staff, partners, learners or events.

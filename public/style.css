@@ -247,3 +247,9 @@ fieldset.field{border:0;padding:0;margin:0 0 14px}fieldset.field legend{font-wei
 .wl-benefits{padding:0;margin:0}
 .wl-benefits li::before{content:"\25C6";position:absolute;left:0;top:7px;color:#8A6A2E;font-size:.75rem}
 @media (max-width:900px){.wl-grid{grid-template-columns:1fr}.wl-hero h1{font-size:1.8rem}}
+/* Photography (October 26, 2026): illustrative images; text stays on a solid navy overlay so contrast does not depend on the photo. */
+.hero.has-photo{background:linear-gradient(90deg,rgba(11,31,58,.97) 0%,rgba(11,31,58,.9) 48%,rgba(11,31,58,.35) 100%),var(--photo) center right/cover no-repeat}
+@media (max-width:900px){.hero.has-photo{background:linear-gradient(rgba(11,31,58,.9),rgba(11,31,58,.9)),var(--photo) center/cover no-repeat}}
+.photo{display:block;width:100%;height:auto;border-radius:var(--radius);object-fit:cover;box-shadow:var(--shadow)}
+.photo.banner{aspect-ratio:16/5;margin:24px 0}
+.card .photo{margin:-4px 0 14px;aspect-ratio:3/2}
