@@ -26,7 +26,7 @@ Launch membership gifts may not target people assessing or deciding LIV's own ac
 
 ## 5a. Experts, trainers and assessment
 People who join the LIV Expert Network declare their conflicts of interest when they apply and update the declaration when it changes. Staff see a flag when one person asks for roles that should stay apart. When assessment programs operate:
-- A person who writes assessment questions does not train candidates in the same domain for [OWNER DECISION: period, proposed two years].
+- A person who writes assessment questions does not train candidates in the same domain for two years (owner decision, October 26, 2026).
 - A trainer does not supervise, mark or decide the assessment of their own learners.
 - A member of the appeals panel does not hear an appeal about a decision they took part in, or about their own learners.
 Approval into the network records a role only; access to assessment material is granted separately, by name, and logged.
