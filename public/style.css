@@ -247,4 +247,3 @@ fieldset.field{border:0;padding:0;margin:0 0 14px}fieldset.field legend{font-wei
 .wl-benefits{padding:0;margin:0}
 .wl-benefits li::before{content:"\25C6";position:absolute;left:0;top:7px;color:#8A6A2E;font-size:.75rem}
 @media (max-width:900px){.wl-grid{grid-template-columns:1fr}.wl-hero h1{font-size:1.8rem}}
-.illustration{display:block;width:100%;max-width:720px;height:auto;margin:24px auto}
