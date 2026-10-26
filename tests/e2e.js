@@ -43,6 +43,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   const homeHtml = await (await pr.get(BASE + '/')).text();
   ok(homeHtml.includes('Validate competence. Verify credentials.') && homeHtml.includes('U.S.-Based Professional Credentialing &amp; Verification Organization'), 'home shows the brand line and descriptor');
   ok(homeHtml.includes('Verified learning you can trust.'), 'home shows the approved message line beside the brand line');
+  ok(homeHtml.includes('/static/illustrations/record-flow.svg" alt="From training to a verified record') && (await pr.get(BASE + '/static/illustrations/record-flow.svg')).status() === 200, 'home explains the record flow with an illustration that has a text alternative');
   ok(!/Leading Institute of Verification|Accreditation Organization|Accredited Provider/.test(homeHtml), 'home carries no obsolete identity wording');
   ok(/<link rel="canonical" href="[^"]+\/">/.test(homeHtml) && homeHtml.includes('og:url'), 'canonical and Open Graph URLs come from the configured base URL');
   const legacy = await pr.get(BASE + '/accreditation', { maxRedirects: 0 });

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-labelledby="t d">
+  <title id="t">From training to a verified record</title>
+  <desc id="d">An Authorized Training Provider delivers the training, LIV issues the record, and anyone checks it online.</desc>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#B08D4C"/></marker></defs>
+  <g fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Provider: building with learners -->
+    <circle cx="110" cy="80" r="62" fill="#F7F6F2" stroke="#E2E5EA"/>
+    <path d="M78 108V70l32-20 32 20v38z" stroke="#0B1F3A"/>
+    <path d="M92 108V86h12v22M116 86h12v10h-12z" stroke="#0B1F3A"/>
+    <!-- LIV: shield with seal -->
+    <circle cx="360" cy="80" r="62" fill="#F7F6F2" stroke="#E2E5EA"/>
+    <path d="M360 42l34 12v26c0 22-15 36-34 44-19-8-34-22-34-44V54z" stroke="#0B1F3A"/>
+    <path d="M346 82l10 10 20-22" stroke="#B08D4C"/>
+    <!-- Verifier: phone with QR and check -->
+    <circle cx="610" cy="80" r="62" fill="#F7F6F2" stroke="#E2E5EA"/>
+    <rect x="584" y="42" width="52" height="80" rx="8" stroke="#0B1F3A"/>
+    <path d="M596 56h12v12h-12zM612 56h12v12h-12zM596 72h12v12h-12z" stroke="#0B1F3A" stroke-width="2"/>
+    <path d="M613 98l6 6 12-14" stroke="#0F7B4A"/>
+    <!-- arrows -->
+    <path d="M186 80h94" stroke="#B08D4C" marker-end="url(#a)"/>
+    <path d="M436 80h94" stroke="#B08D4C" marker-end="url(#a)"/>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="middle">
+    <text x="110" y="172" font-weight="600">Training delivered</text><text x="110" y="191" font-size="13" fill="#55606F">Authorized Training Provider</text>
+    <text x="360" y="172" font-weight="600">Record issued</text><text x="360" y="191" font-size="13" fill="#55606F">by LIV</text>
+    <text x="610" y="172" font-weight="600">Checked online</text><text x="610" y="191" font-size="13" fill="#55606F">QR code, ID or digital badge</text>
+  </g>
+</svg>
