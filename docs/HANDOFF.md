@@ -57,5 +57,5 @@ Waiting (final list, collected for the end):
 - Error-handling policy for records (counsel).
 - Reopening the certificate design (P-21 and P-22).
 - Separate the preview and production environments (a separate schema or a separate database) before any real data is entered.
-- Turning on `PUBLIC_APPLY` and `PUBLIC_FEES`.
+- Turning on `PUBLIC_APPLY` and `PUBLIC_FEES`. Turning on `PUBLIC_APPLY` switches the partner join page (/partners/join) from "Ask to start" to "Start free"; the fee amounts must be published on /partners/fees-and-timelines first.
 - Before launch: delete `ADMIN_RESET_PASSWORD` and turn on two-step sign-in for the admin account.

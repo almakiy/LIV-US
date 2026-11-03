@@ -55,6 +55,7 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   // Partner join page: start free, what you receive, honest trust copy
   { const jh = await (await pr.get(BASE + '/partners/join')).text();
     ok(jh.includes('Join the register of providers') && jh.includes('ATP-XXXX-XXXX') && jh.includes('What you pay, in order') && jh.includes('not a real provider') && jh.includes('does not claim government, federal, ISO'), 'the partner join page explains what a provider receives, labels the example, and states the limits');
+    ok(jh.includes('href="/apply"') && !jh.includes('href="/contact?topic=partner"') && (await pr.get(BASE + '/apply')).status() === 200, 'with public applications on, the join page links the free start to the application');
     ok(!/Internationally accredited|first and only|#1|certified by|first and currently/i.test(jh) && !jh.includes('/legal/'), 'the partner join page makes no superlative or accreditation claim and links no draft page'); }
   // Training quote requests: sent to providers with the scope, no priority by level
   { const qp = await repo.newPage(); await qp.goto(BASE + '/partners/request-quote');
