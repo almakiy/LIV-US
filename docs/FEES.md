@@ -114,3 +114,12 @@ To keep the candidate exam affordable across MENA, apply a band by **billing cou
 | **Enterprise, 8,000 certificates** (annual quoted at $6,000) | $2,000 + $6,000 + (6,000 beyond the allowance: 1,000 × $4 + 4,000 × $3 + 1,000 × $2 = $18,000) = **$26,000** | $6,000 + $18,000 = **$24,000** |
 
 Ten Starter and Professional partners at average first-year invoices of $2,000–$6,000 give roughly **$20,000–$60,000** in the first year before costs; exams, verification API and printing add to this later. Treat these as arithmetic, not forecasts.
+
+## 12. Decisions on partner subscription terms (owner, October 27, 2026)
+Recorded from the review of thecpd.group's pricing. No amount in this file is approved.
+1. **No membership of, or accreditation by, CPD Group or any other body that sells accreditation to providers.** The fee structure of such bodies (fee per course, tiers by volume, unverified recognition claims) is not copied. Independence is the reason LIV is credible.
+2. **Terms:** a partner may choose a one-year or a three-year agreement. A three-year agreement still has an annual review and an annual invoice; it is not a single locked payment for three years.
+3. **Monthly payment:** offered to partners only after the payment provider confirms recurring partner invoices work in production. Until then, annual invoices stay as they are.
+4. **Prepayment discount:** the percentage is set by the finance decision (P-6), after a cost check. The 10% and 15% in §8 are proposals, not approved amounts.
+5. **Renewal and cancellation:** no automatic renewal without the partner's written agreement; cancellation and refund rules wait for counsel (see Open points).
+6. **Transparency:** every offer shows the total, the annual equivalent and the payment schedule together, and no fee is shown without its scope.
