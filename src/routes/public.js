@@ -46,6 +46,7 @@ r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.render('public/partner-verify', { title: 'Verify a provider', description: 'Check an ATP number against the public register.', raw, number, result, searched: Boolean(raw) });
 }));
+r.get('/partners/join', (req, res) => res.render('public/partner-join', { title: 'Become a LIV Authorized Training Provider', description: 'Start free. See what you receive: a provider number, a public register listing, a verification link, a digital badge and a provider certificate.' }));
 r.get('/partners/fees-and-timelines', (req, res) => res.render('public/partner-fees-timelines', { title: 'Fees and timelines', description: 'Service timelines for applicants, and how fees are published.', publicFees: cfg.publicFees }));
 r.get('/partners/journey', (req, res) => res.render('public/partner-journey', { title: 'Your path to becoming a LIV Authorized Training Provider', description: 'How LIV reviews and authorizes a training provider, stage by stage.', publicApply: cfg.publicApply }));
 r.get('/partners/levels', (req, res) => res.render('public/partner-levels', { title: 'Partner levels', description: 'Bronze, Silver and Gold partner levels, and where a level appears.' }));

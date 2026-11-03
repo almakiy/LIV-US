@@ -49,9 +49,13 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   ok(legacy.status() === 301 && legacy.headers().location === '/partners', 'legacy /accreditation redirects permanently to /partners');
   const partnersHtml = await (await pr.get(BASE + '/partners')).text();
   ok(partnersHtml.includes('Authorized Training Provider') && partnersHtml.includes('Demo Safety Training Co.'), 'partner program page lists authorized partners');
-  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|levels"|fees-and-timelines"|request-quote")([a-z0-9-]+)"/) || [])[1];
+  const pSlug = (partnersHtml.match(/href="\/partners\/(?!guide"|verify"|journey"|levels"|fees-and-timelines"|request-quote"|join")([a-z0-9-]+)"/) || [])[1];
   ok(pSlug && (await pr.get(`${BASE}/partners/${pSlug}`)).status() === 200, 'each authorized partner has a public register page');
   ok((await pr.get(BASE + '/partners/no-such-partner-000000')).status() === 404, 'unknown partner page is 404');
+  // Partner join page: start free, what you receive, honest trust copy
+  { const jh = await (await pr.get(BASE + '/partners/join')).text();
+    ok(jh.includes('Start free.') && jh.includes('ATP-XXXX-XXXX') && jh.includes('not a real provider') && jh.includes('does not claim government, federal, ISO'), 'the partner join page explains what a provider receives, labels the example, and states the limits');
+    ok(!/Internationally accredited|first and only|#1|certified by/i.test(jh) && !jh.includes('/legal/'), 'the partner join page makes no superlative or accreditation claim and links no draft page'); }
   // Training quote requests: sent to providers with the scope, no priority by level
   { const qp = await repo.newPage(); await qp.goto(BASE + '/partners/request-quote');
     await qp.fill('#q-org', 'Acme Builders'); await qp.fill('#q-name', 'Sam Buyer'); await qp.fill('#q-email', `buyer.${stamp}@example.com`);

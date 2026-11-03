@@ -1,0 +1,53 @@
+<%- include('../partials/head') %>
+<section class="hero has-photo" style="--photo:url(/static/images/partners-hero.webp);padding:64px 0 72px"><div class="container">
+  <span class="eyebrow"><%= brand %> Authorized Training Provider Program</span>
+  <h1>Start free. Be recognised for the training you already deliver.</h1>
+  <p style="font-size:1.1rem;max-width:640px">Join the public register of providers, get your own provider number and verification link, and let your learners carry a verifiable record of their training. Starting costs nothing; the fee for each step is shown in full before you pay.</p>
+  <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Start your free application</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner">Ask to start your application</a><% } %><a class="btn ghost lg" href="/partners/request-quote">Request a training quote</a></div>
+  <p class="small" style="margin-top:14px;opacity:.85">About 25 minutes in short stages. Each stage saves, so you can stop and return.</p>
+</div></section>
+
+<section class="section white"><div class="container">
+  <h2 class="center">What you receive, shown the way it will appear</h2>
+  <p class="center muted" style="max-width:680px;margin:0 auto">Everything below is what your organisation gets once LIV approves it. The example uses placeholder details, not a real provider.</p>
+  <div class="grid g3 mt">
+    <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:700;color:var(--navy);letter-spacing:.04em">ATP-XXXX-XXXX</div><h3 class="mt">Your provider number</h3><p class="muted small">A number that anyone can look up on the public register to confirm your status, scope and level.</p><a class="small" href="/partners/verify">See how a number is checked</a></div>
+    <div class="card" style="text-align:center"><div style="display:inline-block;border:2px solid var(--gold);border-radius:999px;padding:14px 22px;color:var(--navy);font-weight:600">Authorized Training Provider</div><h3 class="mt">Your provider badge</h3><p class="muted small">A badge for your website and proposals. It states only what LIV has authorized: your scope and your level.</p><a class="small" href="/partners/levels">How levels work</a></div>
+    <div class="card" style="text-align:center"><div style="font-size:.95rem;color:var(--navy)">[Your organisation] is listed on the public register</div><h3 class="mt">Your public listing</h3><p class="muted small">Name, country, city and approved scope, shown only after LIV approves them. Your learners see the listing when they check a record.</p><a class="small" href="/partners">Open the register</a></div>
+  </div>
+  <div class="grid g3 mt">
+    <div class="card"><h3>Learners can verify every record</h3><p class="muted small">Each credential you issue has a number, a QR code and a public page. Employers check it in seconds, which makes your training easier to trust and easier to sell.</p></div>
+    <div class="card"><h3>Sell the scope you hold</h3><p class="muted small">Organisations that need training can request a quote. LIV sends each request to up to five providers that hold the scope, and shares them evenly. Your level does not change your share.</p><a class="small" href="/partners/request-quote">See how requests are sent</a></div>
+    <div class="card"><h3>A record that grows with you</h3><p class="muted small">Your courses, trainers, scope and changes are kept in one record, with dates and reasons, so you can show your history to any buyer.</p></div>
+  </div>
+</div></section>
+
+<section class="section"><div class="container" style="max-width:900px">
+  <h2 class="center">Three steps. You are in control at each one.</h2>
+  <div class="grid g3 mt">
+    <div class="card"><div class="step-n">1</div><h3>Start free</h3><p class="muted small">Create your account and tell us about your organisation, the scope you want, your courses and your trainers. Nothing is charged while you fill in the form.</p></div>
+    <div class="card"><div class="step-n">2</div><h3>Pay the stated fee, once</h3><p class="muted small">When you submit, the fee for the review is shown in full, with what it covers. Paying it does not authorize you; the review decides.</p></div>
+    <div class="card"><div class="step-n">3</div><h3>Get reviewed and listed</h3><p class="muted small">LIV reviews your file against published criteria and tells you the decision and its reasons. If you are approved, you receive your number, your badge and your listing.</p></div>
+  </div>
+  <p class="small muted center mt">Fees and timelines are on the <a href="/partners/fees-and-timelines">fees page</a>. Each fee is published there before it applies.</p>
+</div></section>
+
+<section class="section white"><div class="container" style="max-width:900px">
+  <h2 class="center">Why organisations trust a LIV provider</h2>
+  <div class="grid g3 mt">
+    <div class="card"><h3>Independent</h3><p class="muted small">Decisions are taken by staff who did not review the file. Fees never buy a better decision. <a href="/about">About LIV</a>.</p></div>
+    <div class="card"><h3>Transparent</h3><p class="muted small">Our rules are published with version and date. Our fees and timelines are shown before you pay. <a href="/partners/journey">See the full process</a>.</p></div>
+    <div class="card"><h3>Accountable</h3><p class="muted small">Complaints and appeals have a published route, and every decision carries its reasons. <a href="/contact">Raise a concern</a>.</p></div>
+  </div>
+  <p class="small muted mt">LIV is a private organization. It is not a government agency and does not claim government, federal, ISO or other external accreditation or recognition. Authorization covers the scope LIV has approved, and nothing beyond it.</p>
+</div></section>
+
+<section class="section"><div class="container" style="max-width:820px">
+  <h2 class="center">Questions partners ask</h2>
+  <div class="card mt"><h3>Is it really free to start?</h3><p class="muted small">Yes. Creating your account and filling in the form costs nothing. The fee for the review is shown before you pay it.</p></div>
+  <div class="card mt"><h3>Does paying make me authorized?</h3><p class="muted small">No. The review decides. A payment is never a condition of approval.</p></div>
+  <div class="card mt"><h3>Can I train before I am listed?</h3><p class="muted small">Only what LIV has authorized may be sold or issued under LIV's name. Until then, your courses are not listed and your learners receive no LIV record.</p></div>
+  <div class="card mt"><h3>What if I am not approved?</h3><p class="muted small">You receive the reasons in writing and may appeal. You may apply again once the gaps are closed.</p></div>
+  <p class="center mt"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Start your free application</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner">Ask to start your application</a><% } %></p>
+</div></section>
+<%- include('../partials/foot') %>
