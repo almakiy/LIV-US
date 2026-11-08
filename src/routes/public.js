@@ -46,6 +46,13 @@ r.get('/partners/verify', limiter(1, 60), wrap(async (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.render('public/partner-verify', { title: 'Verify a provider', description: 'Check an ATP number against the public register.', raw, number, result, searched: Boolean(raw) });
 }));
+// Partner funnel: counts one allowed step per visit. Daily totals only; nothing identifies the visitor.
+const FUNNEL_STEPS = ['view', 'cta_start', 'cta_quote', 'cta_faq'];
+r.get('/partners/join/event', limiter(1, 120), wrap(async (req, res) => {
+  const step = String(req.query.e || '');
+  if (FUNNEL_STEPS.includes(step)) await q(`INSERT INTO funnel_daily (day, page, step, n) VALUES (current_date, 'partners-join', $1, 1) ON CONFLICT (day, page, step) DO UPDATE SET n = funnel_daily.n + 1`, [step]);
+  res.status(204).end();
+}));
 r.get('/partners/join', wrap(async (req, res) => {
   const { rows: [c] } = await q(`SELECT count(*)::int AS n FROM platforms WHERE accreditation_status = 'active' AND public_slug IS NOT NULL AND NOT is_preview`);
   res.render('public/partner-join', { title: 'Become a LIV Authorized Training Provider', description: 'Register free, see what your organization receives, and follow the clear path to authorization.', providerCount: c.n });

@@ -16,6 +16,11 @@ const go = (fn, back) => wrap(async (req, res, next) => {
   res.redirect(back);
 });
 
+r.get('/funnel', wrap(async (req, res) => {
+  const { rows } = await q(`SELECT step, sum(n)::int AS total FROM funnel_daily WHERE page = 'partners-join' AND day >= current_date - 29 GROUP BY step`);
+  const { rows: days } = await q(`SELECT day, step, n FROM funnel_daily WHERE page = 'partners-join' AND day >= current_date - 29 ORDER BY day DESC, step`);
+  res.render('admin/funnel', { title: 'Partner funnel', totals: Object.fromEntries(rows.map((r) => [r.step, r.total])), days });
+}));
 r.get('/quote-requests', wrap(async (req, res) => res.render('admin/quote-requests', { title: 'Training requests', rows: await require('../lib/quotes').adminList() })));
 r.get('/directory', wrap(async (req, res) => {
   res.render('admin/directory', { title: 'Directory changes', d: await D.staffQueue(), can: await P.can(req.user), PROFILE: D.PROFILE, SCOPE_FIELDS: D.SCOPE_FIELDS });

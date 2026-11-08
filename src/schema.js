@@ -1614,4 +1614,12 @@ CREATE TABLE IF NOT EXISTS quote_request_recipients (
   PRIMARY KEY (request_id, platform_id)
 );
 CREATE INDEX IF NOT EXISTS idx_quote_recipients_platform ON quote_request_recipients(platform_id, sent_at DESC);
+-- Partner funnel counters (October 27, 2026): daily totals per page and step. No personal data, no cookies, no IP address.
+CREATE TABLE IF NOT EXISTS funnel_daily (
+  day DATE NOT NULL,
+  page VARCHAR(40) NOT NULL,
+  step VARCHAR(40) NOT NULL,
+  n INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, page, step)
+);
 `;

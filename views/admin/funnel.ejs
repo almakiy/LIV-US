@@ -1,0 +1,11 @@
+<%- include('../partials/app-start') %>
+<div class="page-head"><h1>Partner funnel (last 30 days)</h1></div>
+<p class="small muted">Daily totals only. No names, emails, addresses or IP addresses are recorded, and the join page sets no cookies.</p>
+<div class="grid g3 mt">
+  <div class="card"><div class="small muted">Visits</div><div style="font-size:1.8rem;font-weight:700"><%= totals.view || 0 %></div></div>
+  <div class="card"><div class="small muted">Started (free start)</div><div style="font-size:1.8rem;font-weight:700"><%= totals.cta_start || 0 %></div></div>
+  <div class="card"><div class="small muted">Asked for a quote or FAQ</div><div style="font-size:1.8rem;font-weight:700"><%= (totals.cta_quote || 0) + (totals.cta_faq || 0) %></div></div>
+</div>
+<% if (!days.length) { %><p class="muted mt">No visits recorded yet.</p><% } else { %><div class="table-wrap mt" tabindex="0"><table><tr><th>Day</th><th>Step</th><th>Count</th></tr>
+<% days.forEach(d => { %><tr><td><%= usDate(d.day) %></td><td><%= d.step %></td><td><%= d.n %></td></tr><% }) %></table></div><% } %>
+<%- include('../partials/app-end') %>

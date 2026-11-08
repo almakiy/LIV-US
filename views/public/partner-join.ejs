@@ -21,7 +21,7 @@
   <span class="eyebrow"><%= brand %> Authorized Training Provider Program</span>
   <h1>Join the register of providers that learners and employers can verify.</h1>
   <p style="font-size:1.1rem;max-width:660px">Your training becomes part of a public, checkable record. Registering is free. You see every step, and the fee for each step is shown in full before you pay it.</p>
-  <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner">Ask to start</a><% } %><a class="btn ghost lg" href="#pay">See what you pay</a></div>
+  <div class="actions"><% if (publicApply) { %><a class="btn gold lg" href="/apply" data-funnel="cta_start">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner" data-funnel="cta_start">Ask to start</a><% } %><a class="btn ghost lg" href="#pay">See what you pay</a></div>
   <p class="small" style="margin-top:14px;opacity:.85">About 25 minutes in short stages. Each stage saves, so you can stop and return.<% if (providerCount > 0) { %> <%= providerCount %> provider<%= providerCount === 1 ? '' : 's' %> already listed on the register.<% } %></p>
 </div></section>
 
@@ -58,7 +58,7 @@
     <div class="card"><div class="step-n">2</div><h3>Submit and pay the review fee</h3><p class="muted small">When you submit, the review fee is shown in full with what it covers. Paying it does not authorize you; the review decides.</p></div>
     <div class="card"><div class="step-n">3</div><h3>Get the decision</h3><p class="muted small">LIV reviews your file against published criteria. You receive the decision and its reasons. If approved, you receive your number, badge and listing.</p></div>
   </div>
-  <p class="center mt"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner">Ask to start</a><% } %></p>
+  <p class="center mt"><% if (publicApply) { %><a class="btn gold lg" href="/apply" data-funnel="cta_start">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner" data-funnel="cta_start">Ask to start</a><% } %></p>
 </div></section>
 
 <section id="pay" class="section"><div class="container" style="max-width:980px">
@@ -90,6 +90,7 @@
   <div class="card mt"><h3>Does paying make me authorized?</h3><p class="muted small">No. The review decides. A payment is never a condition of approval.</p></div>
   <div class="card mt"><h3>Can I train before I am listed?</h3><p class="muted small">Only what LIV has authorized may be issued under LIV's name. Until then, your courses are not listed and your learners receive no LIV record.</p></div>
   <div class="card mt"><h3>What if I am not approved?</h3><p class="muted small">You receive the reasons in writing and may appeal. You may apply again once the gaps are closed.</p></div>
-  <p class="center mt"><% if (publicApply) { %><a class="btn gold lg" href="/apply">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner">Ask to start</a><% } %></p>
+  <p class="center mt"><% if (publicApply) { %><a class="btn gold lg" href="/apply" data-funnel="cta_start">Start free</a><% } else { %><a class="btn gold lg" href="/contact?topic=partner" data-funnel="cta_start">Ask to start</a><% } %></p>
 </div></section>
+<script src="/static/funnel.js" defer></script>
 <%- include('../partials/foot') %>
