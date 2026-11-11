@@ -66,7 +66,7 @@ test('security strip: deterministic per fingerprint, different across certificat
 });
 
 test('executive with the strip renders more content than with plain bars', async () => {
-  const withStrip = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED } });
+  const withStrip = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: true } });
   const bars = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: false } });
   assert.ok(withStrip.length > bars.length + 1000, `${withStrip.length} vs ${bars.length}`);
 });
