@@ -19,7 +19,7 @@ test('pattern is deterministic for a seed and differs across seeds', () => {
 });
 
 test('normalizeConfig defaults to everything off and rejects junk', () => {
-  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, strip: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
+  assert.deepStrictEqual(normalizeConfig({}), { guilloche: 'off', colors: 'brand', qrBadge: false, legalNote: false, strip: false, bars: false, microtext: false, ghost: false, tiled: false, fingerprint: false, verifyStrip: false });
   assert.strictEqual(normalizeConfig({ colors: 'neon' }).colors, 'brand');
   assert.strictEqual(normalizeConfig({ colors: 'iris', qrBadge: true }).qrBadge, true);
   assert.strictEqual(normalizeConfig({ guilloche: 'evil' }).guilloche, 'off');
@@ -67,6 +67,6 @@ test('security strip: deterministic per fingerprint, different across certificat
 
 test('executive with the strip renders more content than with plain bars', async () => {
   const withStrip = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: true } });
-  const bars = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: false } });
+  const bars = await renderCertificate(data(5), platform, { design: 'executive', security_config: { ...RECOMMENDED, strip: false, bars: true } });
   assert.ok(withStrip.length > bars.length + 1000, `${withStrip.length} vs ${bars.length}`);
 });

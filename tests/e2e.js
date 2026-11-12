@@ -173,6 +173,8 @@ const psqlRefused = (sql) => { try { execSync(`psql "${process.env.DATABASE_URL}
   const bkey = (await (await pub.request.get(`${BASE}/badges/jwks.json`)).json()).keys[0];
   const [bh, bp, bs] = bjwt.split('.');
   ok(require('crypto').verify(null, Buffer.from(`${bh}.${bp}`), require('crypto').createPublicKey({ key: bkey, format: 'jwk' }), Buffer.from(bs, 'base64url')), 'the signed badge checks against the published key');
+  { const bj2 = await (await pub.request.get(`${BASE}/badges/credentials/${certNum}.json?t=${bTok}`)).json(); const iss = await (await pub.request.get(`${BASE}/badges/issuer.json`)).json();
+    ok(bj2.status === 'valid' && bj2.statusCheckedAt && /not a licence/.test(bj2.disclaimer) && bj2.evidence.some((e) => e.name === 'How to verify a LIV credential') && /informational|information only/i.test(iss.disclaimer) && iss.reportMisuse.includes('badge-misuse') && iss.usePolicy.endsWith('/legal/badge-use-policy'), 'the badge states its status, check time, disclaimer and how to verify it, and the issuer offers a misuse report and the use policy'); }
   ok((await (await pub.request.get(`${BASE}/badges/issuer.json`)).json()).description === 'LIV issues and verifies training records and memberships.', 'the issuer profile describes what LIV does and makes no claim either way');
 
   // Tamper with DB record → integrity failure

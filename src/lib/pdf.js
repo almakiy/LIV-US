@@ -152,7 +152,7 @@ function drawExecutive({ doc, data, sig, color, qr, name, config, kind }) {
   const gold = '#B08D4C';
   // Left margin: the holographic security strip (same height as the gold frame, 9pt wide), or plain accent bars
   if (config.strip) drawSecurityStrip(doc, { x: 14, w: 9, y0: 28, y1: H - 28, seed: data.verification_hash || data.cert_number, text: data.cert_number });
-  else { doc.rect(14, 36, 9, 150).fill(color); doc.rect(14, 186, 9, 80).fill(gold); doc.rect(14, 266, 9, 310).fill('#5B6B7F'); }
+  else if (config.bars) { doc.rect(14, 36, 9, 150).fill(color); doc.rect(14, 186, 9, 80).fill(gold); doc.rect(14, 266, 9, 310).fill('#5B6B7F'); }
   // Double frame
   doc.rect(34, 28, W - 68, H - 56).lineWidth(0.8).strokeColor(gold).stroke();
   doc.rect(38.5, 32.5, W - 77, H - 65).lineWidth(0.3).strokeColor(color).stroke();

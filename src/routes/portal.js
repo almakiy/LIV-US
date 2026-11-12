@@ -294,7 +294,7 @@ function readTemplateForm(body) {
     security_config: normalizeConfig({
       guilloche: body.guilloche, colors: body.colors, microtext: body.microtext === 'on', ghost: body.ghost === 'on',
       tiled: body.tiled === 'on', fingerprint: body.fingerprint === 'on', verifyStrip: body.verifyStrip === 'on',
-      qrBadge: body.qrBadge === 'on', legalNote: body.legalNote === 'on', strip: body.strip === 'on',
+      qrBadge: body.qrBadge === 'on', legalNote: body.legalNote === 'on', strip: body.strip === 'on', bars: body.bars === 'on',
     }),
   };
 }

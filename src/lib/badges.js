@@ -9,6 +9,8 @@ const { qrToken, safeEqual } = require('./crypto');
 const { verifyCertificate } = require('./verify');
 const { RECORD_TYPES } = require('./schemes');
 
+// Shown with every badge: informational only, not a licence, and not an endorsement of the holder's competence.
+const DISCLAIMER = 'For information only. This badge is not a licence to practise and does not confirm the holder is competent. Being shown on LIV records does not imply LIV endorses the holder beyond the record stated.';
 const CONTEXT = ['https://www.w3.org/ns/credentials/v2', 'https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json'];
 
 // The signing key comes from BADGE_SIGNING_KEY (an Ed25519 private key in PEM) or, when absent, is derived from
@@ -33,7 +35,12 @@ function issuerProfile() {
   return {
     '@context': CONTEXT, id: issuerId(), type: ['Profile'], name: 'LIV', url: cfg.baseUrl,
     description: 'LIV issues and verifies training records and memberships.',
+    disclaimer: DISCLAIMER,
     publicKeys: `${cfg.baseUrl}/badges/jwks.json`,
+    verification: `${cfg.baseUrl}/verify`,
+    contact: `${cfg.baseUrl}/contact`,
+    reportMisuse: `${cfg.baseUrl}/contact?topic=badge-misuse`,
+    usePolicy: `${cfg.baseUrl}/legal/badge-use-policy`,
   };
 }
 const jwks = () => ({ keys: [key().jwk] });
@@ -88,11 +95,17 @@ async function credentialBadge(number, token) {
         achievementType: rt.assessed ? 'Certification' : 'CertificateOfCompletion',
         name: c.course_name,
         description: rt.disclosure,
-        criteria: { narrative: `Completed the training course "${c.course_name}" delivered by ${c.company_name}, an Authorized Training Provider of LIV.${rt.assessed ? '' : ' No examination. This record confirms completion of training only; it is not a professional qualification or certification.'}` },
+        criteria: { narrative: `Completed the training course "${c.course_name}" delivered by ${c.company_name}, an Authorized Training Provider of LIV${c.scope_title ? `, within its approved scope "${c.scope_title}"` : ''}.${rt.assessed ? '' : ' No examination. This record confirms completion of training only; it is not a professional qualification or certification.'}` },
         creator: { id: issuerId(), type: ['Profile'], name: 'LIV' },
       },
     },
-    evidence: [{ id: verifyUrl, type: ['Evidence'], name: 'Public verification page' }],
+    evidence: [
+      { id: verifyUrl, type: ['Evidence'], name: 'Public verification page' },
+      { id: `${cfg.baseUrl}/verify`, type: ['Evidence'], name: 'How to verify a LIV credential' },
+    ],
+    status: 'valid',
+    statusCheckedAt: new Date().toISOString(),
+    disclaimer: DISCLAIMER,
   };
   return { status: 200, body: vc };
 }
@@ -128,7 +141,13 @@ async function membershipBadge(number, token) {
         creator: { id: issuerId(), type: ['Profile'], name: 'LIV' },
       },
     },
-    evidence: [{ id: `${cfg.baseUrl}/membership/verify/${n}`, type: ['Evidence'], name: 'Public membership check' }],
+    evidence: [
+      { id: `${cfg.baseUrl}/membership/verify/${n}`, type: ['Evidence'], name: 'Public membership check' },
+      { id: `${cfg.baseUrl}/verify`, type: ['Evidence'], name: 'How to verify a LIV credential' },
+    ],
+    status: 'valid',
+    statusCheckedAt: new Date().toISOString(),
+    disclaimer: DISCLAIMER,
   };
   return { status: 200, body: vc };
 }

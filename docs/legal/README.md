@@ -56,6 +56,7 @@ The current task explicitly keeps P-5, P-6, P-7, P-9, P-11–P-17 and I-1–I-12
 | 31 | [governance-structure.md](governance-structure.md) | Visitors, partners, learners, members, experts and LIV personnel | Proposed /legal/governance-structure; About page | No acceptance; published only when the roles are filled (added October 25, 2026) |
 | 32 | [course-quality-standard.md](course-quality-standard.md) | Authorized Training Providers, course authors and trainers, staff who approve courses | Proposed partner course submission and listing; partner portal | No acceptance yet; published only after the owner decisions are recorded (added October 27, 2026) |
 | 33 | [how-liv-works.md](how-liv-works.md) | Everyone who deals with LIV | Proposed /how-liv-works; footer; partner and applicant pages | No acceptance; plain-language summary of the published rules (added October 27, 2026) |
+| 34 | [badge-use-policy.md](badge-use-policy.md) | Holders of LIV credentials and memberships; anyone who displays a LIV badge | Proposed /legal/badge-use-policy; linked from every badge | No acceptance; not published until counsel and the owner decide the open points (added November 12, 2026) |
 
 ## 3. Consistency matrix
 Every numbered substantive section is mapped below; document-control, effective-date and open-point clauses across all files are governed by the release procedure in section 7. “Exists” refers to source behavior, not production verification. Human/legal duties cannot be proved merely by code.
